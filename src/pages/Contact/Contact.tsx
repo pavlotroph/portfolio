@@ -13,7 +13,7 @@ import {
   CUSTOM_SPLITTER,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
-} from '../CollectionComponent/CollectionComponent.styled';
+} from '../../components/CollectionComponent/CollectionComponent.styled';
 
 type ContactSection = {
   id: number;
