@@ -187,13 +187,13 @@ export const COLLECTION_4SEC_TITLE = styled.h4`
 `;
 
 export const COLLECTION_4SEC_DESCRIPTION = styled.h1`
-  padding-bottom: 2px;
+  padding-bottom: 40px;
 `;
 
 export const CollectionHeader = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 40px 0px 90px;
+  padding: 40px 0px 40px;
   width: 100%;
   margin: 0 auto;
 

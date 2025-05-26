@@ -21,7 +21,6 @@ export const Input = styled.input<InputProps>`
   width: 100%;
   padding: 13px 20px;
   margin: 5px 0;
-  border-radius: 4px;
   background: #0c0c0c;
   border: 1px solid ${props => (props.hasError ? '#ff4d4f' : 'transparent')};
   transition: border-color 0.3s;
