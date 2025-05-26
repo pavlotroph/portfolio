@@ -72,22 +72,22 @@ const Contact: React.FC = () => {
 function renderContactItem(sec: ContactSection) {
   const Tag = sec.tag || 'h3';
 
-if (sec.link) {
-  const external = /^https?:\/\//i.test(sec.link);
-  return (
+  if (sec.link) {
+    const external = /^https?:\/\//i.test(sec.link);
+    return (
       <a
-  key={sec.id}
-  href={sec.link}
-  target={external ? '_blank' : undefined}
-  rel={external ? 'noopener noreferrer' : undefined}
->
-  <COLLECTION_4SEC_DESCRIPTION as={Tag}>
-    {sec.text}
-  </COLLECTION_4SEC_DESCRIPTION>
-</a>
-  );
-}
-
+        key={sec.id}
+        href={sec.link}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+        style={{ textDecoration: 'none' }}
+      >
+        <COLLECTION_4SEC_DESCRIPTION as={Tag}
+          dangerouslySetInnerHTML={{ __html: sec.text }}
+        />
+      </a>
+    );
+  }
 
   return (
     <COLLECTION_4SEC_DESCRIPTION
