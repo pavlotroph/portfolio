@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../supabaseClient';
 import ContactForm from '../../components/ContactForm/ContactForm';
+import { supabase } from '../../supabaseClient';
 import {
   ContactContainer,
+  ContactTitel,
 } from './Contact.styled';
 
 import {
@@ -12,13 +13,13 @@ import {
   CUSTOM_SPLITTER,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
-} from '../../components/CollectionComponent/CollectionComponent.styled';
+} from '../CollectionComponent/CollectionComponent.styled';
 
 type ContactSection = {
   id: number;
   position: number;
-  label: string;   // «Social», «Contact»…
-  text: string;    // подпись ссылки
+  label: string;
+  text: string;
   tag?: 'h1' | 'h2' | 'h3';
   link?: string | null;
 };
@@ -26,7 +27,6 @@ type ContactSection = {
 const Contact: React.FC = () => {
   const [sections, setSections] = useState<ContactSection[]>([]);
 
-  /* ─── грузим данные ─── */
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -44,40 +44,37 @@ const Contact: React.FC = () => {
 
   if (!sections.length) return null;
 
-  /* ─── группируем по label ─── */
   const grouped = sections.reduce<Record<string, ContactSection[]>>((acc, sec) => {
     acc[sec.label] = acc[sec.label] ? [...acc[sec.label], sec] : [sec];
     return acc;
   }, {});
 
   return (
-    <ContactContainer>        {/* внешний контейнер футера */}
-      <CUSTOM_SPLITTER />             {/* горизонтальная линия сверху футера */}
+    <ContactContainer>
+      <ContactTitel>Let’s Talk</ContactTitel>
+      <CUSTOM_SPLITTER />
       <CollectionAdditionalWrapper>
-      <CollectionHeader>
-        {Object.entries(grouped).map(([label, items]) => (
-          <CollectionWrapper key={label}>
-            <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
-
-            {items.length === 1 ? (
-              renderItem(items[0])
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {items.map(renderItem)}
-              </div>
-            )}
-          </CollectionWrapper>
-        ))}
-      </CollectionHeader>
+        <CollectionHeader>
+          {Object.entries(grouped).map(([label, items]) => (
+            <CollectionWrapper key={label}>
+              <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
+              {items.length === 1 ? (
+                renderContactItem(items[0])
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {items.map(renderContactItem)}
+                </div>
+              )}
+            </CollectionWrapper>
+          ))}
+        </CollectionHeader>
       </CollectionAdditionalWrapper>
-      <ContactForm/>
+      <ContactForm />
     </ContactContainer>
   );
-
 };
 
-/* helper: одно звено футера */
-function renderItem(sec: ContactSection) {
+function renderContactItem(sec: ContactSection) {
   const Tag = sec.tag || 'h3';
 
   if (sec.link) {
