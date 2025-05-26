@@ -75,14 +75,16 @@ function renderContactItem(sec: ContactSection) {
 if (sec.link) {
   const external = /^https?:\/\//i.test(sec.link);
   return (
-    <COLLECTION_4SEC_DESCRIPTION key={sec.id} as={Tag}>
       <a
-        href={sec.link}
-        target={external ? '_blank' : undefined}
-        rel={external ? 'noopener noreferrer' : undefined}
-        dangerouslySetInnerHTML={{ __html: sec.text }}
-      />
-    </COLLECTION_4SEC_DESCRIPTION>
+  key={sec.id}
+  href={sec.link}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener noreferrer' : undefined}
+>
+  <COLLECTION_4SEC_DESCRIPTION as={Tag}>
+    {sec.text}
+  </COLLECTION_4SEC_DESCRIPTION>
+</a>
   );
 }
 

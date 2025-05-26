@@ -189,6 +189,18 @@ export const COLLECTION_4SEC_TITLE = styled.h4`
 
 export const COLLECTION_4SEC_DESCRIPTION = styled.h1`
   padding-bottom: 8px;
+  color: white;
+  transition: color 0.3s ease;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: #00bfff; /* голубой */
+    }
+  }
 `;
 
 export const CollectionHeader = styled.div`
