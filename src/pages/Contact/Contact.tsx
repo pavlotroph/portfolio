@@ -10,7 +10,7 @@ export interface ContactBlock {
   position: number;
 }
 
-const ContactPage: React.FC = () => {
+const Contact: React.FC = () => {
   const [blocks, setBlocks] = useState<ContactBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -102,4 +102,4 @@ const ContactPage: React.FC = () => {
   );
 };
 
-export default ContactPage;
+export default Contact;
