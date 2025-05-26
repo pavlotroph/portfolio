@@ -550,6 +550,31 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
         </CollectionAdditionalWrapper>
       );
 
+      case 'TEXT_2SEC':
+      return (
+        <CollectionAdditionalWrapper>
+          <CollectionHeader
+            key={b.id}
+            style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
+          >
+            {b.content.sections.map((s: Section, i: number) => (
+              <CollectionWrapper key={i}>
+                <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
+                <COLLECTION_4SEC_DESCRIPTION as={s.tag || 'h1'}>
+                  {s.text.split('\n').map((line, index) => (
+                    <React.Fragment key={index}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ))}
+                </COLLECTION_4SEC_DESCRIPTION>
+              </CollectionWrapper>
+            ))}
+          </CollectionHeader>
+        </CollectionAdditionalWrapper>
+      );
+
+
       case 'TEXT_1SEC':
       case 'TEXT_1SEC_LP':
         return (
