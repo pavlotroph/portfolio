@@ -168,6 +168,7 @@ export const CollectionWrapper = styled.div`
   flex-direction: column;
   gap: 16px;
   width: auto;
+  padding-bottom: 32px;
 
   @media (min-width: 744px) {
     width: 50%;
@@ -187,7 +188,7 @@ export const COLLECTION_4SEC_TITLE = styled.h4`
 `;
 
 export const COLLECTION_4SEC_DESCRIPTION = styled.h1`
-  padding-bottom: 40px;
+  padding-bottom: 8px;
 `;
 
 export const CollectionHeader = styled.div`

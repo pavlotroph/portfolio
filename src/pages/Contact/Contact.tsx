@@ -10,7 +10,6 @@ import {
   CollectionHeader,
   CollectionWrapper,
   CollectionAdditionalWrapper,
-  CUSTOM_SPLITTER,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
 } from '../../components/CollectionComponent/CollectionComponent.styled';
@@ -50,10 +49,8 @@ const Contact: React.FC = () => {
   }, {});
 
   return (
-    <ContactContainer>
+    <CollectionAdditionalWrapper>
       <ContactTitel>Let’s Talk</ContactTitel>
-      <CUSTOM_SPLITTER />
-      <CollectionAdditionalWrapper>
         <CollectionHeader>
           {Object.entries(grouped).map(([label, items]) => (
             <CollectionWrapper key={label}>
@@ -68,9 +65,8 @@ const Contact: React.FC = () => {
             </CollectionWrapper>
           ))}
         </CollectionHeader>
-      </CollectionAdditionalWrapper>
       <ContactForm />
-    </ContactContainer>
+    </CollectionAdditionalWrapper>
   );
 };
 
