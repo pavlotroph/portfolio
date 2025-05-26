@@ -25,6 +25,8 @@ import {
   SliderContent,
   Slide,
   Arrow,
+  COLLECTION_TEXT_TITLE_WRAPPER,
+  COLLECTION_TEXT_TITLE,
   COLLECTION_1SEC_TITLE,
   COLLECTION_1SEC_DESCRIPTION,
   CollectionContainer,
@@ -61,7 +63,7 @@ export type BlockType =
   | 'IMAGE_QUINTUPLE'
   | 'SQUARES_2_1' | 'SQUARES_1_2'
   | 'TEXT_4SEC' | 'TEXT_2SEC'
-  | 'TEXT_1SEC' | 'TEXT_1SEC_LP'
+  | 'TEXT_1SEC' | 'TEXT_1SEC_LP' | 'TEXT_TITLE'
   | 'VIMEO_PLAYER'
   | 'SPLITTER' | 'SPLITTER_SPACE' | 'SPLITTER_DEFAULT';
 
@@ -592,6 +594,30 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
             )}
           </CollectionTextWrapper>
         );
+        
+        case 'TEXT_TITLE': {
+      // предполагаем, что content имеет именно такую форму:
+      // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
+      const { style, text, fontsize, align } = b.content as {
+        style: 'h1' | 'h2' | 'h3';
+        text: string;
+        fontsize: string;
+        align: 'left' | 'center' | 'right';
+      };
+
+      return (
+        <COLLECTION_TEXT_TITLE_WRAPPER key={b.id} align={align}>
+          <COLLECTION_TEXT_TITLE
+            as={style}
+            fontSize={fontsize}
+            align={align}
+          >
+            {text}
+          </COLLECTION_TEXT_TITLE>
+        </COLLECTION_TEXT_TITLE_WRAPPER>
+      );
+    }
+      
 
       /* ----- Vimeo ----- */
       case 'VIMEO_PLAYER':

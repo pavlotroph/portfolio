@@ -1,5 +1,7 @@
 import styled, { css } from 'styled-components'; 
 
+type Align = 'left' | 'center' | 'right';
+
 /* ────────────────────────────────────────────── */
 /* ОБЩАЯ ОБЁРТКА                                  */
 /* ────────────────────────────────────────────── */
@@ -185,6 +187,44 @@ export const COLLECTION_4SEC_TITLE = styled.h4`
   @media (min-width: 1440px) {
     padding-bottom: 30px;
   }
+`;
+
+export const COLLECTION_TEXT_TITLE_WRAPPER = styled.div<{ align?: Align }>`
+  display: flex;
+  flex-direction: row;
+  justify-content: ${({ align }) =>
+    align === 'left'   ? 'flex-start' :
+    align === 'right'  ? 'flex-end' :
+                         'center'};
+  align-items: center;
+  padding: 20px 0;
+  gap: 10px;
+
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  height: 100px;
+
+  background: #000;
+  margin: 0 auto;
+`;
+
+export const COLLECTION_TEXT_TITLE = styled.h1<{
+  fontSize?: string;
+  align?: Align;
+}>`
+  margin: 0;
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+
+  width: auto;
+  height: auto;
+
+  font-size: ${({ fontSize }) => (fontSize ? `${fontSize}px` : '32px')};
+  line-height: 1;
+  text-align: ${({ align }) => align || 'left'};
+  color: #fff;
 `;
 
 export const COLLECTION_4SEC_DESCRIPTION = styled.h1`
@@ -411,58 +451,6 @@ export const IMAGE_QUINTUPLE = styled(IMAGE_BASEGRID).attrs({ as: 'div' })`
         : $itemsCount >= 5
         ? 'repeat(5, 1fr)'
         : `repeat(${$itemsCount}, 1fr)`};
-  }
-`;
-
-export const CollectionImageWrapper = styled.div`
-  display: grid;
-  width: 100%;
-  margin: 32px 0;
-  gap: 6px;              
-
-  .image-container {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    aspect-ratio: 2;
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      cursor: pointer;
-    }
-  }
-
-  @media (max-width: 743px) {
-    grid-template-columns: 1fr;
-  }
-  @media (min-width: 744px) and (max-width: 1439px) {
-    grid-template-columns: repeat(2, 1fr);
-    .image-container:last-child:nth-child(odd) {
-      grid-column: span 2;
-      max-width: 50%;
-      justify-self: center;
-    }
-  }
-  @media (min-width: 1440px) {
-    grid-template-columns: repeat(3, 1fr);
-    .image-container:nth-last-child(2),
-    .image-container:last-child {
-      grid-column: span 1;
-      width: 150%;
-      margin-right: -100%;
-    }
-    .image-container:nth-last-child(2) {
-      justify-self: start;
-    }
-    .image-container:last-child {
-      justify-self: end;
-    }
-    .image-container:last-child:nth-child(3n + 1) {
-      grid-column: span 3;
-      max-width: 33.33%;
-      margin: 0;
-    }
   }
 `;
 
