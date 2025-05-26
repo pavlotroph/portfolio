@@ -38,7 +38,6 @@ import {
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
   CollectionTextWrapper,
-  /* CollectionImageWrapper,*/
   ImageBlock,
   VimeoContainer,
   WorkTextFilter,

@@ -4,6 +4,7 @@ export const FormContainer = styled.div`
   width: 100%;
   margin: 0 auto;
   margin-bottom: 46px;
+  max-width: 1440px;
 `
 
 export const FormGroup = styled.div`
