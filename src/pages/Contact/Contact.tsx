@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import ContactForm from '../../components/ContactForm/ContactForm';
 import { supabase } from '../../supabaseClient';
 import {
-  ContactContainer,
   ContactTitel,
 } from './Contact.styled';
 
