@@ -1,101 +1,108 @@
-import React, { useEffect, useState } from 'react';
-import ContactForm from '../../components/ContactForm/ContactForm';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import {
-  ContactTitel,
-} from './Contact.styled';
+import Header from '../../components/Header/Header';
+import Footer from '../../components/Footer/Footer';
+import Loading from '../../assets/video/logo_animated_hq.webm';
 
-import {
-  CollectionHeader,
-  CollectionWrapper,
-  CollectionAdditionalWrapper,
-  COLLECTION_4SEC_TITLE,
-  COLLECTION_4SEC_DESCRIPTION,
-} from '../../components/CollectionComponent/CollectionComponent.styled';
-
-type ContactSection = {
-  id: number;
-  position: number;
-  label: string;
-  text: string;
-  tag?: 'h1' | 'h2' | 'h3';
-  link?: string | null;
-};
+// Define the shape of a contact-block row
+interface ContactBlock {
+  id: number;             // primary key in contact_blocks
+  type: string;           // e.g. 'TEXT', 'IMAGE', 'FORM', etc.
+  content: any;           // arbitrary content (string, JSON, etc.)
+  position: number;       // ordering
+}
 
 const Contact: React.FC = () => {
-  const [sections, setSections] = useState<ContactSection[]>([]);
+  const [blocks, setBlocks] = useState<ContactBlock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    async function fetchBlocks() {
+      setLoading(true);
       const { data, error } = await supabase
-        .from('contact_sections')
-        .select('*')
-        .order('position');
+        .from('contact_blocks')
+        .select('id, type, content, position')
+        .order('position', { ascending: true });
 
       if (error) {
-        console.error('[Contact] fetch error:', error.message);
+        console.error('Error loading contact blocks:', error);
+        setError(error.message);
       } else {
-        setSections(data as ContactSection[]);
+        setBlocks(data || []);
       }
-    })();
+      setLoading(false);
+    }
+
+    fetchBlocks();
   }, []);
 
-  if (!sections.length) return null;
-
-  const grouped = sections.reduce<Record<string, ContactSection[]>>((acc, sec) => {
-    acc[sec.label] = acc[sec.label] ? [...acc[sec.label], sec] : [sec];
-    return acc;
-  }, {});
-
-  return (
-    <CollectionAdditionalWrapper>
-      <ContactTitel>Let’s Talk</ContactTitel>
-        <CollectionHeader>
-          {Object.entries(grouped).map(([label, items]) => (
-            <CollectionWrapper key={label}>
-              <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
-              {items.length === 1 ? (
-                renderContactItem(items[0])
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {items.map(renderContactItem)}
-                </div>
-              )}
-            </CollectionWrapper>
-          ))}
-        </CollectionHeader>
-      <ContactForm />
-    </CollectionAdditionalWrapper>
-  );
-};
-
-function renderContactItem(sec: ContactSection) {
-  const Tag = sec.tag || 'h3';
-
-  if (sec.link) {
-    const external = /^https?:\/\//i.test(sec.link);
+  if (loading) {
     return (
-      <a
-        key={sec.id}
-        href={sec.link}
-        target={external ? '_blank' : undefined}
-        rel={external ? 'noopener noreferrer' : undefined}
-        style={{ textDecoration: 'none' }}
-      >
-        <COLLECTION_4SEC_DESCRIPTION as={Tag}
-          dangerouslySetInnerHTML={{ __html: sec.text }}
-        />
-      </a>
+      <div style={{
+        width: '100%',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#000',
+      }}>
+        <video src={Loading} autoPlay loop muted playsInline style={{ width: 150, height: 150 }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Error loading page</h2>
+        <p>{error}</p>
+      </div>
     );
   }
 
   return (
-    <COLLECTION_4SEC_DESCRIPTION
-      key={sec.id}
-      as={Tag}
-      dangerouslySetInnerHTML={{ __html: sec.text }}
-    />
+    <>
+      <Header />
+
+      <main style={{ padding: '2rem 1rem' }}>
+        {blocks.map(block => {
+          switch (block.type) {
+            case 'TEXT':
+              return <p key={block.id}>{block.content}</p>;
+
+            case 'HEADING':
+              return <h2 key={block.id}>{block.content}</h2>;
+
+            case 'IMAGE':
+              // content assumed to be an object { src: string, alt?: string }
+              return (
+                <img
+                  key={block.id}
+                  src={block.content.src}
+                  alt={block.content.alt || ''}
+                  style={{ maxWidth: '100%', margin: '1rem 0' }}
+                />
+              );
+
+            case 'FORM':
+              // content assumed to be HTML string for embedding
+              return (
+                <div
+                  key={block.id}
+                  dangerouslySetInnerHTML={{ __html: block.content }}
+                />
+              );
+
+            default:
+              return null;
+          }
+        })}
+      </main>
+
+      <Footer />
+    </>
   );
-}
+};
 
 export default Contact;
