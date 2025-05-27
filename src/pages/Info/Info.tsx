@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   InfoColumnContainer,
+  InfoContainer,
   InfoItem,
   InfoLink,
   InfoName,
@@ -15,8 +16,7 @@ import {
   WrapperLink,
 } from './Info.styled';
 import {
-  CollectionAdditionalWrapper,
-  CollectionContainer
+  CollectionAdditionalWrapper
 } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
@@ -49,8 +49,8 @@ const Info: React.FC = () => {
     }
   }, [quotes]);
   return (
-    <CollectionContainer>
-    <CollectionAdditionalWrapper>
+    <InfoContainer>
+      <CollectionAdditionalWrapper>
       <ListInfo>
         <InfoItem>
           <InfoText>Artist Name</InfoText>
@@ -140,8 +140,8 @@ const Info: React.FC = () => {
           </WorkTextDescription>
         </WorkDescriptionWrapp>
       )}
-    </CollectionAdditionalWrapper>
-    </CollectionContainer>
+      </CollectionAdditionalWrapper>
+    </InfoContainer>
   );
 };
 
