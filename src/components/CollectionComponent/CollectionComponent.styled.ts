@@ -258,7 +258,7 @@ export const CollectionTextWrapper = styled.div`
   padding: 20px 0px 40px;
 
   @media (min-width: 744px) {
-    margin: 32px 24px;
+    padding: 20px 0px 40px;
   }
 
   @media (min-width: 1440px) {

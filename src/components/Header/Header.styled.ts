@@ -20,9 +20,10 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
     max-width: 768px;
   }
     @media screen and (min-width: 1440px){
+    padding: 14px 24px;
     width: 100%;
-margin: 0 auto;
-}
+    margin: 0 auto;
+    }
 
   &:hover,
   &:focus,

@@ -577,22 +577,38 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
 
 
       case 'TEXT_1SEC':
-      case 'TEXT_1SEC_LP':
         return (
           <CollectionAdditionalWrapper>
-          <CollectionTextWrapper
-            key={b.id}
-            style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
-          >
-            {b.content.sections.map(
-              (s: { label: string; text: string }, i: number) => (
+            <CollectionTextWrapper key={b.id}>
+              {b.content.sections.map((section: any, i: number) => (
                 <div key={i}>
-                  <COLLECTION_1SEC_TITLE>{s.label}</COLLECTION_1SEC_TITLE>
-                  <COLLECTION_1SEC_DESCRIPTION>{s.text}</COLLECTION_1SEC_DESCRIPTION>
+                  <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
+
+                  {section.content.map((item: any, j: number) => {
+                    const Tag = item.tag || 'p';
+
+                    const style: React.CSSProperties = {
+                      fontSize: item.fontSize || undefined,
+                      textAlign: item.align || undefined,
+                    };
+
+                    const inner = item.href ? (
+                      <a href={item.href} target="_blank" rel="noopener noreferrer">
+                        {item.text}
+                      </a>
+                    ) : (
+                      item.text
+                    );
+
+                    return (
+                      <COLLECTION_1SEC_DESCRIPTION as={Tag} style={style} key={j}>
+                        {inner}
+                      </COLLECTION_1SEC_DESCRIPTION>
+                    );
+                  })}
                 </div>
-              )
-            )}
-          </CollectionTextWrapper>
+              ))}
+            </CollectionTextWrapper>
           </CollectionAdditionalWrapper>
         );
         
