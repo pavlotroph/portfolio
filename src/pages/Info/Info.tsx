@@ -1,21 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
-  InfoColumnContainer,
-  InfoSmollName,
-  InfoText,
-  UnderlinedText,
   WorkDescription,
   WorkDescriptionWrapp,
   WorkTextDescription,
-  WrapperLink,
 } from './Info.styled';
 import {
   CollectionContainer,
   CollectionWrapper,
   CollectionAdditionalWrapper,
   CollectionHeader,
+  COLLECTION_1SEC_TITLE,
+  COLLECTION_1SEC_DESCRIPTION,
   COLLECTION_4SEC_TITLE,
-  COLLECTION_4SEC_DESCRIPTION
+  COLLECTION_4SEC_DESCRIPTION,
+  CollectionTextWrapper
 } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
@@ -70,54 +68,21 @@ const Info: React.FC = () => {
             </CollectionWrapper>
           ))}
         </CollectionHeader>
+        <CollectionTextWrapper>
+          {[
+            {
+              label: 'Description',
+              text: `The Canadian International AutoShow (CIAS) is Canada's largest auto show. This event has been held in Toronto, Ontario, since 1974 and is staged annually in February at the Metro Toronto Convention Centre. It draws an average of 300,000 visitors throughout its showing from Ontario and Western New York.[1]The Canadian International AutoShow (CIAS) is Canada's largest auto show. This event has been held in Toronto, Ontario, since 1974 and is staged annually in February at the Metro Toronto Convention Centre. It draws an average of 300,000 visitors throughout its showing from Ontario and Western New York.[1]`,
+            },
+          ].map((s, i) => (
+            <div key={i}>
+              <COLLECTION_1SEC_TITLE>{s.label}</COLLECTION_1SEC_TITLE>
+              <COLLECTION_1SEC_DESCRIPTION>{s.text}</COLLECTION_1SEC_DESCRIPTION>
+            </div>
+          ))}
+        </CollectionTextWrapper>
       </CollectionAdditionalWrapper>
-      <InfoColumnContainer>
-        <InfoText>Info</InfoText>
-        <InfoSmollName>
-          Pavlo Troph
-          <span>
-            {' '}
-            is a multidisciplinary artist dedicated to creating impactful and
-            emotionally resonant experiences. By skillfully blending visuals,
-            sound, and storytelling, he transforms ideas into memorable and
-            engaging products.
-          </span>{' '}
-        </InfoSmollName>
-
-        <InfoText>Companies</InfoText>
-
-        <InfoSmollName>
-          FiveMods
-          <br /> Network <br />
-          Graphics
-          <br /> Meta Network
-        </InfoSmollName>
-
-        <InfoText>Software Skills</InfoText>
-        <InfoSmollName>
-          Blender 3D <br />
-          Adobe Suite
-          <br /> Figma
-        </InfoSmollName>
-
-        <InfoText>Links</InfoText>
-        <WrapperLink>
-          <UnderlinedText
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/global//RESUME.pdf"
-          >
-            Resume
-          </UnderlinedText>
-          <UnderlinedText
-            href="https://www.youtube.com/watch?v=LUzVjS18PjI"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Latest ShowReel
-          </UnderlinedText>
-        </WrapperLink>
-      </InfoColumnContainer>
+    
       <CUSTOM_SPLITTER />
 
       {currentQuote && (
