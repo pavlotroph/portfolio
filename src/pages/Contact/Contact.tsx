@@ -1,114 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet';
-import { supabase } from '../../supabaseClient';
-import Loading from '../../assets/video/logo_animated_hq.webm';
-import { NotFoundWraperr, NotFoundText } from '../Work/Work.styled';
-
-import CollectionComponent from '../../components/CollectionComponent/CollectionComponent';
-import { BlockType } from '../../components/CollectionComponent/CollectionComponent';
-
-export interface ContactBlockDB {
-  id: number;
-  type: BlockType;
-  content: any;          
-  position: number;
-}
+import React from 'react';
+import ContactForm from '../../components/ContactForm/ContactForm';
+import {
+  ContactContainer,
+  ContactTitel,
+  WrapperInfo,
+  SocialContainerLink,
+  TextContact,
+  EmailSocialLink,
+  LocationContainer,
+  LocationLink,
+} from './Contact.styled';
 
 const Contact: React.FC = () => {
-  const [blocks, setBlocks] = useState<ContactBlockDB[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-
-  useEffect(() => {
-    const fetchBlocks = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('contact_blocks')
-          .select('*')
-          .order('position', { ascending: true });
-
-        if (error) throw error;
-        setBlocks(data || []);
-      } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBlocks();
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [loading]);
-
-  if (loading) {
-    return (
-      <div style={{
-        width: '100%',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#000',
-      }}>
-        <video src={Loading} autoPlay loop muted playsInline style={{ width: 150, height: 150 }} />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        width: '100%',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#000',
-      }}>
-        <p style={{ color: '#fff' }}>Error: {error}</p>
-      </div>
-    );
-  }
-
-  if (!blocks || blocks.length === 0) {
-    return (
-      <NotFoundWraperr>
-        <NotFoundText>
-          Контактная<br />страница пуста
-        </NotFoundText>
-      </NotFoundWraperr>
-    );
-  }
-
-  const firstTextBlock = blocks.find(b => b.type.startsWith('TEXT_'));
-  const metaDescription = firstTextBlock
-    ? (firstTextBlock.content?.sections?.[0]?.text ?? '').slice(0, 160)
-    : 'Контактная информация';
-
   return (
-    <>
-      <Helmet>
-        <title>Contact — MySite</title>
-        <meta name="description" content={metaDescription} />
-        <meta property="og:title" content="Contact" />
-        <meta property="og:description" content={metaDescription} />
-      </Helmet>
-
-      <CollectionComponent
-        collection={{
-          id: 0,
-          folder: 'contact',
-          blocks: blocks as any, // быстро, но грязно
-        }}
-      />
-    </>
+    <ContactContainer>
+      <ContactTitel>Let’s Talk</ContactTitel>
+      <WrapperInfo>
+        <SocialContainerLink>
+          <TextContact>Contact</TextContact>
+          <EmailSocialLink href="mailto:info@pavlotroph.com">
+            info@pavlotroph.com
+          </EmailSocialLink>
+          <EmailSocialLink href="https://www.linkedin.com/in/pavlo-trofimenko/">
+            LinkedIn
+          </EmailSocialLink>
+          <EmailSocialLink href="https://t.me/pavlotroph">
+            Telegram
+          </EmailSocialLink>
+          <EmailSocialLink href="https://www.instagram.com/">
+            Instagram
+          </EmailSocialLink>
+        </SocialContainerLink>
+        <LocationContainer>
+          <TextContact>Location</TextContact>
+          <LocationLink
+            href="https://maps.app.goo.gl/b7UCDY41c7FuzzFC6"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Toronto, ON, CA
+          </LocationLink>
+        </LocationContainer>
+      </WrapperInfo>
+      <ContactForm />
+    </ContactContainer>
   );
 };
 
