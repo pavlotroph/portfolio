@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   InfoColumnContainer,
-  InfoContainer,
   InfoSmollName,
   InfoText,
   UnderlinedText,
@@ -11,6 +10,7 @@ import {
   WrapperLink,
 } from './Info.styled';
 import {
+  CollectionContainer,
   CollectionWrapper,
   CollectionAdditionalWrapper,
   CollectionHeader,
@@ -48,7 +48,7 @@ const Info: React.FC = () => {
     }
   }, [quotes]);
   return (
-    <InfoContainer>
+    <CollectionContainer>
       <CollectionAdditionalWrapper>
         <CollectionHeader>
           {[
@@ -128,7 +128,7 @@ const Info: React.FC = () => {
           </WorkTextDescription>
         </WorkDescriptionWrapp>
       )}
-    </InfoContainer>
+    </CollectionContainer>
   );
 };
 
