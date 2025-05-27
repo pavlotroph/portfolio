@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   InfoColumnContainer,
-  InfoContainer,
   InfoItem,
   InfoLink,
   InfoName,
@@ -15,6 +14,9 @@ import {
   WorkTextDescription,
   WrapperLink,
 } from './Info.styled';
+import {
+  CollectionAdditionalWrapper
+} from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
 import { supabase } from '../../supabaseClient';
@@ -46,7 +48,7 @@ const Info: React.FC = () => {
     }
   }, [quotes]);
   return (
-    <InfoContainer>
+    <CollectionAdditionalWrapper>
       <ListInfo>
         <InfoItem>
           <InfoText>Artist Name</InfoText>
@@ -112,7 +114,7 @@ const Info: React.FC = () => {
           <UnderlinedText
             target="_blank"
             rel="noopener noreferrer"
-            href="https://drive.google.com/file/d/1D69U9qWZQzXH7Pu58QtCvbdFzv6qZgnV/view?usp=sharing"
+            href="https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/global//RESUME.pdf"
           >
             Resume
           </UnderlinedText>
@@ -136,7 +138,7 @@ const Info: React.FC = () => {
           </WorkTextDescription>
         </WorkDescriptionWrapp>
       )}
-    </InfoContainer>
+    </CollectionAdditionalWrapper>
   );
 };
 
