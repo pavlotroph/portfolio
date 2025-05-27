@@ -2,13 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   InfoColumnContainer,
   InfoContainer,
-  InfoItem,
-  InfoLink,
-  InfoName,
   InfoSmollName,
   InfoText,
-  InfoTitle,
-  ListInfo,
   UnderlinedText,
   WorkDescription,
   WorkDescriptionWrapp,
@@ -16,7 +11,11 @@ import {
   WrapperLink,
 } from './Info.styled';
 import {
-  CollectionAdditionalWrapper
+  CollectionWrapper,
+  CollectionAdditionalWrapper,
+  CollectionHeader,
+  COLLECTION_4SEC_TITLE,
+  COLLECTION_4SEC_DESCRIPTION
 } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
@@ -51,37 +50,27 @@ const Info: React.FC = () => {
   return (
     <InfoContainer>
       <CollectionAdditionalWrapper>
-      <ListInfo>
-        <InfoItem>
-          <InfoText>Artist Name</InfoText>
-          <InfoName>Pavlo Troph</InfoName>
-        </InfoItem>
-        <InfoItem>
-          <InfoText>Specialization</InfoText>
-          <InfoTitle>
-            Graphic Design <br />
-            CGI Photography <br />
-            Cinematography
-            <br /> Art Direction
-          </InfoTitle>
-        </InfoItem>{' '}
-        <InfoItem>
-          <InfoText>Location</InfoText>
-          <InfoLink
-            href="https://maps.app.goo.gl/b7UCDY41c7FuzzFC6"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Toronto, ON, CA
-          </InfoLink>
-        </InfoItem>{' '}
-        <InfoItem>
-          <InfoText>Contact</InfoText>
-          <InfoLink href="mailto:info@pavlotroph.com">
-            info@pavlotroph.com
-          </InfoLink>
-        </InfoItem>
-      </ListInfo>
+        <CollectionHeader>
+          {[
+            { tag: 'h1', text: 'Toronto', label: 'Collection' },
+            { tag: 'h2', text: '2024', label: 'Year' },
+            { tag: 'h3', text: 'Personal\nStreet', label: 'Category' },
+            { tag: 'h1', text: 'Tokyo drift', label: 'Synopsis' },
+          ].map((s, i) => (
+            <CollectionWrapper key={i}>
+              <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
+              <COLLECTION_4SEC_DESCRIPTION as={s.tag}>
+                {s.text.split('\n').map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))}
+              </COLLECTION_4SEC_DESCRIPTION>
+            </CollectionWrapper>
+          ))}
+        </CollectionHeader>
+      </CollectionAdditionalWrapper>
       <InfoColumnContainer>
         <InfoText>Info</InfoText>
         <InfoSmollName>
@@ -129,7 +118,6 @@ const Info: React.FC = () => {
           </UnderlinedText>
         </WrapperLink>
       </InfoColumnContainer>
-
       <CUSTOM_SPLITTER />
 
       {currentQuote && (
@@ -140,7 +128,6 @@ const Info: React.FC = () => {
           </WorkTextDescription>
         </WorkDescriptionWrapp>
       )}
-      </CollectionAdditionalWrapper>
     </InfoContainer>
   );
 };
