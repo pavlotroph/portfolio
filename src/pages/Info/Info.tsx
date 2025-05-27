@@ -15,7 +15,8 @@ import {
   WrapperLink,
 } from './Info.styled';
 import {
-  CollectionAdditionalWrapper
+  CollectionAdditionalWrapper,
+  CollectionContainer
 } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
@@ -48,6 +49,7 @@ const Info: React.FC = () => {
     }
   }, [quotes]);
   return (
+    <CollectionContainer>
     <CollectionAdditionalWrapper>
       <ListInfo>
         <InfoItem>
@@ -139,6 +141,7 @@ const Info: React.FC = () => {
         </WorkDescriptionWrapp>
       )}
     </CollectionAdditionalWrapper>
+    </CollectionContainer>
   );
 };
 
