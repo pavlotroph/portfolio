@@ -255,8 +255,7 @@ export const CollectionTextWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 5px;
-  margin: 32px 18px;
-  padding-bottom: 10px;
+  padding: 20px 0px 40px;
 
   @media (min-width: 744px) {
     margin: 32px 24px;
@@ -264,8 +263,7 @@ export const CollectionTextWrapper = styled.div`
 
   @media (min-width: 1440px) {
     max-width: 1440px;
-    margin: 80px auto;
-    padding-bottom: 20px;
+    padding: 20px 0px 40px;
   }
 `;
 

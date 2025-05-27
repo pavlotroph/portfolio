@@ -579,6 +579,7 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
       case 'TEXT_1SEC':
       case 'TEXT_1SEC_LP':
         return (
+          <CollectionAdditionalWrapper>
           <CollectionTextWrapper
             key={b.id}
             style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
@@ -592,6 +593,7 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
               )
             )}
           </CollectionTextWrapper>
+          </CollectionAdditionalWrapper>
         );
         
         case 'TEXT_TITLE': {
