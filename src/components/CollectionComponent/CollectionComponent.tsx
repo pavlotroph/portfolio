@@ -574,17 +574,17 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
           </CollectionHeader>
         </CollectionAdditionalWrapper>
       );
-      
+
       interface TextSegmentB {
-  text: string;
-  weight?: number;
-  size?: string;
-  link?: string;
-}
+        text: string;
+        weight?: number;
+        size?: string;
+        link?: string;
+      }
       interface SectionB {
-  label: string;
-  segments: TextSegmentB[];
-}
+        label: string;
+        segments: TextSegmentB[];
+      }
       case 'TEXT_1SEC':
       case 'TEXT_1SEC_LP':
         return (
