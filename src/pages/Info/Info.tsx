@@ -74,16 +74,14 @@ const Info: React.FC = () => {
               label: "Description",
               segments: [
                 {
-                  text: "Pavlo Troph",
-                  weight: 700,
-                  size: "18px",
-                  link: "https://www.instagram.com/pavlotroph/"
+                  tag: "h1",
+                  link: "https://www.instagram.com/pavlotroph/",
+                  text: "Pavlo Troph"
                 },
                 {
-                  text: " is a multidisciplinary artist dedicated to creating impactful and emotionally resonant experiences. By skillfully blending visuals, sound, and storytelling, he transforms ideas into memorable and engaging products.",
-                  weight: 500,
-                  size: "16px"
-                },
+                  tag: "span",
+                  text: " is a multidisciplinary artist."
+                }
               ]
             }
           ].map((section, i) => (
@@ -91,14 +89,20 @@ const Info: React.FC = () => {
               <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
               <COLLECTION_1SEC_DESCRIPTION>
                 {section.segments.map((seg, idx) => {
-                  const style: React.CSSProperties = {};
-                  if (seg.weight) style.fontWeight = seg.weight;
-                  if (seg.size) style.fontSize = seg.size;
+                  const Tag = (seg.tag || 'span') as keyof JSX.IntrinsicElements;
 
-                  const content = (
-                    <span key={idx} style={style}>
-                      {seg.text}
-                    </span>
+                  const renderTextWithBreaks = (text: string) =>
+                    text.split("\n").map((line, lineIdx) => (
+                      <React.Fragment key={lineIdx}>
+                        {line}
+                        {lineIdx < text.split("\n").length - 1 && <br />}
+                      </React.Fragment>
+                    ));
+
+                  const element = (
+                    <Tag key={idx} style={{ display: "inline" }}>
+                      {renderTextWithBreaks(seg.text)}
+                    </Tag>
                   );
 
                   return seg.link ? (
@@ -108,10 +112,10 @@ const Info: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {content}
+                      {element}
                     </a>
                   ) : (
-                    content
+                    element
                   );
                 })}
               </COLLECTION_1SEC_DESCRIPTION>
