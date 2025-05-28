@@ -10,16 +10,17 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
- width: 100%;
+  width: 100%;
   margin: 0 auto;
   transition: all 0.3s ease;
   z-index: 99;
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
     padding: 14px 24px;
     max-width: 768px;
   }
-    @media screen and (min-width: 1440px){
+   
+  @media screen and (min-width: 1440px) {
     padding: 14px 24px;
     width: 100%;
     margin: 0 auto;

@@ -132,6 +132,7 @@ export const WorkTextFilter = styled.a`
   font-size: 13px;
   line-height: 162%;
   color: #808080;
+  text-decoration: none;
   transition: all 0.3s ease-in-out;
 
   &.active {
