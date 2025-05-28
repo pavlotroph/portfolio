@@ -162,6 +162,13 @@ export const COLLECTION_1SEC_DESCRIPTION = styled.h2`
   @media (min-width: 1440px) {
     font-size: 16px;
   }
+
+  h1 { }
+  h2 { }
+  h3 { }
+  span { }
+  a { text-decoration: underline; }
+  a:hover { }
 `;
 
 export const CollectionWrapper = styled.div`

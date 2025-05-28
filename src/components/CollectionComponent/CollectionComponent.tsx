@@ -577,8 +577,7 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
 
       interface TextSegmentB {
         text: string;
-        weight?: number;
-        size?: string;
+        tag?: keyof JSX.IntrinsicElements; // 'h1'|'h2'|...|'span'
         link?: string;
       }
       interface SectionB {
@@ -590,24 +589,31 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
         return (
           <CollectionAdditionalWrapper>
             <CollectionTextWrapper key={b.id}>
-              {b.content.sections.map((section: SectionB, i: number) => (
+              {b.content.sections.map((section: SectionB, i) => (
                 <div key={i}>
                   <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
                   <COLLECTION_1SEC_DESCRIPTION>
                     {section.segments.map((seg, idx) => {
-                      const style: React.CSSProperties = {};
-                      if (seg.weight) style.fontWeight = seg.weight;
-                      if (seg.size) style.fontSize = seg.size;
+                      const Tag = seg.tag || 'span';
 
-                      const content = (
-                        <span key={idx} style={style}>
+                      const inner = (
+                        <Tag key={idx}>
                           {seg.text}
-                        </span>
+                        </Tag>
                       );
 
                       return seg.link
-                        ? <a key={idx} href={seg.link} target="_blank" rel="noopener noreferrer">{content}</a>
-                        : content;
+                        ? (
+                          <a
+                            key={idx}
+                            href={seg.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {inner}
+                          </a>
+                        )
+                        : inner;
                     })}
                   </COLLECTION_1SEC_DESCRIPTION>
                 </div>

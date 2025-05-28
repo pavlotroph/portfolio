@@ -137,11 +137,10 @@ export const GlobalStyle = css`
   a {
     text-decoration: none;
       color:rgb(255, 255, 255);
-      transition: all 0.1s ease-in-out;
-      text-decoration: underline;
+      transition: all 0.13s ease-in-out;
     &:hover {
       color:rgb(0, 122, 255);
-      transition: all 0.1s ease-in-out;
+      transition: all 0.13s ease-in-out;
     }
   
   }
