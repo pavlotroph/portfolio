@@ -255,7 +255,7 @@ export const CollectionTextWrapper = styled.div`
   flex-direction: column;
   gap: 5px;
   padding: 20px 0px 40px;
-  width: 100%
+  width: 100%;
 
   @media (min-width: 744px) {
     padding: 20px 0px 40px;
