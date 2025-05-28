@@ -71,13 +71,50 @@ const Info: React.FC = () => {
         <CollectionTextWrapper>
           {[
             {
-              label: 'Description',
-              text: `The Canadian International AutoShow (CIAS) is Canada's largest auto show. This event has been held in Toronto, Ontario, since 1974 and is staged annually in February at the Metro Toronto Convention Centre. It draws an average of 300,000 visitors throughout its showing from Ontario and Western New York.[1]The Canadian International AutoShow (CIAS) is Canada's largest auto show. This event has been held in Toronto, Ontario, since 1974 and is staged annually in February at the Metro Toronto Convention Centre. It draws an average of 300,000 visitors throughout its showing from Ontario and Western New York.[1]`,
-            },
-          ].map((s, i) => (
+              label: "Description",
+              segments: [
+                {
+                  text: "Pavlo Troph",
+                  weight: 700,
+                  size: "18px",
+                  link: "https://www.instagram.com/pavlotroph/"
+                },
+                {
+                  text: " is a multidisciplinary artist dedicated to creating impactful and emotionally resonant experiences. By skillfully blending visuals, sound, and storytelling, he transforms ideas into memorable and engaging products.",
+                  weight: 500,
+                  size: "16px"
+                },
+              ]
+            }
+          ].map((section, i) => (
             <div key={i}>
-              <COLLECTION_1SEC_TITLE>{s.label}</COLLECTION_1SEC_TITLE>
-              <COLLECTION_1SEC_DESCRIPTION>{s.text}</COLLECTION_1SEC_DESCRIPTION>
+              <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
+              <COLLECTION_1SEC_DESCRIPTION>
+                {section.segments.map((seg, idx) => {
+                  const style: React.CSSProperties = {};
+                  if (seg.weight) style.fontWeight = seg.weight;
+                  if (seg.size) style.fontSize = seg.size;
+
+                  const content = (
+                    <span key={idx} style={style}>
+                      {seg.text}
+                    </span>
+                  );
+
+                  return seg.link ? (
+                    <a
+                      key={idx}
+                      href={seg.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    content
+                  );
+                })}
+              </COLLECTION_1SEC_DESCRIPTION>
             </div>
           ))}
         </CollectionTextWrapper>
