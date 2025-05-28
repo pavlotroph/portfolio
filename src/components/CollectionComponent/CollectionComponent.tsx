@@ -580,19 +580,27 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
       case 'TEXT_1SEC_LP':
         return (
           <CollectionAdditionalWrapper>
-          <CollectionTextWrapper
-            key={b.id}
-            style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
-          >
-            {b.content.sections.map(
-              (s: { label: string; text: string }, i: number) => (
+            <CollectionTextWrapper key={b.id}>
+              {b.content.sections.map((s: any, i: number) => (
                 <div key={i}>
                   <COLLECTION_1SEC_TITLE>{s.label}</COLLECTION_1SEC_TITLE>
-                  <COLLECTION_1SEC_DESCRIPTION>{s.text}</COLLECTION_1SEC_DESCRIPTION>
+                  <COLLECTION_1SEC_DESCRIPTION>
+                    {s.runs.map((run: any, j: number) => {
+                      const Tag = run.tag as keyof JSX.IntrinsicElements;
+                      const style = { fontSize: run.fontSize };
+                      const content = run.link
+                        ? <a href={run.link} target="_blank" rel="noopener">{run.text}</a>
+                        : run.text;
+                      return (
+                        <Tag key={j} style={style}>
+                          {content}
+                        </Tag>
+                      );
+                    })}
+                  </COLLECTION_1SEC_DESCRIPTION>
                 </div>
-              )
-            )}
-          </CollectionTextWrapper>
+              ))}
+            </CollectionTextWrapper>
           </CollectionAdditionalWrapper>
         );
         
