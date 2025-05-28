@@ -83,7 +83,6 @@ export const GlobalStyle = css`
     font-weight: 600;
     font-size: 18px;
     font-family: "Geist", sans-serif;
-    color: #fff;
     line-height: 161.8%;
 
     @media (min-width: 744px) {
@@ -100,7 +99,6 @@ export const GlobalStyle = css`
     font-family: "Geist", sans-serif;
     font-style: normal;
     line-height: 161.8%;
-    color: #fff;
   }
 
   h3 {
@@ -109,7 +107,6 @@ export const GlobalStyle = css`
     font-family: "Geist", sans-serif;
     font-style: normal;
     line-height: 161.8%;
-    color: #fff;
 
     @media (min-width: 1440px) {
     font-size: 16px;
