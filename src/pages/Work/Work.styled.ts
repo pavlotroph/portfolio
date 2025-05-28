@@ -74,6 +74,7 @@ export const WorkTextFilter = styled.a`
   line-height: 162%;
    color: #808080;
   cursor: pointer;
+  text-decoration: none;
 
   transition: all 0.3s ease-in-out;
   position: relative;
@@ -87,7 +88,7 @@ export const WorkTextFilter = styled.a`
   
 
   &.active {
-    color:rgb(255, 247, 247);
+    color:rgb(255, 255, 255);
     &::after {
       width: 100%;
     }

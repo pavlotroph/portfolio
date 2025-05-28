@@ -15,7 +15,7 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   transition: all 0.3s ease;
   z-index: 99;
 
-  @media (min-width: 768px) {
+  @media (max-width: 768px) {
     padding: 14px 24px;
     max-width: 768px;
   }
