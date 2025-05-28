@@ -5,7 +5,6 @@ export const WorkContainer = styled.div`
 display: flex;
     flex-direction: column;
 margin: 0 auto;
-margin-top: 70px;
 @media screen and (min-width: 744px){
 
 
