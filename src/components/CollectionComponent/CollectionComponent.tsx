@@ -574,28 +574,40 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
           </CollectionHeader>
         </CollectionAdditionalWrapper>
       );
-
-
+      
+      interface TextSegmentB {
+  text: string;
+  weight?: number;
+  size?: string;
+  link?: string;
+}
+      interface SectionB {
+  label: string;
+  segments: TextSegmentB[];
+}
       case 'TEXT_1SEC':
       case 'TEXT_1SEC_LP':
         return (
           <CollectionAdditionalWrapper>
             <CollectionTextWrapper key={b.id}>
-              {b.content.sections.map((s: any, i: number) => (
+              {b.content.sections.map((section: SectionB, i: number) => (
                 <div key={i}>
-                  <COLLECTION_1SEC_TITLE>{s.label}</COLLECTION_1SEC_TITLE>
+                  <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
                   <COLLECTION_1SEC_DESCRIPTION>
-                    {s.runs.map((run: any, j: number) => {
-                      const Tag = run.tag as keyof JSX.IntrinsicElements;
-                      const style = { fontSize: run.fontSize };
-                      const content = run.link
-                        ? <a href={run.link} target="_blank" rel="noopener">{run.text}</a>
-                        : run.text;
-                      return (
-                        <Tag key={j} style={style}>
-                          {content}
-                        </Tag>
+                    {section.segments.map((seg, idx) => {
+                      const style: React.CSSProperties = {};
+                      if (seg.weight) style.fontWeight = seg.weight;
+                      if (seg.size) style.fontSize = seg.size;
+
+                      const content = (
+                        <span key={idx} style={style}>
+                          {seg.text}
+                        </span>
                       );
+
+                      return seg.link
+                        ? <a key={idx} href={seg.link} target="_blank" rel="noopener noreferrer">{content}</a>
+                        : content;
                     })}
                   </COLLECTION_1SEC_DESCRIPTION>
                 </div>
