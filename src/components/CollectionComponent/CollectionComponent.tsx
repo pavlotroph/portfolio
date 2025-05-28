@@ -620,7 +620,6 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
                           href={seg.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ textDecoration: 'none' /* или свои стили */ }}
                         >
                           {element}
                         </a>
