@@ -136,10 +136,12 @@ export const GlobalStyle = css`
 
   a {
     text-decoration: none;
-     /* transition: all 0.3s ease-in-out; */
+      color:rgb(255, 255, 255)
+      transition: all 0.3s ease-in-out;
+      text-decoration: underline;
     &:hover {
-      color: #808080;
-       /* transition: all 0.3s ease-in-out; */
+      color:rgb(0, 122, 255);
+      transition: all 0.3s ease-in-out;
     }
   
   }
