@@ -577,7 +577,7 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
 
       interface TextSegmentB {
         text: string;
-        tag?: keyof JSX.IntrinsicElements; // 'h1'|'h2'|...|'span'
+        tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
         link?: string;
       }
       interface SectionB {
@@ -589,31 +589,42 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
         return (
           <CollectionAdditionalWrapper>
             <CollectionTextWrapper key={b.id}>
-              {b.content.sections.map((section: SectionB, i) => (
+              {b.content.sections.map((section: SectionB, i: number) => (
                 <div key={i}>
                   <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
                   <COLLECTION_1SEC_DESCRIPTION>
                     {section.segments.map((seg, idx) => {
+                      // Выбираем тэг: h1-h5 или span
                       const Tag = seg.tag || 'span';
 
-                      const inner = (
-                        <Tag key={idx}>
-                          {seg.text}
+                      // Функция для разбивки по \n
+                      const renderTextWithBreaks = (text: string) =>
+                        text.split('\n').map((line, lineIdx) => (
+                          <React.Fragment key={lineIdx}>
+                            {line}
+                            {lineIdx < text.split('\n').length - 1 && <br />}
+                          </React.Fragment>
+                        ));
+
+                      // Содержимое тега
+                      const element = (
+                        <Tag key={idx} style={{ display: 'inline' }}>
+                          {renderTextWithBreaks(seg.text)}
                         </Tag>
                       );
 
-                      return seg.link
-                        ? (
-                          <a
-                            key={idx}
-                            href={seg.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {inner}
-                          </a>
-                        )
-                        : inner;
+                      // Если есть ссылка — оборачиваем
+                      return seg.link ? (
+                        <a
+                          key={idx}
+                          href={seg.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none' /* или свои стили */ }}
+                        >
+                          {element}
+                        </a>
+                      ) : element;
                     })}
                   </COLLECTION_1SEC_DESCRIPTION>
                 </div>
