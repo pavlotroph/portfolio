@@ -6,7 +6,7 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   justify-content: space-between;
   align-items: center;
    background: rgb(0, 0, 0);
-  padding: 14px 18px
+  padding: 14px 18px;
   position: fixed;
   top: 0;
   left: 0;
