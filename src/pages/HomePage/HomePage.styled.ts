@@ -2,14 +2,15 @@ import styled from 'styled-components';
 
 export const HomeContainer = styled.div`
   max-width: 100%;
-  margin: 78px auto;
-  height: calc(var(--vh, 1vh) * 100);
+  margin: 0px;
   background: #000;
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
+  height: calc(100vh - 78px);
+  padding: 78px 10px 0px 18px;
 `;
 
 export const SpanTitel = styled.span``;
