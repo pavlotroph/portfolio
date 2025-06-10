@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 
 export const InfoContainer = styled.div`
-margin: 0 auto;
+margin: 78px auto;
 margin-top: 100px;
 height: 100%;
 max-width: 1440px;
