@@ -7,7 +7,7 @@ type Align = 'left' | 'center' | 'right';
 /* ────────────────────────────────────────────── */
 export const CollectionContainer = styled.div`
   width: 100%;
-  margin: 78px auto;
+  margin: 78px 0px auto;
   @media (min-width: 1440px) {
     max-width: 100%;
   }
