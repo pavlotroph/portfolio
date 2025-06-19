@@ -115,6 +115,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     params.set('filter', newFilter);
     window.history.replaceState({}, '', `${location.pathname}?${params}`);
   };
+  const showFilter = location.pathname === '/work' || location.pathname === '/photo';
   const bucket = source === 'work'
     ? 'work-images'
     : 'photography-images';
@@ -719,25 +720,27 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
   return (
     <CollectionContainer>
       {/* ——— верхний титул и фильтр ——— */}
-      <WorkTitelContainer>
-        <WorkTitel>{source === 'photo' ? 'PHOTOGRAPHY' : 'WORK'}</WorkTitel>
-        <WorkFilterWrapp>
-          {['ALL', 'COMMERCIAL', 'PERSONAL'].map(cat => (
-            <WorkTextFilter
-              key={cat}
-              onClick={() => {
-                if (filter !== cat) {
-                  setFilter(cat as any);
-                  updateUrlFilter(cat);
-                }
-              }}
-              className={filter === cat ? 'active' : ''}
-            >
-              {cat}
-            </WorkTextFilter>
-          ))}
-        </WorkFilterWrapp>
-      </WorkTitelContainer>
+      {showFilter && (
+        <WorkTitelContainer>
+          <WorkTitel>{source === 'photo' ? 'PHOTOGRAPHY' : 'WORK'}</WorkTitel>
+          <WorkFilterWrapp>
+            {['ALL', 'COMMERCIAL', 'PERSONAL'].map(cat => (
+              <WorkTextFilter
+                key={cat}
+                onClick={() => {
+                  if (filter !== cat) {
+                    setFilter(cat as any);
+                    updateUrlFilter(cat);
+                  }
+                }}
+                className={filter === cat ? 'active' : ''}
+              >
+                {cat}
+              </WorkTextFilter>
+            ))}
+          </WorkFilterWrapp>
+        </WorkTitelContainer>
+      )}
 
       {/* ——— хедер коллекции ——— */}
       {collection.main && (
