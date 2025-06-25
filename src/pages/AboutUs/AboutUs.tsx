@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { Reveal } from '../Reveal/Reveal';
 
 import {
+  AdditionalWrapper,
   AboutContainer,
   AboutDescription,
   AboutItem,
@@ -44,6 +45,7 @@ const AboutUs: React.FC = () => {
   }
 
   return (
+    <AdditionalWrapper>
     <AboutContainer>
       <AboutTitle>About Me</AboutTitle>
 
@@ -67,6 +69,7 @@ const AboutUs: React.FC = () => {
         </Reveal>
       ))}
     </AboutContainer>
+    </AdditionalWrapper>
   );
 };
 

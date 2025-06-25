@@ -1,17 +1,24 @@
 import styled from "styled-components";
 
+export const AdditionalWrapper = styled.div`
+padding: 0px 18px;
 
+@media screen and (min-width: 744px){
+padding: 0px 24px;
+}
+`;
 
 export const ContactContainer = styled.div`
 margin: 78px auto 10px;
 height: 100%;
 max-width: 1440px;
-padding: 16px 32px;
+padding: 16px 0px;
 display: flex;
 flex-direction: column;
+margin-bottom: 16px;
 
 @media screen and (min-width: 744px){
-
+margin-bottom: 20px;
 }
 
 @media screen and (min-width: 1440px){
@@ -21,7 +28,7 @@ max-width: 1440px;
 padding: 16px 0px;
 display: flex;
 flex-direction: column;
-margin-bottom: 100px;
+margin-bottom: 24px;
 }
 `;
 

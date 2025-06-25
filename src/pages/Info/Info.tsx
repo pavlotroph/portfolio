@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  WorkDescription,
-  WorkDescriptionWrapp,
-  WorkTextDescription,
-} from './Info.styled';
+import QuoteBlock from '../../components/Quote/QuoteBlock';
 import {
   CollectionContainer,
   CollectionWrapper,
@@ -50,10 +46,10 @@ const Info: React.FC = () => {
       <CollectionAdditionalWrapper>
         <CollectionHeader>
           {[
-            { tag: 'h1', text: 'Toronto', label: 'Collection' },
-            { tag: 'h2', text: '2024', label: 'Year' },
-            { tag: 'h3', text: 'Personal\nStreet', label: 'Category' },
-            { tag: 'h1', text: 'Tokyo drift', label: 'Synopsis' },
+            { tag: 'h1', text: 'Pavlo Troph', label: 'Artist Name' },
+            { tag: 'h3', text: 'Graphic Design\nCGI\nPhotography\nCinematography\nArt Direction', label: 'Specialization' },
+            { tag: 'h3', text: 'Toronto, ON, CA', label: 'Location' },
+            { tag: 'h3', text: 'info@pavlotroph.com', label: 'Contact' },
           ].map((s, i) => (
             <CollectionWrapper key={i}>
               <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
@@ -80,7 +76,56 @@ const Info: React.FC = () => {
                 },
                 {
                   tag: "span",
-                  text: " is a multidisciplinary artist."
+                  text: " is a multidisciplinary artist dedicated to creating impactful and emotionally resonant experiences. By skillfully blending visuals, sound, and storytelling, he transforms ideas into memorable and engaging products. "
+                }
+              ]
+            },
+            {
+              label: "Companies",
+              segments: [
+                {
+                  tag: "h1",
+                  link: "https://www.instagram.com/pavlotroph/",
+                  text: "FiveMods"
+                },
+                {
+                 "text": "\n",
+                },
+                {
+                  tag: "h1",
+                  link: "https://www.instagram.com/pavlotroph/",
+                  text: "Network Graphics"
+                },
+                {
+                 "text": "\n",
+                },  
+                {
+                  tag: "h1",
+                  link: "https://www.instagram.com/pavlotroph/",
+                  text: "Meta Network"
+                }
+              ]
+            },
+            {
+              label: "Software Skills",
+              segments: [
+                {
+                  tag: "h1",
+                  text: "Adobe Suite"
+                },
+                {
+                 "text": "\n",
+                },
+                {
+                  tag: "h1",
+                  text: "Blender"
+                },
+                {
+                 "text": "\n",
+                },  
+                {
+                  tag: "h1",
+                  text: "Figma"
                 }
               ]
             }
@@ -126,14 +171,7 @@ const Info: React.FC = () => {
     
       <CUSTOM_SPLITTER />
 
-      {currentQuote && (
-        <WorkDescriptionWrapp>
-          <WorkDescription>{currentQuote.text}</WorkDescription>
-          <WorkTextDescription>
-            — {currentQuote.author}, <i>{currentQuote.source}</i>
-          </WorkTextDescription>
-        </WorkDescriptionWrapp>
-      )}
+      {currentQuote && <QuoteBlock quote={currentQuote} />}
     </CollectionContainer>
   );
 };

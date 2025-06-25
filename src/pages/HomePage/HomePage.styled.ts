@@ -10,7 +10,7 @@ export const HomeContainer = styled.div`
   align-items: center;
   justify-content: center;
   height: calc(100vh - 78px);
-  padding: 78px 10px 0px 18px;
+  padding: 78px 0px 0px 0px;
 `;
 
 export const SpanTitel = styled.span``;

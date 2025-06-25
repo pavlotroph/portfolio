@@ -1,6 +1,7 @@
 import React from 'react';
 import ContactForm from '../../components/ContactForm/ContactForm';
 import {
+  AdditionalWrapper,
   ContactContainer,
   ContactTitel,
   WrapperInfo,
@@ -13,6 +14,7 @@ import {
 
 const Contact: React.FC = () => {
   return (
+    <AdditionalWrapper>
     <ContactContainer>
       <ContactTitel>Let’s Talk</ContactTitel>
       <WrapperInfo>
@@ -44,6 +46,7 @@ const Contact: React.FC = () => {
       </WrapperInfo>
       <ContactForm />
     </ContactContainer>
+    </AdditionalWrapper>
   );
 };
 

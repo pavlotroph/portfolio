@@ -8,6 +8,7 @@ type Align = 'left' | 'center' | 'right';
 export const CollectionContainer = styled.div`
   width: 100%;
   margin: 78px auto;
+  margin-bottom: 0px;
   @media (min-width: 1440px) {
     max-width: 100%;
   }
@@ -261,7 +262,7 @@ export const CollectionHeader = styled.div`
 export const CollectionTextWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 40px;
   padding: 20px 0px 40px;
   width: 100%;
 

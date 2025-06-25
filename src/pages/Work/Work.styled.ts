@@ -113,18 +113,22 @@ export const WorkTextFilter = styled.a`
 export const WorkItemContainer = styled.div`
   cursor: pointer;
   width: 100%;
-  height: 200px;
   position: relative;
   overflow: hidden;
-  margin-bottom: 10px;
-  margin-top: 10px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  aspect-ratio: 21/9;
   
   @media screen and (min-width: 744px) {
-    height: 270px;
+    aspect-ratio: 32/9;
+    margin-bottom: 5px;
+    margin-top: 5px;
   }
-
+  
   @media screen and (min-width: 1440px) {
-    height: 400px;
+    aspect-ratio: 48/9;
+    margin-bottom: 6px;
+    margin-top: 6px;
   }
 `;
 

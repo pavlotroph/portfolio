@@ -3,9 +3,6 @@ import { supabase } from '../../supabaseClient';
 import WorkItemComponent from '../../components/WorkItemComponent/WorkItemComponent';
 import {
   WorkContainer,
-  WorkDescription,
-  WorkTextDescription,
-  WorkDescriptionWrapp,
   WorkFilterWrapp,
   WorkPhotoWrapp,
   WorkTextFilter,
@@ -13,8 +10,9 @@ import {
   WorkTitelContainer,
 } from './Work.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
-import Loading from '../../assets/video/logo_animated_hq.webm';
 import { Link } from 'react-router-dom';
+import QuoteBlock from '../../components/Quote/QuoteBlock';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export type WorkItemData = {
   id: string;
@@ -99,57 +97,29 @@ const Work: React.FC = () => {
       </WorkTitelContainer>
 
       <WorkPhotoWrapp>
-        {filteredWorks.length > 0 ? (
-          filteredWorks.map(work => (
-            <Link
-              key={work.id}
-              to={`/work/${work.id}?filter=${filter}`}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <WorkItemComponent work={work} source="work" />
-            </Link>
-          ))
-        ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100vh',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#000',
-            }}
-          >
-            <video
-              src={Loading}
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{ width: '150px', height: '150px' }}
-            />
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+    {filteredWorks.map(work => (
+      <motion.div
+        key={work.id}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <Link
+          to={`/work/${work.id}?filter=${filter}`}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <WorkItemComponent work={work} source="work" />
+        </Link>
+      </motion.div>
+    ))}
+  </AnimatePresence>
       </WorkPhotoWrapp>
       <CUSTOM_SPLITTER />
 
-      {currentQuote && (
-        <WorkDescriptionWrapp>
-          <WorkDescription>
-            {currentQuote.text
-              .split(/\r?\n/)
-              .map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-          </WorkDescription>
-          <WorkTextDescription>
-            — {currentQuote.author}, <i>{currentQuote.source}</i>
-          </WorkTextDescription>
-        </WorkDescriptionWrapp>
-      )}
+      {currentQuote && <QuoteBlock quote={currentQuote} />}
 
     </WorkContainer>
   );

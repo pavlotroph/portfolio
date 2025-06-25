@@ -245,7 +245,6 @@ export const WorkDescriptionWrapp = styled.div`
     align-items: center;
     gap: 15px;
 @media screen and (min-width: 744px){
-height: 200px;
 
 }
 
