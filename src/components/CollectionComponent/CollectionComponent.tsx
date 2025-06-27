@@ -683,8 +683,10 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
         return <hr key={b.id} style={{ margin: '20px 0', borderColor: '#444' }} />;
       case 'SPLITTER':
         return <CUSTOM_SPLITTER/>;
-      case 'SPLITTER_SPACE':
-        return <div key={b.id} style={{ height: 100 }} />;
+      case 'SPLITTER_SPACE': {
+        const height = b.content?.size || '100px'; // fallback if no size is defined
+        return <div key={b.id} style={{ height }} />;
+      }
 
       default:
         return null;
