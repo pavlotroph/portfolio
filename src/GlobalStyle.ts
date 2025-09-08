@@ -1,52 +1,9 @@
-import "modern-normalize";
-import "@fontsource/jetbrains-mono/400.css";
-import "@fontsource/jetbrains-mono/500.css";
-import "@fontsource/geist-sans/400.css"; // Geist Regular
-import "@fontsource/geist-sans/600.css"; // Geist SemiBold
-import "@fontsource/geist-mono/600.css"; // Geist Mono SemiBold
-import { css } from "@emotion/react";
-import GeistRegular from "../public/fonts/Geist/Geist-Regular.ttf";
-import GeistSemiBold from "../public/fonts/Geist/Geist-SemiBold.ttf"
-import GeistMono from "../public/fonts/Geist_mono/GeistMono-SemiBold.ttf"
-import JetBrainsMonoMedium from "../public/fonts/JetBrains/JetBrainsMono-Medium.ttf"
-import JetBrainsMonoRegular from "../public/fonts/JetBrains/JetBrainsMono-Regular.ttf"
+import { css } from '@emotion/react';
+import 'modern-normalize';
 export const GlobalStyle = css`
-
-  @font-face {
-    font-family: 'Geist';
-    src: url(${GeistRegular})  format("truetype");
-    font-weight: 400;
-    font-style: normal;
-  }
-
-  @font-face {
-    font-family: 'Geist';
-    src: url(${GeistSemiBold}) format("truetype");
-    font-weight: 600;
-    font-style: normal;
-  }
-
-  @font-face {
-    font-family: 'Geist Mono';
-    src: url(${GeistMono}) format("truetype");
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'JetBrainsMono Medium';
-    src: url(${JetBrainsMonoMedium}) format("truetype");
-    font-style: normal;
-  }
-
-  @font-face {
-    font-family: 'JetBrainsMono Regular';
-    src: url(${JetBrainsMonoRegular}) format("truetype");
-    font-style: normal;
-  }
-
   :root {
-    --font-family: "Geist", sans-serif;
-    --second-family: "JetBrains Mono", sans-serif;
-    --third-family: "Geist Mono", sans-serif;
+    --font-family: 'Geist', sans-serif;
+    --second-family: 'JetBrains Mono', sans-serif;
   }
 
   * {
@@ -71,32 +28,32 @@ export const GlobalStyle = css`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-    
-  body.modal-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-}
 
-  h1, {
+  body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+
+  h1 {
     font-weight: 600;
     font-size: 18px;
-    font-family: "Geist", sans-serif;
+    font-family: 'Geist', sans-serif;
     line-height: 161.8%;
 
     @media (min-width: 744px) {
-    font-size: 20px;
+      font-size: 20px;
     }
 
     @media (min-width: 1440px) {
-    font-size: 24px;
+      font-size: 24px;
     }
   }
-  
+
   h2 {
     font-weight: 400;
-    font-family: "Geist", sans-serif;
+    font-family: 'Geist', sans-serif;
     font-style: normal;
     line-height: 161.8%;
   }
@@ -104,12 +61,12 @@ export const GlobalStyle = css`
   h3 {
     font-weight: 400;
     font-size: 14px;
-    font-family: "Geist", sans-serif;
+    font-family: 'Geist', sans-serif;
     font-style: normal;
     line-height: 161.8%;
 
     @media (min-width: 1440px) {
-    font-size: 16px;
+      font-size: 16px;
     }
   }
 
@@ -123,7 +80,7 @@ export const GlobalStyle = css`
     color: #808080;
 
     @media (min-width: 1440px) {
-    font-size: 16px;
+      font-size: 16px;
     }
   }
 
@@ -133,13 +90,12 @@ export const GlobalStyle = css`
 
   a {
     text-decoration: none;
-      color:rgb(255, 255, 255);
-      transition: all 0.13s ease-in-out;
+    color: rgb(255, 255, 255);
+    transition: all 0.13s ease-in-out;
     &:hover {
-      color:rgb(0, 122, 255);
+      color: rgb(0, 122, 255);
       transition: all 0.13s ease-in-out;
     }
-  
   }
 
   img {
@@ -152,18 +108,25 @@ export const GlobalStyle = css`
   button {
     cursor: pointer;
     font-family: var(--second-family);
-    background: linear-gradient(90deg, #e4e4e4 0%, #203a43 33.33%, #2c5364 66.66%, #e4e4e4 100%);
+    background: linear-gradient(
+      90deg,
+      #e4e4e4 0%,
+      #203a43 33.33%,
+      #2c5364 66.66%,
+      #e4e4e4 100%
+    );
     background-size: 305% 100%;
     background-position: right bottom;
     transition: all 0.5s ease-in-out;
   }
-    video {
+  video {
     object-fit: contain;
     overflow-clip-margin: content-box;
     overflow: clip;
-}
+  }
 
-  ul, li {
+  ul,
+  li {
     list-style: none;
   }
 
@@ -171,7 +134,8 @@ export const GlobalStyle = css`
     scroll-behavior: smooth;
   }
 
-  html, body {
+  html,
+  body {
     height: -webkit-fill-available;
     font-smoothing: antialiased;
     -webkit-overflow-scrolling: touch;
@@ -181,7 +145,9 @@ export const GlobalStyle = css`
     display: none;
   }
 
-  input, textarea, button {
+  input,
+  textarea,
+  button {
     font-size: 16px;
     font-family: inherit;
   }
@@ -194,13 +160,23 @@ export const GlobalStyle = css`
   }
 
   @keyframes buttonAnimationOut {
-    0% { background-position: center bottom; }
-    99.99% { background-position: left bottom; }
-    100% { background-position: right bottom; }
+    0% {
+      background-position: center bottom;
+    }
+    99.99% {
+      background-position: left bottom;
+    }
+    100% {
+      background-position: right bottom;
+    }
   }
 
   @keyframes move {
-    from { transform: translateY(0%); }
-    to { transform: translateY(-100%); }
+    from {
+      transform: translateY(0%);
+    }
+    to {
+      transform: translateY(-100%);
+    }
   }
 `;
