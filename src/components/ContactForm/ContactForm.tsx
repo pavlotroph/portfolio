@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
+  Button,
   FormContainer,
-  Success,
   FormGroup,
   Input,
+  Success,
   Textarea,
-  Button,
 } from './ContactForm.styled';
 
 const ContactForm: React.FC = () => {
@@ -61,13 +61,14 @@ const ContactForm: React.FC = () => {
   return (
     <FormContainer>
       {success && <Success>Your message has been sent successfully!</Success>}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} id="contactus">
         <FormGroup>
           <Input
             placeholder="Full Name (required)"
             value={fullName}
             onChange={e => setFullName(e.target.value)}
-            hasError={submitted && !fullName}
+            $hasError={submitted && !fullName}
+            id="fullName"
           />
         </FormGroup>
         <FormGroup>
@@ -75,7 +76,9 @@ const ContactForm: React.FC = () => {
             placeholder="Email (required)"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            hasError={submitted && (!email || !validateEmail(email))}
+            $hasError={submitted && (!email || !validateEmail(email))}
+            id="email"
+            autoComplete="email"
           />
         </FormGroup>
         <FormGroup>
@@ -83,6 +86,7 @@ const ContactForm: React.FC = () => {
             placeholder="Subject"
             value={subject}
             onChange={e => setSubject(e.target.value)}
+            id="subject"
           />
         </FormGroup>
         <FormGroup>
@@ -90,6 +94,7 @@ const ContactForm: React.FC = () => {
             placeholder="Message"
             value={message}
             onChange={e => setMessage(e.target.value)}
+            id="message"
           />
         </FormGroup>
         <Button type="submit">Send a Message</Button>

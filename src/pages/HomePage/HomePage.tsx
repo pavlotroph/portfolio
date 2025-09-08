@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  HomeContainer,
   HOME_BUTTON_MAIN,
   HOME_BUTTON_RESIZABLE_BAR,
-  HOME_BUTTON_TEXT
+  HOME_BUTTON_TEXT,
+  HomeContainer,
 } from './HomePage.styled';
 
 const Home: React.FC = () => {
@@ -24,9 +24,9 @@ const Home: React.FC = () => {
     };
 
     return (
-      <HOME_BUTTON_MAIN onClick={handleClick} isClicked={isClicked}>
-        <HOME_BUTTON_RESIZABLE_BAR isClicked={isClicked} />
-        <HOME_BUTTON_TEXT isClicked={isClicked}>{label}</HOME_BUTTON_TEXT>
+      <HOME_BUTTON_MAIN onClick={handleClick} $isClicked={isClicked}>
+        <HOME_BUTTON_RESIZABLE_BAR $isClicked={isClicked} />
+        <HOME_BUTTON_TEXT $isClicked={isClicked}>{label}</HOME_BUTTON_TEXT>
       </HOME_BUTTON_MAIN>
     );
   };

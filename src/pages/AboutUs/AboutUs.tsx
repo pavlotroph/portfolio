@@ -3,12 +3,12 @@ import { supabase } from '../../supabaseClient';
 import { Reveal } from '../Reveal/Reveal';
 
 import {
-  AdditionalWrapper,
   AboutContainer,
   AboutDescription,
   AboutItem,
   AboutText,
   AboutTitle,
+  AdditionalWrapper,
 } from './AboutUs.styled';
 
 type AboutBlockDB = {
@@ -28,7 +28,7 @@ const AboutUs: React.FC = () => {
       const { data, error } = await supabase
         .from('about_blocks')
         .select('*')
-        .order('id');               // порядок вывода
+        .order('id'); // порядок вывода
       if (error) console.error(error);
       setBlocks(data || []);
       setLoading(false);
@@ -46,29 +46,29 @@ const AboutUs: React.FC = () => {
 
   return (
     <AdditionalWrapper>
-    <AboutContainer>
-      <AboutTitle>About Me</AboutTitle>
+      <AboutContainer>
+        <AboutTitle>About Me</AboutTitle>
 
-      {blocks.map(block => (
-        <Reveal>
-        <AboutItem key={block.id}>
-          <AboutText>{block.title}</AboutText>
+        {blocks.map(block => (
+          <Reveal key={block.id}>
+            <AboutItem>
+              <AboutText>{block.title}</AboutText>
 
-          {/* выводим каждую строку с переносами <br/> в content.items[0].text */}
-          {block.content.items.map((it, idx) => (
-            <AboutDescription key={idx}>
-              {it.text.split('<br/>').map((line, i) => (
-                <React.Fragment key={i}>
-                  {line}
-                  <br />
-                </React.Fragment>
+              {/* выводим каждую строку с переносами <br/> в content.items[0].text */}
+              {block.content.items.map((it, idx) => (
+                <AboutDescription key={idx}>
+                  {it.text.split('<br/>').map((line, i) => (
+                    <React.Fragment key={i}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ))}
+                </AboutDescription>
               ))}
-            </AboutDescription>
-          ))}
-        </AboutItem>
-        </Reveal>
-      ))}
-    </AboutContainer>
+            </AboutItem>
+          </Reveal>
+        ))}
+      </AboutContainer>
     </AdditionalWrapper>
   );
 };

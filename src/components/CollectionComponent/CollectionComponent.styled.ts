@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components'; 
+import styled, { css } from 'styled-components';
 
 type Align = 'left' | 'center' | 'right';
 
@@ -121,10 +121,10 @@ export const WorkFilterWrapp = styled.div`
 `;
 
 export const activeStyles = css`
-   color: rgb(255, 247, 247);
-   pointer-events: none;
-   cursor: default;
- `;
+  color: rgb(255, 247, 247);
+  pointer-events: none;
+  cursor: default;
+`;
 
 export const WorkTextFilter = styled.a`
   font-family: var(--second-family);
@@ -155,7 +155,7 @@ export const COLLECTION_1SEC_TITLE = styled.h4`
   }
 `;
 
-export const COLLECTION_1SEC_DESCRIPTION = styled.h2`
+export const COLLECTION_1SEC_DESCRIPTION = styled.div`
   font-family: var(--font-family);
   font-size: 14px;
   line-height: 162%;
@@ -165,12 +165,19 @@ export const COLLECTION_1SEC_DESCRIPTION = styled.h2`
     font-size: 16px;
   }
 
-  h1 { }
-  h2 { }
-  h3 { }
-  span { }
-  a { text-decoration: underline; }
-  a:hover { }
+  h1 {
+  }
+  h2 {
+  }
+  h3 {
+  }
+  span {
+  }
+  a {
+    text-decoration: underline;
+  }
+  a:hover {
+  }
 `;
 
 export const CollectionWrapper = styled.div`
@@ -191,7 +198,7 @@ export const CollectionWrapper = styled.div`
 
 export const COLLECTION_4SEC_TITLE = styled.h4`
   color: #808080;
-  
+
   @media (min-width: 1440px) {
     padding-bottom: 30px;
   }
@@ -201,9 +208,11 @@ export const COLLECTION_TEXT_TITLE_WRAPPER = styled.div<{ align?: Align }>`
   display: flex;
   flex-direction: row;
   justify-content: ${({ align }) =>
-    align === 'left'   ? 'flex-start' :
-    align === 'right'  ? 'flex-end' :
-                         'center'};
+    align === 'left'
+      ? 'flex-start'
+      : align === 'right'
+      ? 'flex-end'
+      : 'center'};
   align-items: center;
   padding: 20px 0;
   gap: 10px;
@@ -285,7 +294,6 @@ type IMAGE_PROPS = {
   $aspectRatio?: string;
 };
 
-
 export const SliderWrapper = styled.div<IMAGE_PROPS>`
   position: relative;
   width: 100%;
@@ -296,19 +304,20 @@ export const SliderWrapper = styled.div<IMAGE_PROPS>`
   display: flex;
   align-items: center;
 
-  touch-action: pan-y
+  touch-action: pan-y;
 `;
-
 
 export const SliderContent = styled.div<{
   index: number;
   animate: boolean;
   offset: number;
-  isDragging: boolean;           /* ← новое */
+  isDragging: boolean /* ← новое */;
 }>`
   display: flex;
   transition: ${({ animate, isDragging }) =>
-    !animate || isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.25, 0, 0.2, 1)'};
+    !animate || isDragging
+      ? 'none'
+      : 'transform 0.5s cubic-bezier(0.25, 0, 0.2, 1)'};
   transform: ${({ index, offset }) =>
     `translateX(calc(-${index * 100}% + ${offset}px))`};
 `;
@@ -326,7 +335,6 @@ export const Slide = styled.div`
     object-fit: cover;
   }
 `;
-
 
 export const Arrow = styled.button<{ left?: boolean }>`
   position: absolute;
@@ -354,14 +362,14 @@ export const Arrow = styled.button<{ left?: boolean }>`
     width: 96px;
     height: 96px;
   }
-    
+
   img {
     width: 12px;
     height: auto;
     pointer-events: none;
 
     @media (min-width: 1080px) {
-    width: 16px;
+      width: 16px;
     }
   }
 `;
@@ -492,7 +500,7 @@ export const TextBlock = styled.div`
   text-align: center;
   aspect-ratio: 1;
   h1 {
-      font-size: 32px;
+    font-size: 32px;
   }
 
   @media (min-width: 744px) {
@@ -507,7 +515,6 @@ export const TextBlock = styled.div`
     }
   }
 `;
-
 
 export const ImageBlock = styled.div`
   width: 100%;
@@ -540,7 +547,7 @@ export const CUSTOM_SPLITTER = styled.div`
   /* внешний контейнер */
   width: 100%;
   display: flex;
-  justify-content: center;   /* центрируем линию */
+  justify-content: center; /* центрируем линию */
   padding: 9px 18px;
   background: #000;
 
