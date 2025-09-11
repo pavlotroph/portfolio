@@ -29,3 +29,4 @@ dist-ssr
 .env
 
 instructions/
+.vite-ssg-temp/

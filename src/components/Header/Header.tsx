@@ -1,4 +1,9 @@
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import React, { useEffect, useState } from 'react';
+import { useMediaQuery } from 'react-responsive';
+import LogoIcon from '../../assets/icons/logo-portfolio.svg';
+import BurgerMenu from '../MobileMenu/MobileMenu';
 import {
   HeaderWrapper,
   Logo,
@@ -7,11 +12,6 @@ import {
   NavList,
   StyledNavLink,
 } from './Header.styled';
-import { useMediaQuery } from 'react-responsive';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import LogoIcon from '../../assets/icons/logo-portfolio.svg';
-import BurgerMenu from '../MobileMenu/MobileMenu';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);

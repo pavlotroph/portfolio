@@ -1,5 +1,5 @@
-import React, { createContext, useContext, ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import React, { createContext, ReactNode, useContext } from 'react';
 
 //
 // Контекст: по-умолчанию анимация включена
@@ -23,7 +23,7 @@ const revealVariants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as any },
   },
 };
 

@@ -1,14 +1,14 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from './components/Layout/Layout';
-import Home from './pages/HomePage/HomePage';
 import AboutUs from './pages/AboutUs/AboutUs';
-import Contact from './pages/Contact/Contact';
-import Work from './pages/Work/Work';
-import Photo from './pages/Photo/Photo';
-import Info from './pages/Info/Info';
 import CollectionPage from './pages/CollectionPage/CollectionPage';
+import Contact from './pages/Contact/Contact';
+import Home from './pages/HomePage/HomePage';
+import Info from './pages/Info/Info';
+import Photo from './pages/Photo/Photo';
+import Work from './pages/Work/Work';
 
 const AnimatedPage = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => window.scrollTo(0, 0), []);
@@ -27,22 +27,22 @@ const AnimatedPage = ({ children }: { children: React.ReactNode }) => {
 
 export const App: React.FC = () => {
   const location = useLocation();
-  
+
   useEffect(() => {
-  const updateHeight = () => {
-    const vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-  };
+    const updateHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
 
-  updateHeight();
-  window.addEventListener('resize', updateHeight);
-  window.addEventListener('orientationchange', updateHeight);
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('orientationchange', updateHeight);
 
-  return () => {
-    window.removeEventListener('resize', updateHeight);
-    window.removeEventListener('orientationchange', updateHeight);
-  };
-}, []);
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('orientationchange', updateHeight);
+    };
+  }, []);
 
   useEffect(() => window.scrollTo(0, 0), [location.pathname]);
 
@@ -53,16 +53,41 @@ export const App: React.FC = () => {
         <Route
           path="/"
           element={
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
               <Layout />
             </motion.div>
           }
         >
-          <Route index element={<AnimatedPage><Home /></AnimatedPage>} />
-          <Route path="home" element={<AnimatedPage><Home /></AnimatedPage>} />
+          <Route
+            index
+            element={
+              <AnimatedPage>
+                <Home />
+              </AnimatedPage>
+            }
+          />
+          <Route
+            path="home"
+            element={
+              <AnimatedPage>
+                <Home />
+              </AnimatedPage>
+            }
+          />
 
           {/** Work listing и деталка */}
-          <Route path="work" element={<AnimatedPage><Work /></AnimatedPage>} />
+          <Route
+            path="work"
+            element={
+              <AnimatedPage>
+                <Work />
+              </AnimatedPage>
+            }
+          />
           <Route
             path="work/:id"
             element={
@@ -73,7 +98,14 @@ export const App: React.FC = () => {
           />
 
           {/** Photography listing и деталка */}
-          <Route path="photography" element={<AnimatedPage><Photo /></AnimatedPage>} />
+          <Route
+            path="photography"
+            element={
+              <AnimatedPage>
+                <Photo />
+              </AnimatedPage>
+            }
+          />
           <Route
             path="photography/:id"
             element={
@@ -83,12 +115,40 @@ export const App: React.FC = () => {
             }
           />
 
-          <Route path="info" element={<AnimatedPage><Info /></AnimatedPage>} />
-          <Route path="contact" element={<AnimatedPage><Contact /></AnimatedPage>} />
-          <Route path="about" element={<AnimatedPage><AboutUs /></AnimatedPage>} />
+          <Route
+            path="info"
+            element={
+              <AnimatedPage>
+                <Info />
+              </AnimatedPage>
+            }
+          />
+          <Route
+            path="contact"
+            element={
+              <AnimatedPage>
+                <Contact />
+              </AnimatedPage>
+            }
+          />
+          <Route
+            path="about"
+            element={
+              <AnimatedPage>
+                <AboutUs />
+              </AnimatedPage>
+            }
+          />
 
           {/** Убираем /collections/:id */}
-          <Route path="*" element={<AnimatedPage><Home /></AnimatedPage>} />
+          <Route
+            path="*"
+            element={
+              <AnimatedPage>
+                <Home />
+              </AnimatedPage>
+            }
+          />
         </Route>
       </Routes>
     </AnimatePresence>
