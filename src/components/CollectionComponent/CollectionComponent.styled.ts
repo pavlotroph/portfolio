@@ -7,13 +7,14 @@ type Align = 'left' | 'center' | 'right';
 /* ────────────────────────────────────────────── */
 export const CollectionContainer = styled.div<{ $isPhoto?: boolean }>`
   width: 100%;
-  margin: ${props => props.$isPhoto ? '0px' : '78px'} auto;
+  margin: 0 auto;
   margin-bottom: 0px;
   position: relative;
   @media (min-width: 1440px) {
     max-width: 100%;
   }
 `;
+
 export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
   display: flex;
   flex-direction: row;
@@ -23,7 +24,7 @@ export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
   align-content: center;
   padding: 0px 18px;
   gap: 40px;
-  margin-top: ${props => props.$isPhoto ? '-78px' : '0px'};
+  margin-top: 0;
 
   @media (min-width: 744px) {
     padding: 0px 24px;
@@ -521,7 +522,7 @@ export const TextBlock = styled.div`
   padding: 1rem;
   text-align: center;
   aspect-ratio: 1;
-  h2 {
+  h1 {
     font-size: 32px;
   }
 
@@ -532,7 +533,7 @@ export const TextBlock = styled.div`
     margin: 0 auto;
     padding: 80px;
 
-    h2 {
+    h1 {
       font-size: 32px;
     }
   }

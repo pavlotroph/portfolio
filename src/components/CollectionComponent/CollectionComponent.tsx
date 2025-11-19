@@ -534,18 +534,17 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
 
         const Txt = (
           <TextBlock>
-            {/* это однострочная надпись сбоку от изображения */}
+            {/* це однорядковий заголовок біля зображення */}
             {item.label && (
-              <h2>
+              <h1>
                 {item.label.split('\n').map((line, i) => (
                   <React.Fragment key={i}>
                     {line}
                     <br />
                   </React.Fragment>
                 ))}
-              </h2>
+              </h1>
             )}
-
           </TextBlock>
         );
 
@@ -624,7 +623,36 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
         segments: TextSegmentB[];
       }
       case 'TEXT_1SEC':
-      case 'TEXT_1SEC_LP':
+      case 'TEXT_1SEC_LP': {
+        const normalizeSegmentTag = (tag?: string): keyof JSX.IntrinsicElements => {
+          if (typeof tag !== 'string') return 'span';
+          const lower = tag.toLowerCase();
+          if (lower.startsWith('data:') || lower.includes('/')) return 'span';
+          if (lower === 'h1') return 'h3';
+          if (lower === 'h2') return 'h4';
+          const allowed: Array<keyof JSX.IntrinsicElements> = [
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'p',
+            'span',
+            'strong',
+            'em',
+          ];
+          return allowed.includes(lower as keyof JSX.IntrinsicElements)
+            ? (lower as keyof JSX.IntrinsicElements)
+            : 'span';
+        };
+
+        const renderTextWithBreaks = (text: string) =>
+          text.split('\n').map((line, lineIdx, arr) => (
+            <React.Fragment key={lineIdx}>
+              {line}
+              {lineIdx < arr.length - 1 && <br />}
+            </React.Fragment>
+          ));
+
         return (
           <CollectionAdditionalWrapper>
             <CollectionTextWrapper key={b.id}>
@@ -633,32 +661,14 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
                   <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
                   <COLLECTION_1SEC_DESCRIPTION>
                     {section.segments.map((seg, idx) => {
-                      // Выбираем тэг: h1-h5 или span
-                      // Validate tag to ensure it's a valid HTML tag and not a data URI
-                      const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
-                        if (typeof tag !== 'string') return false;
-                        // Prevent data URIs and other invalid tag names
-                        return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
-                      };
-                      const Tag = isValidTag(seg.tag) ? seg.tag : 'span';
+                      const Tag = normalizeSegmentTag(seg.tag);
 
-                      // Функция для разбивки по \n
-                      const renderTextWithBreaks = (text: string) =>
-                        text.split('\n').map((line, lineIdx) => (
-                          <React.Fragment key={lineIdx}>
-                            {line}
-                            {lineIdx < text.split('\n').length - 1 && <br />}
-                          </React.Fragment>
-                        ));
-
-                      // Содержимое тега
                       const element = (
                         <Tag key={idx} style={{ display: 'inline' }}>
                           {renderTextWithBreaks(seg.text)}
                         </Tag>
                       );
 
-                      // Если есть ссылка — оборачиваем
                       return seg.link ? (
                         <a
                           key={idx}
@@ -670,7 +680,9 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
                         >
                           {element}
                         </a>
-                      ) : element;
+                      ) : (
+                        element
+                      );
                     })}
                   </COLLECTION_1SEC_DESCRIPTION>
                 </div>
@@ -678,29 +690,29 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
             </CollectionTextWrapper>
           </CollectionAdditionalWrapper>
         );
+      }
         
-        case 'TEXT_TITLE': {
-      // предполагаем, что content имеет именно такую форму:
-      // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
-      const { style, text, fontsize, align } = b.content as {
-        style: 'h1' | 'h2' | 'h3';
-        text: string;
-        fontsize: string;
-        align: 'left' | 'center' | 'right';
-      };
+      case 'TEXT_TITLE': {
+        // предполагаем, что content имеет именно такую форму:
+        // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
+        const { text, fontsize, align } = b.content as {
+          style?: 'h1' | 'h2' | 'h3' | string;
+          text: string;
+          fontsize: string;
+          align: 'left' | 'center' | 'right';
+        };
 
-      return (
-        <COLLECTION_TEXT_TITLE_WRAPPER key={b.id} align={align}>
-          <COLLECTION_TEXT_TITLE
-            as={style}
-            fontSize={fontsize}
-            align={align}
-          >
-            {text}
-          </COLLECTION_TEXT_TITLE>
-        </COLLECTION_TEXT_TITLE_WRAPPER>
-      );
-    }
+        // Always render as h1 for SEO/semantics, regardless of stored style
+        const headingTag: 'h1' = 'h1';
+
+        return (
+          <COLLECTION_TEXT_TITLE_WRAPPER key={b.id} align={align}>
+            <COLLECTION_TEXT_TITLE as={headingTag} fontSize={fontsize} align={align}>
+              {text}
+            </COLLECTION_TEXT_TITLE>
+          </COLLECTION_TEXT_TITLE_WRAPPER>
+        );
+      }
       
 
       /* ----- Vimeo ----- */
@@ -802,26 +814,39 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
       {/* ——— хедер коллекции ——— */}
       {collection.main && (
         <CollectionAdditionalWrapper $isPhoto={isPhoto}>
-        <CollectionHeader $isPhoto={isPhoto}>
-          {collection.main.map(
-            (
-              s: {
-                label: string;
-                text: string;
-                tag?: 'h1' | 'h2' | 'h3';
-              },
-              i: number
-            ) => (
-              <CollectionWrapper key={i} $isPhoto={isPhoto}>
-                <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
-                <COLLECTION_4SEC_DESCRIPTION
-                  as={s.tag || 'h1'}
-                  dangerouslySetInnerHTML={{ __html: s.text }}
-                />
-              </CollectionWrapper>
-            )
-          )}
-        </CollectionHeader>
+          <CollectionHeader $isPhoto={isPhoto}>
+            {collection.main.map(
+              (
+                s: {
+                  label: string;
+                  text: string;
+                  tag?: 'h1' | 'h2' | 'h3';
+                },
+                i: number
+              ) => {
+                const normalizeTag = (tag?: string): keyof JSX.IntrinsicElements => {
+                  if (typeof tag !== 'string') return 'p';
+                  const lower = tag.toLowerCase();
+                  if (lower === 'h1') return 'h3';
+                  if (lower === 'h2') return 'h4';
+                  const allowed: Array<keyof JSX.IntrinsicElements> = ['h3', 'h4', 'h5', 'p', 'span'];
+                  return allowed.includes(lower as keyof JSX.IntrinsicElements)
+                    ? (lower as keyof JSX.IntrinsicElements)
+                    : 'p';
+                };
+
+                return (
+                  <CollectionWrapper key={i} $isPhoto={isPhoto}>
+                    <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
+                    <COLLECTION_4SEC_DESCRIPTION
+                      as={normalizeTag(s.tag)}
+                      dangerouslySetInnerHTML={{ __html: s.text }}
+                    />
+                  </CollectionWrapper>
+                );
+              }
+            )}
+          </CollectionHeader>
         </CollectionAdditionalWrapper>
       )}
 
