@@ -60,6 +60,9 @@ export const HeaderWrapper = styled.div`
   @media screen and (min-width: 768px) {
     padding: 14px 24px;
   }
+  @media screen and (min-width: 1460px) {
+    padding: 14px 0px;
+  }
 `;
 export const Logo = styled(NavLink)`
   font-size: 1.5rem;
