@@ -10,7 +10,6 @@ import {
   WorkTitel,
   WorkTitelContainer,
 } from '../Work/Work.styled';
-import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Link } from 'react-router-dom';
 import QuoteBlock from '../../components/Quote/QuoteBlock';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,7 +21,9 @@ export type WorkItemData = {
   title: string;
   description: string;
   preview_url: string | null;
+  category?: 'PERSONAL' | 'COMMERCIAL' | null; // <-- NEW
 };
+
 
 export type Quote = {
   id: number;
@@ -38,15 +39,16 @@ const Photo: React.FC = () => {
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>('ALL');
 
   const filteredWorks =
-    filter === 'ALL' ? works : works.filter(w => w.folder.toUpperCase() === filter);
+    filter === 'ALL'
+      ? works
+      : works.filter(w => (w.category || '').toUpperCase() === filter);
+
 
   useEffect(() => {
     const fetchWorks = async () => {
       const { data, error } = await supabase.from('photography').select('*');
-      if (error) {
-        console.error('Error loading photos:', error.message);
-      } else {
-        setWorks(data);
+      if (!error && data) {
+        setWorks(data as WorkItemData[]);
       }
     };
     const fetchQuotes = async () => {
@@ -78,59 +80,56 @@ const Photo: React.FC = () => {
         <meta name="twitter:title" content="Photography | Pavlo Troph Portfolio" />
         <meta name="twitter:description" content="Photography portfolio by Pavlo Troph — automotive, cinematic frames, and environment studies." />
       </Helmet>
-      
+
       <WorkContainer>
         <WorkTitelContainer>
           <WorkTitel as="h1">PHOTOGRAPHY</WorkTitel>
-        <WorkFilterWrapp>
-          {['ALL', 'COMMERCIAL', 'PERSONAL'].map(cat => (
-            <WorkTextFilter
-              key={cat}
-              onClick={() => {
-                setFilter(cat as 'ALL' | 'COMMERCIAL' | 'PERSONAL');
-                if (quotes.length) {
-                  const idx = Math.floor(Math.random() * quotes.length);
-                  setCurrentQuote(quotes[idx]);
-                }
-              }}
-              className={filter === cat ? 'active' : ''}
-              aria-label={`Filter by ${cat}`}
-              aria-pressed={filter === cat}
-              role="button"
-            >
-              {cat}
-            </WorkTextFilter>
-          ))}
-        </WorkFilterWrapp>
-      </WorkTitelContainer>
-
-      <WorkPhotoWrapp>
-        <AnimatePresence mode="wait">
-          {filteredWorks.map(work => (
-            <motion.div
-              key={work.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ width: '100%', height: '100%' }}
-            >
-              <Link
-                to={`/photography/${work.id}?filter=${filter}`}
-                style={{ width: '100%', height: '100%' }}
-                aria-label={`View ${work.title || 'photography item'}`}
+          <WorkFilterWrapp>
+            {['ALL', 'COMMERCIAL', 'PERSONAL'].map(cat => (
+              <WorkTextFilter
+                key={cat}
+                onClick={() => {
+                  setFilter(cat as 'ALL' | 'COMMERCIAL' | 'PERSONAL');
+                  if (quotes.length) {
+                    const idx = Math.floor(Math.random() * quotes.length);
+                    setCurrentQuote(quotes[idx]);
+                  }
+                }}
+                className={filter === cat ? 'active' : ''}
+                aria-label={`Filter by ${cat}`}
+                aria-pressed={filter === cat}
+                role="button"
               >
-                <WorkItemComponent work={work} source="photo" />
-              </Link>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </WorkPhotoWrapp>
+                {cat}
+              </WorkTextFilter>
+            ))}
+          </WorkFilterWrapp>
+        </WorkTitelContainer>
 
-      <CUSTOM_SPLITTER />
-
-      {currentQuote && <QuoteBlock quote={currentQuote} />}
-    </WorkContainer>
+        <WorkPhotoWrapp>
+          <AnimatePresence mode="wait">
+            {filteredWorks.map(work => (
+              <motion.div
+                key={work.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{ width: '100%', height: '100%' }}
+              >
+                <Link
+                  to={`/photography/${work.id}?filter=${filter}`}
+                  style={{ width: '100%', height: '100%' }}
+                  aria-label={`View ${work.title || 'photography item'}`}
+                >
+                  <WorkItemComponent work={work} source="photo" />
+                </Link>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </WorkPhotoWrapp>
+        {currentQuote && <QuoteBlock quote={currentQuote} />}
+      </WorkContainer>
     </>
   );
 };

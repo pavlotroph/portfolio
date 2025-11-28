@@ -59,7 +59,6 @@ const Info: React.FC = () => {
       <CollectionContainer style={{ marginTop: '10px' }}>
         <CollectionAdditionalWrapper>
           <CollectionHeader>
-            <h1></h1>
             {[
               { tag: 'h2', text: 'Pavlo Troph', label: 'Artist Name', bold: true },
             { tag: 'h3', text: 'Graphic Design\nCGI\nPhotography\nCinematography\nArt Direction', label: 'Specialization' },

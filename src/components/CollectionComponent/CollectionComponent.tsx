@@ -48,7 +48,6 @@ import {
   VimeoVideoContainer,
   VideoCaption,
   CUSTOM_SPLITTER,
-  TopSplitter,
 } from './CollectionComponent.styled';
 
 /* ────────────────────────────────────────────── */
@@ -319,26 +318,41 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    const el = sliderRef.current!;
-    el.releasePointerCapture(e.pointerId);
+  if (!isDragging) return;
+  const el = sliderRef.current!;
+  el.releasePointerCapture(e.pointerId);
 
-    setIsDragging(false);
-    const dx        = offset;
-    const vel       = Math.abs(lastVelocityRef.current);
-    const threshold = slideWidthRef.current * 0.5;
+  setIsDragging(false);
 
-    let newIdx = index;
-    if (dx >  threshold || vel > 0.2) newIdx = index - 1;
-    if (dx < -threshold || vel > 0.2) newIdx = index + 1;
+  const dx        = offset;
+  const vel       = lastVelocityRef.current; // 👉 signed velocity
+  const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
 
-    setAnimate(true);
-    setOffset(0);
-    if (!transitioningRef.current) {
-      setIndex(newIdx);
-      transitioningRef.current = true;
-    }
-  };
+  let newIdx = index;
+
+  const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
+  const passedLeft  = dx < -threshold || vel < -0.3; // swipe left  → next slide
+
+  if (passedRight && !passedLeft) {
+    newIdx = index - 1;
+  } else if (passedLeft && !passedRight) {
+    newIdx = index + 1;
+  }
+  // if both or neither → newIdx stays index (no slide change)
+
+  setAnimate(true);
+  setOffset(0);
+
+  // (keep the click-fix logic we added earlier)
+  if (newIdx !== index && !transitioningRef.current) {
+    setIndex(newIdx);
+    transitioningRef.current = true;
+  } else {
+    transitioningRef.current = false;
+  }
+};
+
+
 
   const handleTransitionEnd = () => {
     transitioningRef.current = false;
@@ -784,7 +798,6 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
   const isPhoto = source === 'photo';
   return (
     <CollectionContainer $isPhoto={isPhoto}>
-      {isPhoto && <TopSplitter />}
       {/* ——— верхний титул и фильтр ——— */}
       {showFilter && (
         <WorkTitelContainer>
