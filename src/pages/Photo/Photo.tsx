@@ -46,7 +46,11 @@ const Photo: React.FC = () => {
 
   useEffect(() => {
     const fetchWorks = async () => {
-      const { data, error } = await supabase.from('photography').select('*');
+      const { data, error } = await supabase
+        .from('photography')
+        .select('*')
+        .order('id', { ascending: false }); // 👈 biggest id first
+
       if (!error && data) {
         setWorks(data as WorkItemData[]);
       }

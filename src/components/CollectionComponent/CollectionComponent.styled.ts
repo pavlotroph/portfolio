@@ -325,7 +325,6 @@ export const SliderWrapper = styled.div<IMAGE_PROPS>`
   aspect-ratio: ${({ $aspectRatio }) => $aspectRatio || '16 / 9'};
   overflow: hidden;
   display: flex;
-  align-items: center;
 
   touch-action: pan-y;
 `;
@@ -416,81 +415,24 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
   }
 `;
 
-export const IMAGE_DOUBLE = styled(IMAGE_BASEGRID).attrs({ as: 'div' })`
+export const IMAGE_GALLERY = styled(IMAGE_BASEGRID)<{
+  $itemsCount?: number;
+}>`
   @media (min-width: 744px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(2, 1fr)'
-        : $itemsCount >= 2
-        ? 'repeat(2, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
+    grid-template-columns: ${({ $itemsCount }) => {
+      const count = Math.max(1, Math.min($itemsCount || 1, 5)); // clamp 1–5
+      return `repeat(${count}, 1fr)`;
+    }};
   }
+
   @media (min-width: 1440px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(2, 1fr)'
-        : $itemsCount >= 2
-        ? 'repeat(2, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
+    grid-template-columns: ${({ $itemsCount }) => {
+      const count = Math.max(1, Math.min($itemsCount || 1, 5));
+      return `repeat(${count}, 1fr)`;
+    }};
   }
 `;
 
-export const IMAGE_TRIPLE = styled(IMAGE_BASEGRID).attrs({ as: 'div' })`
-  @media (min-width: 744px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(3, 1fr)'
-        : $itemsCount >= 3
-        ? 'repeat(3, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-  @media (min-width: 1440px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(3, 1fr)'
-        : $itemsCount >= 3
-        ? 'repeat(3, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-`;
-
-export const IMAGE_QUADRUPLE = styled(IMAGE_BASEGRID).attrs({ as: 'div' })`
-  @media (min-width: 744px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(4, 1fr)'
-        : $itemsCount >= 4
-        ? 'repeat(4, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-  @media (min-width: 1440px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(4, 1fr)'
-        : $itemsCount >= 4
-        ? 'repeat(4, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-`;
-
-export const IMAGE_QUINTUPLE = styled(IMAGE_BASEGRID).attrs({ as: 'div' })`
-  @media (min-width: 744px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(5, 1fr)'
-        : $itemsCount >= 5
-        ? 'repeat(5, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-  @media (min-width: 1440px) {
-    grid-template-columns: ${({ $itemsCount }) =>
-      !$itemsCount
-        ? 'repeat(5, 1fr)'
-        : $itemsCount >= 5
-        ? 'repeat(5, 1fr)'
-        : `repeat(${$itemsCount}, 1fr)`};
-  }
-`;
 
 /* ────────────────────────────────────────────── */
 /* КАРТИНКА + ТЕКСТ                               */

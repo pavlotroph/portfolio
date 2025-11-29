@@ -47,7 +47,11 @@ const Work: React.FC = () => {
 
   useEffect(() => {
     const fetchWorks = async () => {
-      const { data, error } = await supabase.from('work').select('*');
+      const { data, error } = await supabase
+        .from('work')
+        .select('*')
+        .order('id', { ascending: false }); // 👈 biggest id first
+
       if (!error && data) {
         setWorks(data as WorkItemData[]);
       }

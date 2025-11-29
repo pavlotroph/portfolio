@@ -17,10 +17,7 @@ import Right from '../../assets/icons/icon_right.svg';
 import { Reveal } from '../../pages/Reveal/Reveal';
 
 import {
-  IMAGE_DOUBLE,
-  IMAGE_TRIPLE,
-  IMAGE_QUADRUPLE,
-  IMAGE_QUINTUPLE,
+  IMAGE_GALLERY,
   SliderWrapper,
   SliderContent,
   Slide,
@@ -57,6 +54,7 @@ import {
 export type BlockType =
   | 'IMAGE_SINGLE' 
   | 'IMAGE_DOUBLE'
+  | 'IMAGE_GALLERY' 
   | 'IMAGE_TRIPLE'
   | 'IMAGE_QUADRUPLE'
   | 'IMAGE_QUINTUPLE'
@@ -429,25 +427,14 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
 
   
   /* ────────── рендер одного блока ────────── */
-  const blockTypeToWrapper = {
-    IMAGE_DOUBLE: IMAGE_DOUBLE,
-    IMAGE_TRIPLE: IMAGE_TRIPLE,
-    IMAGE_QUADRUPLE: IMAGE_QUADRUPLE,
-    IMAGE_QUINTUPLE: IMAGE_QUINTUPLE
-  };
-
-
-const renderImageGridBlock = (b: CollectionBlockDB) => {
+  const renderImageGalleryBlock = (b: CollectionBlockDB) => {
   const items = b.content?.items || [];
   const aspectRatio = b.content?.aspectRatio || '16 / 9';
 
   if (!items.length) return null;
 
-  const Wrapper = blockTypeToWrapper[b.type];
-  if (!Wrapper) return null;
-
   return (
-    <Wrapper
+    <IMAGE_GALLERY
       key={b.id}
       $itemsCount={items.length}
       $aspectRatio={aspectRatio}
@@ -467,7 +454,9 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
             }
             role="button"
             tabIndex={0}
-            aria-label={item.title ? `View ${item.title}` : `View image ${i + 1}`}
+            aria-label={
+              item.title ? `View ${item.title}` : `View image ${i + 1}`
+            }
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -482,9 +471,10 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
           />
         </div>
       ))}
-    </Wrapper>
+    </IMAGE_GALLERY>
   );
 };
+
 
   
   const renderBlock = (b: CollectionBlockDB) => {
@@ -502,11 +492,8 @@ const renderImageGridBlock = (b: CollectionBlockDB) => {
       return <ImageSlider images={images} aspectRatio={aspectRatio}/>;
     }
 
-    case 'IMAGE_DOUBLE':
-    case 'IMAGE_TRIPLE':
-    case 'IMAGE_QUADRUPLE':
-    case 'IMAGE_QUINTUPLE':
-      return renderImageGridBlock(b);
+    case 'IMAGE_GALLERY':
+      return renderImageGalleryBlock(b);
         
       /* ----- квадрат + текст ----- */
       /* ----- квадрат + текст ----- */
