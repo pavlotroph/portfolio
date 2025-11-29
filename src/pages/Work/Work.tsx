@@ -76,6 +76,7 @@ const Work: React.FC = () => {
       setCurrentQuote(quotes[randomIndex]);
     }
   }, [quotes]);
+  
   return (
     <>
       <Helmet>

@@ -178,6 +178,21 @@ export const OriginalLayer = styled.div<{ $isVisible: boolean }>`
   }
 `;
 
+export const HoverGradient = styled.div<{ $isVisible: boolean }>`
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: ${props => (props.$isVisible ? 1 : 0)};
+  transition: opacity 0.4s ease-in-out;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    transparent 100%
+  );
+  z-index: 2;
+`;
+
+
 export const VideoPreview = styled.div<{ $isVisible: boolean; $imageUrl: string }>`
   position: absolute;
   top: 0;
@@ -229,7 +244,7 @@ export const ImageDescription = styled.p<{ $isVisible: boolean }>`
   left: 20px;
   opacity: ${props => props.$isVisible ? 1 : 0};
   transition: opacity 0.4s ease-out;
-  z-index: 2;
+  z-index: 3;
   will-change: opacity;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   

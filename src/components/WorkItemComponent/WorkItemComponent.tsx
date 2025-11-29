@@ -6,7 +6,8 @@ import {
   // WorkSpannImage,
   WorkItemContainer,
   PreviewLayer,
-  OriginalLayer
+  OriginalLayer,
+  HoverGradient
 } from '../../pages/Work/Work.styled';
 import Loading from '../../assets/video/logo_animated_hq.webm';
 import { WorkItemData } from '../../pages/Work/Work';
@@ -41,6 +42,8 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   };
 
   const previewSrc = getPreviewUrl();
+
+  const sameStaticImage = !isVideo && previewSrc === src;
 
   useEffect(() => {
     // Завантажуємо прев'ю
@@ -118,7 +121,10 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
       }}
     >
       {/* Базовий шар - прев'ю */}
-      <PreviewLayer $isVisible={!isHovered} $imageUrl={previewSrc}>
+      <PreviewLayer
+        $isVisible={sameStaticImage ? true : !isHovered}
+        $imageUrl={previewSrc}
+      >
         <img
           src={previewSrc}
           alt={title || `Preview image for ${work.title || 'work item'}`}
@@ -127,7 +133,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
       </PreviewLayer>
 
       {/* Шар для зображень (показується при наведенні) */}
-      {!isVideo && (
+      {!isVideo && !sameStaticImage && (
         <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
           <img
             src={src}
@@ -136,7 +142,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
           />
         </OriginalLayer>
       )}
-
+      
       {/* Шар для відео (показується при наведенні) */}
       {isHovered && (isVideo || isVimeo) && (
   <VideoPreview $isVisible={isHovered} $imageUrl={previewSrc}>
@@ -172,6 +178,11 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     )}
   </VideoPreview>
 )}
+
+{/* Прозорий градієнт поверх зображення при наведенні (тільки для статичних зображень) */}
+      <HoverGradient
+        $isVisible={isHovered && !isVideo && !isVimeo}
+      />
 
       {/* Заголовок (завжди присутній, але з анімацією) */}
       <ImageDescription $isVisible={isHovered}>
