@@ -231,7 +231,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   src: string;
   title?: string;
   description?: string;
-  row?: number; 
+  row?: number | string;
 }
 
 interface ImageSliderProps {
@@ -423,21 +423,71 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
   
   /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
-  const items = b.content?.items || [];
+  const rawItems = b.content?.items || [];
   const aspectRatio = b.content?.aspectRatio || '16 / 9';
-  const columns = b.content?.columns as number | undefined; // optional
 
-  if (!items.length) return null;
+  if (!rawItems.length) return null;
+
+  // Do we have any `row` info in items?
+  const hasRowInfo = rawItems.some(
+    (item: any) => item.row !== undefined && item.row !== null && item.row !== ''
+  );
+
+  // If we have rows → compute row/col placement per item
+  let itemsForRender = rawItems as any[];
+  let columnsForGrid: number | undefined = b.content?.columns as number | undefined;
+
+  if (hasRowInfo) {
+    const rowOrder: string[] = [];                // preserves order of rows (1,2,3,...)
+    const rowCounters = new Map<string, number>(); // how many items per row so far
+
+    itemsForRender = rawItems.map((item: any) => {
+      const rawRow = String(item.row ?? '1');
+
+      if (!rowOrder.includes(rawRow)) {
+        rowOrder.push(rawRow);
+      }
+
+      const rowIdx = rowOrder.indexOf(rawRow) + 1; // grid row index (1-based)
+      const currentCount = rowCounters.get(rawRow) ?? 0;
+      const colIdx = currentCount + 1;
+
+      rowCounters.set(rawRow, colIdx);
+
+      return {
+        ...item,
+        _gridRow: rowIdx,
+        _gridCol: colIdx,
+      };
+    });
+
+    const maxCols = Array.from(rowCounters.values()).reduce(
+      (max, n) => (n > max ? n : max),
+      1
+    );
+
+    // In row-mode, our "column count" is the max items in a row
+    columnsForGrid = maxCols;
+  }
+
+  // What we pass to styled grid as "columns" – fallback to items.length if nothing else
+  const itemsCountForGrid = columnsForGrid ?? itemsForRender.length;
 
   return (
     <IMAGE_GALLERY
       key={b.id}
-      $itemsCount={items.length}
+      $itemsCount={itemsCountForGrid}
       $aspectRatio={aspectRatio}
-      $columns={columns}
     >
-      {items.map((item: any, i: number) => (
-        <div key={i}>
+      {itemsForRender.map((item: any, i: number) => (
+        <div
+          key={i}
+          style={
+            hasRowInfo
+              ? { gridRow: item._gridRow, gridColumn: item._gridCol }
+              : undefined
+          }
+        >
           <img
             src={imageUrl(item.src)}
             alt={item.title || `Image ${i + 1} from collection`}
@@ -469,6 +519,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
     </IMAGE_GALLERY>
   );
 };
+
 
 
   
