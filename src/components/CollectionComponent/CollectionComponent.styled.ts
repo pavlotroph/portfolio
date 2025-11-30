@@ -409,10 +409,6 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
     cursor: pointer;
     display: block;
   }
-
-  @media (max-width: 743px) {
-    grid-template-columns: 1fr;
-  }
 `;
 
 export const IMAGE_GALLERY = styled(IMAGE_BASEGRID)<{

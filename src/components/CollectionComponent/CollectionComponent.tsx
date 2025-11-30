@@ -898,11 +898,21 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
 
 
       {/* ——— контент из collection_blocks ——— */}
-      {blocks.map(b => (
-       <Reveal key={b.id}>
-         {renderBlock(b)}
-         </Reveal>
-         ))}
+      {blocks.map((b) => {
+        const node = renderBlock(b);
+        if (!node) return null;
+
+        const isGallery = b.type === 'IMAGE_GALLERY';
+
+        return (
+          <Reveal
+            key={b.id}
+            amount={isGallery ? 0.08 : undefined}  // 👈 tall galleries trigger almost immediately
+          >
+            {node}
+          </Reveal>
+        );
+      })}
 
       {/* ——— модалка ——— */}
       {isModalOpen && (

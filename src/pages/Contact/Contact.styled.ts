@@ -42,12 +42,12 @@ color: #fff;
 
 export const WrapperInfo = styled.div`
 display: flex;
-gap: %;
+gap: 20%;
 margin-top: 50px;
 margin-bottom: 50px;
 
 @media screen and (min-width: 744px){
-  gap: 50%;
+  gap: 40%;
 }
 
 @media screen and (min-width: 1440px){
