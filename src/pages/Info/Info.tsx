@@ -55,158 +55,201 @@ const Info: React.FC = () => {
         <meta name="twitter:title" content="Info / CV | Pavlo Troph Portfolio" />
         <meta name="twitter:description" content="Info & CV — tools, skills, and experience of Pavlo Troph. Available for collaborations and studio roles." />
       </Helmet>
-      
+
       <CollectionContainer style={{ marginTop: '10px' }}>
         <CollectionAdditionalWrapper>
           <CollectionHeader>
             {[
-              { tag: 'h2', text: 'Pavlo Troph', label: 'Artist Name', bold: true },
-            { tag: 'h3', text: 'Graphic Design\nCGI\nPhotography\nCinematography\nArt Direction', label: 'Specialization' },
-            { tag: 'h3', text: 'Toronto, ON, CA', label: 'Location' },
-            { tag: 'h3', text: 'info@pavlotroph.com', label: 'Contact' },
-          ].map((s, i) => {
-            // Validate tag to ensure it's a valid HTML tag and not a data URI
-            const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
-              if (typeof tag !== 'string') return false;
-              // Prevent data URIs and other invalid tag names
-              return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
-            };
-            const validTag = isValidTag(s.tag) ? s.tag : 'h3';
-            
-            return (
-            <CollectionWrapper key={i}>
-              <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
-              <COLLECTION_4SEC_DESCRIPTION as={validTag as any} style={(s as any).bold ? { fontWeight: 550 } : {}}>
-                {s.text.split('\n').map((line, index) => (
+              {
+                tag: 'h2',
+                text: 'Pavlo Troph',
+                label: 'Artist Name',
+                bold: true,
+              },
+              {
+                tag: 'h3',
+                text: 'Graphic Design\nCGI\nPhotography\nCinematography\nArt Direction',
+                label: 'Specialization',
+              },
+              {
+                tag: 'h3',
+                text: 'Toronto, ON, CA',
+                label: 'Location',
+                link: 'https://www.google.com/maps/search/?api=1&query=Toronto,+ON,+CA',
+              },
+              {
+                tag: 'h3',
+                text: 'info@pavlotroph.com',
+                label: 'Contact',
+                link: 'mailto:info@pavlotroph.com',
+              },
+            ].map((s, i) => {
+              // Validate tag to ensure it's a valid HTML tag and not a data URI
+              const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
+                if (typeof tag !== 'string') return false;
+                // Prevent data URIs and other invalid tag names
+                return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
+              };
+              const validTag = isValidTag(s.tag) ? s.tag : 'h3';
+
+              const renderTextWithBreaks = (text: string) =>
+                text.split('\n').map((line, index, arr) => (
                   <React.Fragment key={index}>
                     {line}
-                    <br />
+                    {index < arr.length - 1 && <br />}
                   </React.Fragment>
-                ))}
-              </COLLECTION_4SEC_DESCRIPTION>
-            </CollectionWrapper>
-          );
-          })}
-        </CollectionHeader>
-        <CollectionTextWrapper>
-          {[
-            {
-              label: "Description",
-              segments: [
-                {
-                  tag: "h2",
-                  link: "https://www.instagram.com/pavlotroph/",
-                  text: "Pavlo Troph"
-                },
-                {
-                  tag: "span",
-                  text: " is a multidisciplinary artist dedicated to creating impactful and emotionally resonant experiences. By skillfully blending visuals, sound, and storytelling, he transforms ideas into memorable and engaging products. "
-                }
-              ]
-            },
-            {
-              label: "Companies",
-              segments: [
-                {
-                  tag: "h2",
-                  link: "https://www.instagram.com/pavlotroph/",
-                  text: "FiveMods"
-                },
-                {
-                 "text": "\n",
-                },
-                {
-                  tag: "h2",
-                  link: "https://www.instagram.com/pavlotroph/",
-                  text: "Network Graphics"
-                },
-                {
-                 "text": "\n",
-                },  
-                {
-                  tag: "h2",
-                  link: "https://www.instagram.com/pavlotroph/",
-                  text: "Meta Network"
-                }
-              ]
-            },
-            {
-              label: "Software Skills",
-              segments: [
-                {
-                  tag: "h2",
-                  text: "Adobe Suite"
-                },
-                {
-                 "text": "\n",
-                },
-                {
-                  tag: "h2",
-                  text: "Blender"
-                },
-                {
-                 "text": "\n",
-                },  
-                {
-                  tag: "h2",
-                  text: "Figma"
-                }
-              ]
-            }
-          ].map((section, i) => (
-            <div key={i}>
-              <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
-              <COLLECTION_1SEC_DESCRIPTION>
-                {section.segments.map((seg, idx) => {
-                  // Validate tag to ensure it's a valid HTML tag and not a data URI
-                  const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
-                    if (typeof tag !== 'string') return false;
-                    // Prevent data URIs and other invalid tag names
-                    return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
-                  };
-                  
-                  const Tag = isValidTag(seg.tag) ? seg.tag : 'span';
+                ));
 
-                  const renderTextWithBreaks = (text: string) =>
-                    text.split("\n").map((line, lineIdx) => (
-                      <React.Fragment key={lineIdx}>
-                        {line}
-                        {lineIdx < text.split("\n").length - 1 && <br />}
-                      </React.Fragment>
-                    ));
+              let content: React.ReactNode = renderTextWithBreaks(s.text);
 
-                  const element = (
-                    <Tag key={idx} style={{ display: "inline" }}>
-                      {renderTextWithBreaks(seg.text)}
-                    </Tag>
-                  );
+              if (s.link) {
+                const isHttp = s.link.startsWith('http');
+                content = (
+                  <a
+                    href={s.link}
+                    target={isHttp ? '_blank' : undefined}
+                    rel={isHttp ? 'noopener noreferrer' : undefined}
+                    style={{ textDecoration: 'none' }}   // 👈 no color here
+                    aria-label={`${s.text}${isHttp ? ' (opens in new tab)' : ''}`}
+                  >
+                    {content}
+                  </a>
+                );
+              }
 
-                  return seg.link ? (
-                    <a
-                      key={idx}
-                      href={seg.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${seg.text} (opens in new tab)`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      {element}
-                      <span style={{ marginLeft: '4px', fontSize: '0.9em', opacity: 0.7 }} aria-hidden="true" title="Opens in new tab"></span>
-                    </a>
-                  ) : (
-                    element
-                  );
-                })}
-              </COLLECTION_1SEC_DESCRIPTION>
-            </div>
-          ))}
-        </CollectionTextWrapper>
-      </CollectionAdditionalWrapper>
-    
-      <CUSTOM_SPLITTER />
+              return (
+                <CollectionWrapper key={i}>
+                  <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
+                  <COLLECTION_4SEC_DESCRIPTION
+                    as={validTag as any}
+                    style={(s as any).bold ? { fontWeight: 550 } : {}}
+                  >
+                    {content}
+                  </COLLECTION_4SEC_DESCRIPTION>
+                </CollectionWrapper>
+              );
 
-      {currentQuote && <QuoteBlock quote={currentQuote} />}
-    </CollectionContainer>
+            })}
+          </CollectionHeader>
+          <CollectionTextWrapper>
+            {[
+              {
+                label: "Description",
+                segments: [
+                  {
+                    tag: "h2",
+                    link: "https://www.instagram.com/pavlotroph/",
+                    text: "Pavlo Troph"
+                  },
+                  {
+                    tag: "span",
+                    text: " is a multidisciplinary artist dedicated to creating impactful and emotionally resonant experiences. By skillfully blending visuals, sound, and storytelling, he transforms ideas into memorable and engaging products. "
+                  }
+                ]
+              },
+              {
+                label: "Companies",
+                segments: [
+                  {
+                    tag: "h2",
+                    link: "https://www.instagram.com/pavlotroph/",
+                    text: "FiveMods"
+                  },
+                  {
+                    "text": "\n",
+                  },
+                  {
+                    tag: "h2",
+                    link: "https://www.instagram.com/pavlotroph/",
+                    text: "Network Graphics"
+                  },
+                  {
+                    "text": "\n",
+                  },
+                  {
+                    tag: "h2",
+                    link: "https://www.instagram.com/pavlotroph/",
+                    text: "Meta Network"
+                  }
+                ]
+              },
+              {
+                label: "Software Skills",
+                segments: [
+                  {
+                    tag: "h2",
+                    text: "Adobe Suite"
+                  },
+                  {
+                    "text": "\n",
+                  },
+                  {
+                    tag: "h2",
+                    text: "Blender"
+                  },
+                  {
+                    "text": "\n",
+                  },
+                  {
+                    tag: "h2",
+                    text: "Figma"
+                  }
+                ]
+              }
+            ].map((section, i) => (
+              <div key={i}>
+                <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
+                <COLLECTION_1SEC_DESCRIPTION>
+                  {section.segments.map((seg, idx) => {
+                    // Validate tag to ensure it's a valid HTML tag and not a data URI
+                    const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
+                      if (typeof tag !== 'string') return false;
+                      // Prevent data URIs and other invalid tag names
+                      return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
+                    };
+
+                    const Tag = isValidTag(seg.tag) ? seg.tag : 'span';
+
+                    const renderTextWithBreaks = (text: string) =>
+                      text.split("\n").map((line, lineIdx) => (
+                        <React.Fragment key={lineIdx}>
+                          {line}
+                          {lineIdx < text.split("\n").length - 1 && <br />}
+                        </React.Fragment>
+                      ));
+
+                    const element = (
+                      <Tag key={idx} style={{ display: "inline" }}>
+                        {renderTextWithBreaks(seg.text)}
+                      </Tag>
+                    );
+
+                    return seg.link ? (
+                      <a
+                        key={idx}
+                        href={seg.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${seg.text} (opens in new tab)`}
+                        style={{ textDecoration: 'none' }}   // 👈 no color here
+                      >
+                        {element}
+                        <span style={{ marginLeft: '4px', fontSize: '0.9em', opacity: 0.7 }} aria-hidden="true" title="Opens in new tab"></span>
+                      </a>
+                    ) : (
+                      element
+                    );
+                  })}
+                </COLLECTION_1SEC_DESCRIPTION>
+              </div>
+            ))}
+          </CollectionTextWrapper>
+        </CollectionAdditionalWrapper>
+
+        <CUSTOM_SPLITTER />
+
+        {currentQuote && <QuoteBlock quote={currentQuote} />}
+      </CollectionContainer>
     </>
   );
 };

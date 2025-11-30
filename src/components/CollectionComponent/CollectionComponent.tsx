@@ -231,17 +231,12 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   src: string;
   title?: string;
   description?: string;
+  row?: number; 
 }
 
 interface ImageSliderProps {
   images: ImageItem[];
   aspectRatio?: string;
-}
-
-interface ImageItem {
-  src: string;
-  title?: string;
-  description?: string;
 }
 
 interface ImageSliderProps {
@@ -430,6 +425,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
   const items = b.content?.items || [];
   const aspectRatio = b.content?.aspectRatio || '16 / 9';
+  const columns = b.content?.columns as number | undefined; // optional
 
   if (!items.length) return null;
 
@@ -438,8 +434,9 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
       key={b.id}
       $itemsCount={items.length}
       $aspectRatio={aspectRatio}
+      $columns={columns}
     >
-      {items.map((item, i) => (
+      {items.map((item: any, i: number) => (
         <div key={i}>
           <img
             src={imageUrl(item.src)}
@@ -454,9 +451,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
             }
             role="button"
             tabIndex={0}
-            aria-label={
-              item.title ? `View ${item.title}` : `View image ${i + 1}`
-            }
+            aria-label={item.title ? `View ${item.title}` : `View image ${i + 1}`}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();

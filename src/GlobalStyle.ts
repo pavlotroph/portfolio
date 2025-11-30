@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import 'modern-normalize';
+import 'modern-normalize/modern-normalize.css';
 export const GlobalStyle = css`
   :root {
     --font-family: 'Geist', sans-serif;
