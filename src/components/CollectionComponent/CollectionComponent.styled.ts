@@ -409,6 +409,10 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
     cursor: pointer;
     display: block;
   }
+
+  @media (max-width: 744px) {
+    gap: 1px;;
+  }
 `;
 
 export const IMAGE_GALLERY = styled(IMAGE_BASEGRID)<{

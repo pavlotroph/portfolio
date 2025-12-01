@@ -80,49 +80,52 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     navigate(`${base}/${work.id}`);
   };
 
-  if (isLoading) {
-    return (
-      <div style={{
-        width: '100%',
-        height: '100%',
-        minHeight: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#000'
-      }}>
-        <video
-          src={Loading}
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-label="Loading animation"
-          style={{ width: '80px', height: '80px' }}
-        />
-      </div>
-    );
-  }
-
   return (
     <WorkItemContainer
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleClick}
-      className="work-item"
-      role="button"
-      tabIndex={0}
-      aria-label={`View ${title || 'work item'}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
-    >
+    onMouseEnter={() => setIsHovered(true)}
+    onMouseLeave={() => setIsHovered(false)}
+    onClick={handleClick}
+    className="work-item"
+    role="button"
+    tabIndex={0}
+    aria-label={`View ${title || 'work item'}`}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleClick();
+      }
+    }}
+  >
+    {/* 🔹 Loader overlay while preview is loading */}
+    {isLoading && (
+      <div
+  style={{
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#000',
+    zIndex: 900, // higher than gradients/text
+    opacity: isLoading ? 1 : 0,
+    pointerEvents: isLoading ? 'auto' : 'none',
+    transition: 'opacity 0.6s ease-in-out',
+  }}
+>
+  <video
+    src={Loading}
+    autoPlay
+    loop
+    muted
+    playsInline
+    aria-label="Loading animation"
+    style={{ width: '80px', height: '80px' }}
+  />
+</div>
+    )}
       {/* Базовий шар - прев'ю */}
       <PreviewLayer
-        $isVisible={sameStaticImage ? true : !isHovered}
+        $isVisible={!isLoading && (sameStaticImage ? true : !isHovered)}
         $imageUrl={previewSrc}
       >
         <img

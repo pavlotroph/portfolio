@@ -114,20 +114,20 @@ export const WorkItemContainer = styled.div`
   width: 100%;
   position: relative;
   overflow: hidden;
-  margin-bottom: 4px;
-  margin-top: 4px;
+  margin-bottom: 1px;
+  margin-top: 1px;
   aspect-ratio: 21/9;
   
   @media screen and (min-width: 744px) {
     aspect-ratio: 32/9;
-    margin-bottom: 5px;
-    margin-top: 5px;
+    margin-bottom: 2px;
+    margin-top: 2px;
   }
   
   @media screen and (min-width: 1440px) {
     aspect-ratio: 48/9;
-    margin-bottom: 6px;
-    margin-top: 6px;
+    margin-bottom: 3px;
+    margin-top: 3px;
   }
 `;
 
