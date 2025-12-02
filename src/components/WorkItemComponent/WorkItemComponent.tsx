@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ImageDescription,
   VideoPreview,
@@ -26,7 +25,6 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   const [isHovered, setIsHovered] = useState(false);
   const [isOriginalLoaded, setIsOriginalLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const navigate = useNavigate();
 
   const { folder, image_name, title, preview_url, vimeo_id } = work;
   const isVimeo = Boolean(vimeo_id);
@@ -75,26 +73,11 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     }
   }, [isHovered, isVideo, isVimeo]);
 
-  const handleClick = () => {
-    const base = source === 'work' ? '/work' : '/photography';
-    navigate(`${base}/${work.id}`);
-  };
-
   return (
     <WorkItemContainer
-    onMouseEnter={() => setIsHovered(true)}
-    onMouseLeave={() => setIsHovered(false)}
-    onClick={handleClick}
-    className="work-item"
-    role="button"
-    tabIndex={0}
-    aria-label={`View ${title || 'work item'}`}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleClick();
-      }
-    }}
+     onMouseEnter={() => setIsHovered(true)}
+     onMouseLeave={() => setIsHovered(false)}
+     className="work-item"
   >
     {/* 🔹 Loader overlay while preview is loading */}
     {isLoading && (

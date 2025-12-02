@@ -21,7 +21,7 @@ const NavigationWrapper = styled.div`
   width: 100%;
 `;
 
-const ArrowButton = styled.button<{ side: 'left' | 'right' }>`
+const ArrowButton = styled.button<{ $side: 'left' | 'right' }>`
   background: rgba(0, 0, 0, 0.7);
   border: none;
   width: 50px;
@@ -32,7 +32,7 @@ const ArrowButton = styled.button<{ side: 'left' | 'right' }>`
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: ${({ side }) => (side === 'left' ? 'flex-start' : 'flex-end')};
+  justify-content: ${({ $side }) => ($side === 'left' ? 'flex-start' : 'flex-end')};
   transition: all 0.3s;
 
   &:hover {
@@ -90,13 +90,13 @@ const CollectionSlider: React.FC<CollectionSliderProps> = ({
   return (
     <CollectionAdditionalWrapper>
       <NavigationWrapper>
-        <ArrowButton side="left" onClick={() => navigateTo(currentIndex - 1)}>
+        <ArrowButton $side="left" onClick={() => navigateTo(currentIndex - 1)}>
           <ArrowImage src={Left} alt="Previous" />
         </ArrowButton>
 
         <CollectionName>{collectionName}</CollectionName>
 
-        <ArrowButton side="right" onClick={() => navigateTo(currentIndex + 1)}>
+        <ArrowButton $side="right" onClick={() => navigateTo(currentIndex + 1)}>
           <ArrowImage src={Right} alt="Next" />
         </ArrowButton>
       </NavigationWrapper>

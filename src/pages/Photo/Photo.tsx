@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '../../supabaseClient';
 import WorkItemComponent from '../../components/WorkItemComponent/WorkItemComponent';
 import {
@@ -15,15 +15,16 @@ import QuoteBlock from '../../components/Quote/QuoteBlock';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export type WorkItemData = {
+  slug?: string | null;   
   id: string;
   folder: string;
   image_name: string;
   title: string;
   description: string;
   preview_url: string | null;
+  vimeo_id?: string;
   category?: 'PERSONAL' | 'COMMERCIAL' | null; // <-- NEW
 };
-
 
 export type Quote = {
   id: number;
@@ -43,7 +44,6 @@ const Photo: React.FC = () => {
       ? works
       : works.filter(w => (w.category || '').toUpperCase() === filter);
 
-
   useEffect(() => {
     const fetchWorks = async () => {
       const { data, error } = await supabase
@@ -55,9 +55,14 @@ const Photo: React.FC = () => {
         setWorks(data as WorkItemData[]);
       }
     };
+
     const fetchQuotes = async () => {
       const { data, error } = await supabase.from('quotes').select('*');
-      if (!error && data) setQuotes(data);
+      if (error) {
+        console.error('Помилка при отриманні цитат:', error.message);
+      } else {
+        setQuotes(data);
+      }
     };
 
     fetchWorks();
@@ -65,9 +70,9 @@ const Photo: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (quotes.length) {
-      const idx = Math.floor(Math.random() * quotes.length);
-      setCurrentQuote(quotes[idx]);
+    if (quotes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * quotes.length);
+      setCurrentQuote(quotes[randomIndex]);
     }
   }, [quotes]);
 
@@ -111,28 +116,34 @@ const Photo: React.FC = () => {
         </WorkTitelContainer>
 
         <WorkPhotoWrapp>
-          <AnimatePresence mode="wait">
-            {filteredWorks.map(work => (
-              <motion.div
-                key={work.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                style={{ width: '100%', height: '100%' }}
-              >
-                <Link
-                  to={`/photography/${work.id}?filter=${filter}`}
+          <AnimatePresence>
+            {filteredWorks.map(work => {
+              const slugOrId = work.slug || work.id;  
+
+              return (
+                <motion.div
+                  key={slugOrId}                        // you can also use it as key
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
                   style={{ width: '100%', height: '100%' }}
-                  aria-label={`View ${work.title || 'photography item'}`}
                 >
-                  <WorkItemComponent work={work} source="photo" />
-                </Link>
-              </motion.div>
-            ))}
+                  <Link
+                    to={`/photography/${slugOrId}`}
+                    style={{ width: '100%', height: '100%' }}
+                    aria-label={`View ${work.title || 'photography item'}`}
+                  >
+                    <WorkItemComponent work={work} source="photo" />
+                  </Link>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </WorkPhotoWrapp>
+
         {currentQuote && <QuoteBlock quote={currentQuote} />}
+        
       </WorkContainer>
     </>
   );

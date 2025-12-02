@@ -6,16 +6,19 @@ import { ThemeProvider } from 'styled-components';
 import { App } from './App';
 import { GlobalStyle } from './GlobalStyle';
 import { theme } from './theme';
+import { HelmetProvider } from 'react-helmet-async';
 import './styles/aos-fix.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <Global styles={GlobalStyle} />
-        <App />
-      </ThemeProvider>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <ThemeProvider theme={theme}>
+          <Global styles={GlobalStyle} />
+          <App />
+        </ThemeProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 );
 

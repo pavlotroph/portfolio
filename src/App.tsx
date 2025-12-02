@@ -89,7 +89,7 @@ export const App: React.FC = () => {
             }
           />
           <Route
-            path="work/:id"
+            path="work/:slugOrId"
             element={
               <AnimatedPage>
                 <CollectionPage source="work" />
@@ -107,7 +107,7 @@ export const App: React.FC = () => {
             }
           />
           <Route
-            path="photography/:id"
+            path="photography/:slugOrId"
             element={
               <AnimatedPage>
                 <CollectionPage source="photo" />
