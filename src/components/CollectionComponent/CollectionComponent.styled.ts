@@ -400,7 +400,7 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
   display: grid;
   ${fullBleed};
   gap: 3px;
-  margin-bottom: 3rem;
+  margin-bottom: 14px;
 
   img {
     width: 100%;
@@ -410,8 +410,13 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
     display: block;
   }
 
-  @media (max-width: 744px) {
-    gap: 1px;;
+  @media (min-width: 744px) {
+    gap: 1px;
+    margin-bottom: 20px;
+  }
+
+  @media (min-width: 1440px) {
+    margin-bottom: 30px;
   }
 `;
 
