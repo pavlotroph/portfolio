@@ -20,7 +20,7 @@ const Header: React.FC = () => {
     AOS.init({ duration: 3000 });
     AOS.refresh();
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 120);
     };
 
     window.addEventListener('scroll', handleScroll);

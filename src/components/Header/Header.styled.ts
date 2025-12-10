@@ -5,7 +5,10 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgb(0, 0, 0);
+  background-color: ${({ $isScrolled }) =>
+    $isScrolled ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.1)'};
+  backdrop-filter: ${({ $isScrolled }) =>
+    $isScrolled ? 'blur(24px)' : 'blur(4px)'};
   padding: 0;
   position: fixed;
   top: 0;
@@ -16,7 +19,7 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   border: none;
   outline: none;
   box-shadow: none;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   z-index: 99;
   will-change: transform;
 

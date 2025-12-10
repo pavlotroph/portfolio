@@ -24,6 +24,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   const [isLoading, setIsLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isOriginalLoaded, setIsOriginalLoaded] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { folder, image_name, title, preview_url, vimeo_id } = work;
@@ -44,25 +45,17 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   const sameStaticImage = !isVideo && previewSrc === src;
 
   useEffect(() => {
-    // Завантажуємо прев'ю
-    const img = new Image();
-    img.src = previewSrc;
-    img.onload = () => {
-      setIsLoading(false);
-      
-      // Попередньо завантажуємо оригінал
-      if (!isVideo) {
-        const originalImg = new Image();
-        originalImg.src = src;
-        originalImg.onload = () => setIsOriginalLoaded(true);
-        originalImg.onerror = () => console.error('Failed to preload original image:', src);
-      }
-    };
-    img.onerror = () => {
-      console.error('Failed to load preview image:', previewSrc);
-      setIsLoading(false);
-    };
-  }, [previewSrc, src, isVideo]);
+  const img = new Image();
+  img.src = previewSrc;
+  img.onload = () => {
+    setIsLoading(false);
+  };
+  img.onerror = () => {
+    console.error('Failed to load preview image:', previewSrc);
+    setIsLoading(false);
+  };
+}, [previewSrc]); // 👈 no src / isVideo deps
+
 
   useEffect(() => {
     if (isHovered && isVideo && !isVimeo && videoRef.current) {
@@ -73,15 +66,28 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     }
   }, [isHovered, isVideo, isVimeo]);
 
+  const showHoverVideoLoader =
+  isHovered && (isVideo || isVimeo) && !isVideoReady;
+
+  const showLoaderOverlay = isLoading || showHoverVideoLoader;
+
+  const handleMouseEnter = () => {
+  setIsHovered(true);
+};
+
+const handleMouseLeave = () => {
+  setIsHovered(false);
+  setIsVideoReady(false); // 👈 reset for the next hover
+};
+  
   return (
     <WorkItemContainer
-     onMouseEnter={() => setIsHovered(true)}
-     onMouseLeave={() => setIsHovered(false)}
-     className="work-item"
+     onMouseEnter={handleMouseEnter}
+    onMouseLeave={handleMouseLeave}
+    className="work-item"
   >
     {/* 🔹 Loader overlay while preview is loading */}
-    {isLoading && (
-      <div
+    <div
   style={{
     position: 'absolute',
     inset: 0,
@@ -89,9 +95,9 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     alignItems: 'center',
     justifyContent: 'center',
     background: '#000',
-    zIndex: 900, // higher than gradients/text
-    opacity: isLoading ? 1 : 0,
-    pointerEvents: isLoading ? 'auto' : 'none',
+    zIndex: 900,
+    opacity: showLoaderOverlay ? 1 : 0,
+    pointerEvents: showLoaderOverlay ? 'auto' : 'none',
     transition: 'opacity 0.6s ease-in-out',
   }}
 >
@@ -102,36 +108,36 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
     muted
     playsInline
     aria-label="Loading animation"
-    style={{ width: '80px', height: '80px' }}
+    style={{ width: '100px', height: '100px' }}
   />
 </div>
-    )}
-      {/* Базовий шар - прев'ю */}
-      <PreviewLayer
-        $isVisible={!isLoading && (sameStaticImage ? true : !isHovered)}
-        $imageUrl={previewSrc}
-      >
-        <img
-          src={previewSrc}
-          alt={title || `Preview image for ${work.title || 'work item'}`}
-          loading="eager"
-        />
-      </PreviewLayer>
+      {/* Base layer – preview stays visible once loaded */}
+<PreviewLayer
+  $isVisible={!isLoading}
+  $imageUrl={previewSrc}
+>
+  <img
+    src={previewSrc}
+    alt={title || `Preview image for ${work.title || 'work item'}`}
+    loading="lazy"
+  />
+</PreviewLayer>
 
-      {/* Шар для зображень (показується при наведенні) */}
-      {!isVideo && !sameStaticImage && (
-        <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
-          <img
-            src={src}
-            alt={title || `Full image for ${work.title || 'work item'}`}
-            loading={isOriginalLoaded ? 'eager' : 'lazy'}
-          />
-        </OriginalLayer>
-      )}
+{/* Hover layer – original fades in/out on hover */}
+{!isVideo && !sameStaticImage && (
+  <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
+    <img
+      src={src}
+      alt={title || `Full image for ${work.title || 'work item'}`}
+      loading="eager"
+      onLoad={() => setIsOriginalLoaded(true)}
+    />
+  </OriginalLayer>
+)}
       
-      {/* Шар для відео (показується при наведенні) */}
-      {isHovered && (isVideo || isVimeo) && (
-  <VideoPreview $isVisible={isHovered} $imageUrl={previewSrc}>
+      {/* Шар для відео (завжди в DOM для відео) */}
+{(isVideo || isVimeo) && (
+  <VideoPreview $isVisible={isHovered}>
     {isVimeo ? (
       <iframe
         src={`https://player.vimeo.com/video/${vimeo_id}?autoplay=1&muted=1&loop=1&background=1`}
@@ -140,15 +146,6 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
         allowFullScreen
         title={title || `Video player for ${work.title || 'work item'}`}
         aria-label={title || `Video player for ${work.title || 'work item'}`}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          zIndex: 1,
-        }}
       />
     ) : (
       <video
@@ -160,20 +157,27 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
         playsInline
         disablePictureInPicture
         aria-label={title || `Video preview for ${work.title || 'work item'}`}
+        onPlaying={() => setIsVideoReady(true)}
       />
     )}
   </VideoPreview>
 )}
 
 {/* Прозорий градієнт поверх зображення при наведенні (тільки для статичних зображень) */}
-      <HoverGradient
-        $isVisible={isHovered && !isVideo && !isVimeo}
-      />
+      <HoverGradient $isVisible={isHovered} />
 
       {/* Заголовок (завжди присутній, але з анімацією) */}
-      <ImageDescription $isVisible={isHovered}>
-        {title}
-      </ImageDescription>
+      <ImageDescription
+  $isVisible={
+    isHovered &&
+    (
+      (!isVideo && !isVimeo) || // images: show immediately
+      isVideoReady              // video: wait until ready
+    )
+  }
+>
+  {title}
+</ImageDescription>
     </WorkItemContainer>
   );
 };

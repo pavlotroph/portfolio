@@ -5,7 +5,7 @@ export const Wrapper = styled.div`
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 48px 24px;
+  padding: 18px 24px;
   gap: 10px;
   width: 100%;
   max-width: 1920px;
@@ -13,13 +13,13 @@ export const Wrapper = styled.div`
   margin: 0 auto;
 
   @media screen and (min-width: 744px){
-    padding: 72px 24px;
+    padding: 24px 24px;
   }
 
     transition: padding 0.4s ease-in-out, gap 0.4s ease-in-out;
 
   @media screen and (min-width: 1440px){
-    padding: 96px 24px;
+    padding: 33px 24px;
   }
 `;
 
@@ -28,11 +28,19 @@ export const TextBlock = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   width: 100%;
   max-width: 1440px;
   /* let the content decide the height */
   height: auto;
+
+  @media screen and (min-width: 744px){
+    gap: 14px;
+  }
+
+  @media screen and (min-width: 1440px){
+    gap: 18px;
+  }
 `;
 
 export const QuoteText = styled.div`
@@ -42,7 +50,7 @@ export const QuoteText = styled.div`
   /* typography */
   font-family: 'Geist', sans-serif;
   font-weight: 600;
-  font-size: 32px;
+  font-size: 22px;
   line-height: 140%;
   text-align: center;
   color: #fff;
@@ -55,6 +63,14 @@ export const QuoteText = styled.div`
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 5;          /* show ≤ 5 lines */
+
+  @media screen and (min-width: 744px){
+    font-size: 28px;
+  }
+
+  @media screen and (min-width: 1440px){
+    font-size: 32px;
+  }
 `;
 
 
@@ -63,7 +79,7 @@ export const QuoteSource = styled.div`
   max-width: 1440px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 12px;
   line-height: 161.8%;
   text-align: center;
   color: #808080;
@@ -71,4 +87,12 @@ export const QuoteSource = styled.div`
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+
+  @media screen and (min-width: 744px){
+    font-size: 14px;
+  }
+
+  @media screen and (min-width: 1440px){
+    font-size: 16px;
+  }
 `;

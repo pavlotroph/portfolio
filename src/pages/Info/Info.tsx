@@ -10,7 +10,8 @@ import {
   COLLECTION_1SEC_DESCRIPTION,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
-  CollectionTextWrapper
+  CollectionTextWrapper,
+  ContentBlockWrapper
 } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { CUSTOM_SPLITTER } from '../../components/CollectionComponent/CollectionComponent.styled';
 import { Quote } from '../Work/Work';
@@ -57,6 +58,7 @@ const Info: React.FC = () => {
       </Helmet>
 
       <CollectionContainer style={{ marginTop: '10px' }}>
+      <ContentBlockWrapper>
         <CollectionAdditionalWrapper>
           <CollectionHeader>
             {[
@@ -151,51 +153,28 @@ const Info: React.FC = () => {
                 label: "Companies",
                 segments: [
                   {
-                    tag: "h2",
-                    link: "https://www.instagram.com/pavlotroph/",
+                    tag: "h1",
+                    link: "https://fivemods.io/",
                     text: "FiveMods"
                   },
                   {
                     "text": "\n",
                   },
                   {
-                    tag: "h2",
-                    link: "https://www.instagram.com/pavlotroph/",
+                    tag: "h1",
+                    link: "https://ntw.graphics/",
                     text: "Network Graphics"
                   },
                   {
                     "text": "\n",
                   },
                   {
-                    tag: "h2",
-                    link: "https://www.instagram.com/pavlotroph/",
-                    text: "Meta Network"
+                    tag: "h1",
+                    link: "https://metarp.net/en",
+                    text: "Meta Role Play"
                   }
                 ]
               },
-              {
-                label: "Software Skills",
-                segments: [
-                  {
-                    tag: "h2",
-                    text: "Adobe Suite"
-                  },
-                  {
-                    "text": "\n",
-                  },
-                  {
-                    tag: "h2",
-                    text: "Blender"
-                  },
-                  {
-                    "text": "\n",
-                  },
-                  {
-                    tag: "h2",
-                    text: "Figma"
-                  }
-                ]
-              }
             ].map((section, i) => (
               <div key={i}>
                 <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
@@ -245,6 +224,7 @@ const Info: React.FC = () => {
             ))}
           </CollectionTextWrapper>
         </CollectionAdditionalWrapper>
+        </ContentBlockWrapper>
 
         <CUSTOM_SPLITTER />
 

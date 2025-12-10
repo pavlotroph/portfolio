@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const WorkContainer = styled.div`
 display: flex;
 flex-direction: column;
-margin: 0 auto 10px;
+margin: 0 auto;
 max-width: 1440px;
 padding: 0px 18px;
 
@@ -133,41 +133,11 @@ export const WorkItemContainer = styled.div`
 
 export const PreviewLayer = styled.div<{ $isVisible: boolean; $imageUrl: string }>`
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  opacity: ${props => props.$isVisible ? 1 : 0};
-  z-index: 1;
-  will-change: opacity;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
-    opacity: ${props => props.$isVisible ? 0 : 1};
-    transition: opacity 0.6s ease-in-out;
-    z-index: 1;
-    pointer-events: none;
-  }
-`;
-
-export const OriginalLayer = styled.div<{ $isVisible: boolean }>`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  opacity: ${props => props.$isVisible ? 1 : 0};
+  transition: opacity 3.4s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: ${props => (props.$isVisible ? 1 : 0)};
   z-index: 0;
   will-change: opacity;
 
@@ -175,6 +145,40 @@ export const OriginalLayer = styled.div<{ $isVisible: boolean }>`
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+  }
+`;
+
+export const OriginalLayer = styled.div<{ $isVisible: boolean }>`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: ${props => (props.$isVisible ? 1 : 0)};
+  transition: opacity 0.4s ease-out;
+  z-index: 1;             /* above preview */
+  will-change: opacity;
+  pointer-events: none;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* 👇 gradient lives here now */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.25) 40%,
+      transparent 100%
+    );
   }
 `;
 
@@ -184,55 +188,37 @@ export const HoverGradient = styled.div<{ $isVisible: boolean }>`
   pointer-events: none;
   opacity: ${props => (props.$isVisible ? 1 : 0)};
   transition: opacity 0.4s ease-in-out;
-  background: linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.6) 0%,
-    transparent 100%
-  );
+  background: linear-gradient( 0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.6) 7%, rgba(0, 0, 0, 0.5) 14%, rgba(0, 0, 0, 0.3) 21%, rgba(0, 0, 0, 0.15) 28%, rgba(0, 0, 0, 0.06) 35%, transparent 50% );
   z-index: 2;
 `;
 
 
-export const VideoPreview = styled.div<{ $isVisible: boolean; $imageUrl: string }>`
+export const VideoPreview = styled.div<{ $isVisible: boolean }>`
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: 1000;     /* 👈 поверх усього */
+  opacity: ${props => (props.$isVisible ? 1 : 0)};
   transition: opacity 0.3s ease-out;
-  opacity: ${props => props.$isVisible ? 1 : 0};
   z-index: 1;
   will-change: opacity;
   background-color: #000;
 
-  video {
+  video,
+  iframe {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    top: 0;
-    left: 0;
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: ${props => props.$isVisible ? '47%' : '100%'};
-    background: ${props => props.$isVisible 
-      ? 'linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%)' 
-      : `url(${props.$imageUrl})`};
-    background-size: cover;
-    background-position: center;
-    transition: all 0.6s ease-in-out;
-    z-index: 1;
-    pointer-events: none;
+    border: none;
   }
 `;
+
+
 
 export const ImageDescription = styled.p<{ $isVisible: boolean }>`
   font-family: var(--font-family);
@@ -243,7 +229,7 @@ export const ImageDescription = styled.p<{ $isVisible: boolean }>`
   bottom: 20px;
   left: 20px;
   opacity: ${props => props.$isVisible ? 1 : 0};
-  transition: opacity 0.4s ease-out;
+  transition: opacity 0.3s ease-out;
   z-index: 3;
   will-change: opacity;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
@@ -256,10 +242,18 @@ export const WorkPhotoWrapp = styled.div`
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   overflow: hidden;
-
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 0;
+
+  @media screen and (min-width: 744px) {
+    margin-bottom: 40px;
+  }
+
+  @media screen and (min-width: 1440px) {
+    margin-bottom: 50px;
+  }
 `;
 
 export const WorkItem = styled.div`
