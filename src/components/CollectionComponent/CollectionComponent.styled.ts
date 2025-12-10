@@ -15,6 +15,23 @@ export const CollectionContainer = styled.div<{ $isPhoto?: boolean }>`
   }
 `;
 
+export const ContentBlockWrapper = styled.div`
+  width: 100%;
+  margin-top: 15px;
+  margin-bottom: 15px;
+
+  @media (min-width: 744px) {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (min-width: 1440px) {
+    margin-top: 40px;
+    margin-bottom: 40px;
+  }
+`;
+
+
 export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
   display: flex;
   flex-direction: row;
@@ -24,7 +41,6 @@ export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
   align-content: center;
   padding: 0px 18px;
   gap: 40px;
-  margin-top: 0;
 
   @media (min-width: 744px) {
     padding: 0px 24px;
@@ -32,67 +48,33 @@ export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
 `;
 
 /* ────────────────────────────────────────────── */
-/* VIMEO                                          */
+/* YouTube                                       */
 /* ────────────────────────────────────────────── */
-export const PlayerVimeo = styled.div`
+
+export const YouTubePlayerWrapper = styled.div`
   width: 100%;
-  margin: 0 auto;
-  background: #000;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  @media (min-width: 744px) {
+  }
+
+  @media (min-width: 1440px) {
+  }
 `;
 
-export const VimeoVideoContainer = styled.div`
+export const YouTubeIframeContainer = styled.div`
   position: relative;
-  padding-bottom: 56.125%;
-  overflow: hidden;
-  background: #000;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
 
   iframe {
-    background: #000;
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
-    height: 200%;
-    transform: translateY(-25%);
-  }
-
-  video {
-    object-fit: cover;
-  }
-`;
-
-export const VideoCaption = styled.div`
-  color: #fff;
-  text-align: center;
-  padding: 20px 5%;
-  width: 90%;
-  margin: 0 auto;
-  max-width: 1200px;
-  line-height: 1.5;
-
-  h3 {
-    font-size: 1.5rem;
-    margin-top: 12px;
-  }
-`;
-
-export const VimeoContainer = styled.div`
-  width: 100%;
-  max-width: 1280px;
-  height: 0;
-  padding-bottom: 56.25%;
-  position: relative;
-  background: #000;
-
-  iframe {
-    background: #000;
-    position: absolute;
-    top: -10%;
-    left: 0;
-    width: 100vw;
-    height: 50vh;
-    background-size: cover;
+    height: 100%;
+    border: 0;
   }
 `;
 
@@ -267,7 +249,7 @@ export const COLLECTION_4SEC_DESCRIPTION = styled.h2`
 export const CollectionHeader = styled.div<{ $isPhoto?: boolean }>`
   display: flex;
   flex-direction: column;
-  padding: ${props => props.$isPhoto ? '20px' : '40px'} 0px ${props => props.$isPhoto ? '20px' : '40px'};
+  padding: ${props => props.$isPhoto ? '20px' : '0px'} 0px ${props => props.$isPhoto ? '20px' : '0px'};
   width: 100%;
   margin: 0 auto;
 
@@ -279,7 +261,7 @@ export const CollectionHeader = styled.div<{ $isPhoto?: boolean }>`
 
   @media (min-width: 1440px) {
     max-width: 1440px;
-    padding: ${props => props.$isPhoto ? '30px' : '50px'} 0px;
+    padding: ${props => props.$isPhoto ? '30px' : '0px'} 0px;
     align-items: flex-start;
   }
 `;
@@ -288,16 +270,13 @@ export const CollectionTextWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 40px;
-  padding: 20px 0px 40px;
   width: 100%;
 
   @media (min-width: 744px) {
-    padding: 20px 0px 40px;
   }
 
   @media (min-width: 1440px) {
     max-width: 1440px;
-    padding: 20px 0px 60px;
   }
 `;
 
@@ -399,8 +378,7 @@ export const Arrow = styled.button<{ $left?: boolean }>`
 const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
   display: grid;
   ${fullBleed};
-  gap: 3px;
-  margin-bottom: 14px;
+  gap: 1px;
 
   img {
     width: 100%;
@@ -411,12 +389,10 @@ const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
   }
 
   @media (min-width: 744px) {
-    gap: 1px;
-    margin-bottom: 20px;
+    gap: 2px;
   }
 
   @media (min-width: 1440px) {
-    margin-bottom: 30px;
   }
 `;
 
@@ -516,12 +492,16 @@ export const CUSTOM_SPLITTER = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 5px 18px; /* lowered from 20px */
+  padding: 20px 18px; 
 
   background: #000;
 
   @media (min-width: 744px) {
-    padding: 5px 24px; /* lowered here too */
+    padding: 40px 24px; 
+  }
+
+   @media (min-width: 1404px) {
+    padding: 60px 24px; 
   }
 
   &::after {
