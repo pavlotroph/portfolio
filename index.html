@@ -1,72 +1,59 @@
 <!doctype html>
 <html lang="en" dir="ltr">
-  <head>
-    <link rel="preconnect" href="https://pavlotroph.com" />
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <title>Pavlo Troph - Portfolio</title>
+<head>
+  <link rel="preconnect" href="https://pavlotroph.com" />
 
-    <!-- Favicon -->
-    <link rel="icon" href="https://pavlotroph.com/PT_SVG.svg" type="image/x-icon" />
-    <link rel="icon" type="image/png" sizes="16x16" href="https://pavlotroph.com/PT_16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://pavlotroph.com/PT_32.png">
-    <link rel="icon" type="image/png" sizes="64x64" href="https://pavlotroph.com/PT_64.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="https://pavlotroph.com/PT_96.png">
-    <link rel="icon" type="image/png" sizes="128x128" href="https://pavlotroph.com/PT_128.png">
-    <link rel="icon" type="image/png" sizes="256x256" href="https://pavlotroph.com/PT_256.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <title>Pavlo Troph - Portfolio</title>
 
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Pavlo Troph - Portfolio" />
-    <meta
-      property="og:description"
-      content="Pavlo Troph is a multidisciplinary artist: Graphic Design, CGI, Photography, Cinematography, Art Direction."
-    />
-    <meta
-      name="description"
-      content="Pavlo Troph is a multidisciplinary artist: Graphic Design, CGI, Photography, Cinematography, Art Direction."
-    />
-    <meta
-      property="og:image"
-      content="https://raw.githubusercontent.com/Svitly4nyi-Vla2yslav/portfolio-photography/main/src/assets/icons/logo-portfolio.svg"
-    />
-    <meta property="og:url" content="https://pavlo-protfolio.vercel.app" />
-    <meta property="og:type" content="website" />
+  <!-- Main favicon for Google Search and browsers -->
+  <link rel="icon" type="image/png" href="https://pavlotroph.com/PT_96.png">
 
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Pavlo Troph - Portfolio" />
-    <meta
-      name="twitter:description"
-      content="Multidisciplinary artist based in Toronto specializing in CGI, Graphic Design & Cinematography."
-    />
-    <meta
-      name="twitter:image"
-      content="https://raw.githubusercontent.com/Svitly4nyi-Vla2yslav/portfolio-photography/main/src/assets/icons/logo-portfolio.svg"
-    />
+  <!-- Optional, but fine to keep -->
+  <link rel="apple-touch-icon" href="https://pavlotroph.com/PT_96.png">
+  <link rel="shortcut icon" href="https://pavlotroph.com/PT_96.png">
 
-    <!-- SEO Meta -->
-    <meta
-      name="keywords"
-      content="Pavlo Troph, Graphic Design, CGI, Cinematography, Art Direction, Portfolio, Toronto artist, Photography, Blender, Adobe Suite, Figma"
-    />
-    <meta name="author" content="Pavlo Troph" />
 
-    <!-- Explicit sitemap/search discoverability for scanners -->
-    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
-    <link rel="alternate" href="/sitemap.html" title="Sitemap" />
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="Pavlo Troph - Portfolio" />
+  <meta property="og:description"
+    content="Pavlo Troph is a multidisciplinary artist: Graphic Design, CGI, Photography, Cinematography, Art Direction." />
+  <meta name="description"
+    content="Pavlo Troph is a multidisciplinary artist: Graphic Design, CGI, Photography, Cinematography, Art Direction." />
+  <meta property="og:image"
+    content="https://raw.githubusercontent.com/Svitly4nyi-Vla2yslav/portfolio-photography/main/src/assets/icons/logo-portfolio.svg" />
+  <meta property="og:url" content="https://pavlo-protfolio.vercel.app" />
+  <meta property="og:type" content="website" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
-      rel="stylesheet"
-    />
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pavlo Troph - Portfolio" />
+  <meta name="twitter:description"
+    content="Multidisciplinary artist based in Toronto specializing in CGI, Graphic Design & Cinematography." />
+  <meta name="twitter:image"
+    content="https://raw.githubusercontent.com/Svitly4nyi-Vla2yslav/portfolio-photography/main/src/assets/icons/logo-portfolio.svg" />
 
-    <!-- Structured Data for SEO -->
-    <script type="application/ld+json">
+  <!-- SEO Meta -->
+  <meta name="keywords"
+    content="Pavlo Troph, Graphic Design, CGI, Cinematography, Art Direction, Portfolio, Toronto artist, Photography, Blender, Adobe Suite, Figma" />
+  <meta name="author" content="Pavlo Troph" />
+
+  <!-- Explicit sitemap/search discoverability for scanners -->
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+  <link rel="alternate" href="/sitemap.html" title="Sitemap" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+    rel="stylesheet" />
+
+  <!-- Structured Data for SEO -->
+  <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Person",
@@ -94,73 +81,75 @@
         "hasCredential": ["Blender 3D", "Adobe Suite", "Figma"]
       }
     </script>
-  </head>
+</head>
 
-  <body>
-    <!-- Static h1 for search engines - visible in HTML source before React loads -->
-    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;">Pavlo Troph Portfolio</h1>
+<body>
+  <!-- Static h1 for search engines - visible in HTML source before React loads -->
+  <h1
+    style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;">
+    Pavlo Troph Portfolio</h1>
 
-    <!-- Minimal, JS-independent primary navigation so scanners always detect multiple ways to navigate -->
-    <nav id="preload-primary-nav" aria-label="Primary" style="display:none;background:#000;color:#fff;padding:6px 10px;font-family:Arial,sans-serif;font-size:12px;border-bottom:1px solid #333">
-      <ul style="list-style:none;display:flex;gap:10px;margin:0;padding:0;flex-wrap:wrap">
-        <li><a href="/home" style="color:#fff;text-decoration:underline">Home</a></li>
-        <li><a href="/work" style="color:#fff;text-decoration:underline">Work</a></li>
-        <li><a href="/photography" style="color:#fff;text-decoration:underline">Photography</a></li>
-        <li><a href="/about" style="color:#fff;text-decoration:underline">About</a></li>
-        <li><a href="/info" style="color:#fff;text-decoration:underline">Info</a></li>
-        <li><a href="/contact" style="color:#fff;text-decoration:underline">Contact</a></li>
-        <li><a href="/sitemap.html" style="color:#fff;text-decoration:underline">Sitemap</a></li>
-      </ul>
-    </nav>
+  <!-- Minimal, JS-independent primary navigation so scanners always detect multiple ways to navigate -->
+  <nav id="preload-primary-nav" aria-label="Primary"
+    style="display:none;background:#000;color:#fff;padding:6px 10px;font-family:Arial,sans-serif;font-size:12px;border-bottom:1px solid #333">
+    <ul style="list-style:none;display:flex;gap:10px;margin:0;padding:0;flex-wrap:wrap">
+      <li><a href="/home" style="color:#fff;text-decoration:underline">Home</a></li>
+      <li><a href="/work" style="color:#fff;text-decoration:underline">Work</a></li>
+      <li><a href="/photography" style="color:#fff;text-decoration:underline">Photography</a></li>
+      <li><a href="/about" style="color:#fff;text-decoration:underline">About</a></li>
+      <li><a href="/info" style="color:#fff;text-decoration:underline">Info</a></li>
+      <li><a href="/contact" style="color:#fff;text-decoration:underline">Contact</a></li>
+      <li><a href="/sitemap.html" style="color:#fff;text-decoration:underline">Sitemap</a></li>
+    </ul>
+  </nav>
 
-    <!-- Minimal static navigation (visible without JavaScript) to satisfy WCAG 2.4.5 and automated scanners -->
-    <div
-      id="preload-access-nav"
-      style="display:none;position: fixed; bottom: 0; right: 0; background: #000; color: #fff; padding: 6px 10px; font-family: Arial, sans-serif; font-size: 12px; z-index: 10001; border-top-left-radius: 6px; border: 1px solid #333; border-right: none; border-bottom: none;"
-    >
-      <a href="/sitemap.html" style="color: #fff; text-decoration: underline;">Sitemap</a>
+  <!-- Minimal static navigation (visible without JavaScript) to satisfy WCAG 2.4.5 and automated scanners -->
+  <div id="preload-access-nav"
+    style="display:none;position: fixed; bottom: 0; right: 0; background: #000; color: #fff; padding: 6px 10px; font-family: Arial, sans-serif; font-size: 12px; z-index: 10001; border-top-left-radius: 6px; border: 1px solid #333; border-right: none; border-bottom: none;">
+    <a href="/sitemap.html" style="color: #fff; text-decoration: underline;">Sitemap</a>
+  </div>
+  <script>
+    // Hide static nav when JavaScript is enabled (run immediately, not waiting for DOMContentLoaded)
+    (function () {
+      var preloadNav = document.getElementById('preload-access-nav');
+      if (preloadNav) {
+        preloadNav.style.display = 'none';
+      }
+    })();
+    // Also hide on DOMContentLoaded as backup
+    document.addEventListener('DOMContentLoaded', function () {
+      var preloadNav = document.getElementById('preload-access-nav');
+      if (preloadNav) {
+        preloadNav.style.display = 'none';
+      }
+      // Also hide preload-primary-nav
+      var preloadPrimaryNav = document.getElementById('preload-primary-nav');
+      if (preloadPrimaryNav) {
+        preloadPrimaryNav.style.display = 'none';
+      }
+    });
+  </script>
+
+  <div id="root"></div>
+  <noscript>
+    <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto;">
+      <h1>Pavlo Troph Portfolio</h1>
+      <p>This website requires JavaScript to be enabled. Please enable JavaScript in your browser settings.</p>
+      <nav>
+        <h2>Site Navigation</h2>
+        <ul>
+          <li><a href="/home">Home</a></li>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/photography">Photography</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/info">Info / CV</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/sitemap.html">Sitemap</a></li>
+        </ul>
+      </nav>
     </div>
-    <script>
-      // Hide static nav when JavaScript is enabled (run immediately, not waiting for DOMContentLoaded)
-      (function() {
-        var preloadNav = document.getElementById('preload-access-nav');
-        if (preloadNav) {
-          preloadNav.style.display = 'none';
-        }
-      })();
-      // Also hide on DOMContentLoaded as backup
-      document.addEventListener('DOMContentLoaded', function() {
-        var preloadNav = document.getElementById('preload-access-nav');
-        if (preloadNav) {
-          preloadNav.style.display = 'none';
-        }
-        // Also hide preload-primary-nav
-        var preloadPrimaryNav = document.getElementById('preload-primary-nav');
-        if (preloadPrimaryNav) {
-          preloadPrimaryNav.style.display = 'none';
-        }
-      });
-    </script>
+  </noscript>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 
-    <div id="root"></div>
-    <noscript>
-      <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto;">
-        <h1>Pavlo Troph Portfolio</h1>
-        <p>This website requires JavaScript to be enabled. Please enable JavaScript in your browser settings.</p>
-        <nav>
-          <h2>Site Navigation</h2>
-          <ul>
-            <li><a href="/home">Home</a></li>
-            <li><a href="/work">Work</a></li>
-            <li><a href="/photography">Photography</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/info">Info / CV</a></li>
-            <li><a href="/contact">Contact</a></li>
-            <li><a href="/sitemap.html">Sitemap</a></li>
-          </ul>
-        </nav>
-      </div>
-    </noscript>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
 </html>
