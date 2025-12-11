@@ -6,6 +6,7 @@ import Modal, {
   CloseButton,
   MediaContainer,
   TextContainer,
+  ModalArrowZone,
 } from '../Modal/Modal';
 import Loading from '../../assets/video/logo_animated_hq.webm';
 import { supabase, supabaseUrl } from '../../supabaseClient';
@@ -100,6 +101,275 @@ interface ModalMediaItem {
   title?: string;
   description: string;
 }
+
+interface ZoomableImageProps {
+  src: string;
+  alt: string;
+  onError?: () => void;
+  onLoad?: () => void;
+}
+
+/**
+ * ZoomableImage:
+ * - Mouse wheel → zoom in/out
+ * - Touch pinch (two fingers) → zoom
+ * - Drag/pan when zoomed in
+ */
+const ZoomableImage: React.FC<ZoomableImageProps> = ({
+  src,
+  alt,
+  onError,
+  onLoad,
+}) => {
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const scaleRef = useRef(1);
+  const translateRef = useRef({ x: 0, y: 0 });
+
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const translateStartRef = useRef({ x: 0, y: 0 });
+
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const isPinchingRef = useRef(false);
+  const initialPinchDistanceRef = useRef(0);
+  const initialScaleRef = useRef(1);
+
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 4;
+
+  const clampScale = (value: number) =>
+    Math.min(Math.max(value, MIN_SCALE), MAX_SCALE);
+
+  const clampTranslate = useCallback(
+    (x: number, y: number, scaleValue: number) => {
+      const el = wrapperRef.current;
+      if (!el || scaleValue <= 1) {
+        return { x: 0, y: 0 };
+      }
+
+      const rect = el.getBoundingClientRect();
+      const maxX = (rect.width * (scaleValue - 1)) / 2;
+      const maxY = (rect.height * (scaleValue - 1)) / 2;
+
+      const clampedX = Math.max(-maxX, Math.min(maxX, x));
+      const clampedY = Math.max(-maxY, Math.min(maxY, y));
+
+      return { x: clampedX, y: clampedY };
+    },
+    []
+  );
+
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  useEffect(() => {
+    translateRef.current = translate;
+  }, [translate]);
+
+  // Wheel zoom (mouse / trackpad)
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY === 0) return;
+
+    // Only zoom, no scroll inside the modal
+    e.preventDefault();
+
+    const prevScale = scaleRef.current;
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const nextScale = clampScale(prevScale * factor);
+
+    if (nextScale === prevScale) return;
+
+    if (nextScale === 1) {
+      setScale(1);
+      setTranslate({ x: 0, y: 0 });
+      return;
+    }
+
+    const current = translateRef.current;
+    const clamped = clampTranslate(current.x, current.y, nextScale);
+
+    setScale(nextScale);
+    setTranslate(clamped);
+  };
+
+  // Pointer helpers
+  const updatePointer = (id: number, x: number, y: number) => {
+    const map = pointersRef.current;
+    map.set(id, { x, y });
+  };
+
+  const removePointer = (id: number) => {
+    const map = pointersRef.current;
+    map.delete(id);
+  };
+
+  const getTwoPointers = () => {
+    const arr = Array.from(pointersRef.current.values());
+    if (arr.length < 2) return null;
+    return arr.slice(0, 2);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    el.setPointerCapture(e.pointerId);
+    updatePointer(e.pointerId, e.clientX, e.clientY);
+
+    const activeCount = pointersRef.current.size;
+
+    if (activeCount === 2) {
+      // Begin pinch
+      const pts = getTwoPointers();
+      if (!pts) return;
+      const [p1, p2] = pts;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.hypot(dx, dy);
+
+      initialPinchDistanceRef.current = dist;
+      initialScaleRef.current = scaleRef.current;
+      isPinchingRef.current = true;
+      setIsPanning(false);
+    } else if (activeCount === 1 && scaleRef.current > 1) {
+      // Begin pan
+      setIsPanning(true);
+      panStartRef.current = { x: e.clientX, y: e.clientY };
+      translateStartRef.current = translateRef.current;
+      isPinchingRef.current = false;
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointersRef.current.has(e.pointerId)) return;
+
+    updatePointer(e.pointerId, e.clientX, e.clientY);
+
+    // Pinch zoom (touch)
+    if (isPinchingRef.current) {
+      const pts = getTwoPointers();
+      if (!pts) return;
+      const [p1, p2] = pts;
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (!initialPinchDistanceRef.current) return;
+
+      const rawScale =
+        (dist / initialPinchDistanceRef.current) * initialScaleRef.current;
+      const nextScale = clampScale(rawScale);
+
+      if (nextScale === 1) {
+        setScale(1);
+        setTranslate({ x: 0, y: 0 });
+        return;
+      }
+
+      const current = translateRef.current;
+      const clamped = clampTranslate(current.x, current.y, nextScale);
+
+      setScale(nextScale);
+      setTranslate(clamped);
+      return;
+    }
+
+    // Pan when zoomed in
+    if (isPanning && scaleRef.current > 1) {
+      const start = panStartRef.current;
+      const base = translateStartRef.current;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+
+      const nextX = base.x + dx;
+      const nextY = base.y + dy;
+
+      const clamped = clampTranslate(nextX, nextY, scaleRef.current);
+      setTranslate(clamped);
+    }
+  };
+
+  const endInteraction = (pointerId: number) => {
+    removePointer(pointerId);
+
+    const count = pointersRef.current.size;
+
+    if (count < 2) {
+      isPinchingRef.current = false;
+    }
+    if (count === 0) {
+      setIsPanning(false);
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = wrapperRef.current;
+    if (el && el.hasPointerCapture(e.pointerId)) {
+      el.releasePointerCapture(e.pointerId);
+    }
+    endInteraction(e.pointerId);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = wrapperRef.current;
+    if (el && el.hasPointerCapture(e.pointerId)) {
+      el.releasePointerCapture(e.pointerId);
+    }
+    endInteraction(e.pointerId);
+  };
+
+  return (
+    <div
+      ref={wrapperRef}
+      onWheel={handleWheel}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onPointerLeave={handlePointerUp}
+      style={{
+        width: '100%',
+        height: '100%',
+        maxHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        touchAction: scale > 1 ? 'none' : 'pan-y',
+        cursor:
+          scale > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default',
+      }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        onLoad={onLoad}
+        onError={onError}
+        style={{
+          transform: `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${scale})`,
+          transformOrigin: 'center center',
+          transition:
+            isPanning || isPinchingRef.current
+              ? 'none'
+              : 'transform 0.15s ease-out',
+          maxHeight: '80vh',
+          maxWidth: '100%',
+          width: 'auto',
+          height: 'auto',
+          objectFit: 'contain',
+        }}
+      />
+    </div>
+  );
+};
+
 
 
 /* ────────────────────────────────────────────── */
@@ -1004,71 +1274,39 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
             </CloseButton>
             <MediaContainer>
               {modalLength > 1 && (
-                <>
-                  <button
-  type="button"
-  onClick={goToPrevMedia}
-  aria-label="Previous image"
-  style={{
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: '24%',          // wide “blue” band
-    minWidth: '80px',
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: '0 16px',
-    zIndex: 2,
-  }}
->
-  <img src={Left} alt="" />
-</button>
+  <>
+    <ModalArrowZone
+      type="button"
+      onClick={goToPrevMedia}
+      aria-label="Previous image"
+      $side="left"
+    >
+      <img src={Left} alt="" />
+    </ModalArrowZone>
 
-
-                  <button
-  type="button"
-  onClick={goToNextMedia}
-  aria-label="Next image"
-  style={{
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: '24%',          // wide “blue” band
-    minWidth: '80px',
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: '0 16px',
-    zIndex: 2,
-  }}
->
-  <img src={Right} alt="" />
-</button>
-
-                </>
-              )}
-
+    <ModalArrowZone
+      type="button"
+      onClick={goToNextMedia}
+      aria-label="Next image"
+      $side="right"
+    >
+      <img src={Right} alt="" />
+    </ModalArrowZone>
+  </>
+)}
               {currentMedia.type === 'image' && (
-                <img
-                  src={currentMedia.url}
-                  alt={currentMedia.altText}
-                  data-modal-img
-                  onLoad={() => { }}
-                  onError={() => {
-                    console.error('❌ Image failed to load:', currentMedia.url);
-                    failedMedia.current.add(currentMedia.url);
-                  }}
-                />
-              )}
+  <ZoomableImage
+    src={currentMedia.url}
+    alt={currentMedia.altText}
+    onLoad={() => {
+      // you can keep this empty or log if needed
+    }}
+    onError={() => {
+      console.error('❌ Image failed to load:', currentMedia.url);
+      failedMedia.current.add(currentMedia.url);
+    }}
+  />
+)}
 
               {currentMedia.type === 'video' && currentMedia.url && (
                 <video

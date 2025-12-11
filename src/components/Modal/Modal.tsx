@@ -140,6 +140,33 @@ export const CloseButton = styled.button`
   }
 `;
 
+export const ModalArrowZone = styled.button<{ $side: 'left' | 'right' }>`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: ${({ $side }) => ($side === 'left' ? 0 : 'auto')};
+  right: ${({ $side }) => ($side === 'right' ? 0 : 'auto')};
+  width: 10%;          /* wide “blue” band */
+  min-width: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: ${({ $side }) =>
+    $side === 'left' ? 'flex-start' : 'flex-end'};
+  padding: 0 16px;
+  z-index: 2;
+
+  img,
+  svg {
+    pointer-events: none;
+    width: clamp(12px, 1.1vw, 32px); 
+    height: auto;
+  }
+`;
+
+
 export const MODAL_DESCRIPTION = styled.p`
   font-family: 'JetBrains Mono';
   font-size: 14px;
