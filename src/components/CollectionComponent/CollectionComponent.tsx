@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Modal, {
   MODAL_TITLE,
@@ -93,6 +93,15 @@ interface CollectionComponentProps {
   source?: 'work' | 'photo';
 }
 
+interface ModalMediaItem {
+  url: string;
+  type: 'image' | 'video';
+  altText: string;
+  title?: string;
+  description: string;
+}
+
+
 /* ────────────────────────────────────────────── */
 /* КОМПОНЕНТ                                      */
 /* ────────────────────────────────────────────── */
@@ -122,21 +131,28 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
   /* ────────── модалка ────────── */
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentMedia, setCurrentMedia] = useState<{
-    url: string;
-    type: 'image' | 'video';
-    altText: string;
-    title?: string;
-    description: string;
-  }>({
-    url: '',
-    type: 'image',
-    altText: '',
-    title: '',
-    description: '',
-  });
+  const [modalItems, setModalItems] = useState<ModalMediaItem[]>([]);
+  const [modalIndex, setModalIndex] = useState<number>(0);
+
+  const hasModalMedia = modalItems.length > 0;
+  const currentMedia = hasModalMedia ? modalItems[modalIndex] : null;
 
   const failedMedia = useRef<Set<string>>(new Set());
+
+    const modalLength = modalItems.length;
+
+  const goToPrevMedia = useCallback(() => {
+    if (!hasModalMedia || modalLength === 0) return;
+
+    setModalIndex((prev) => (prev - 1 + modalLength) % modalLength);
+  }, [hasModalMedia, modalLength]);
+
+  const goToNextMedia = useCallback(() => {
+    if (!hasModalMedia || modalLength === 0) return;
+
+    setModalIndex((prev) => (prev + 1) % modalLength);
+  }, [hasModalMedia, modalLength]);
+
 
   /* ────────── helpers ────────── */
   const imageUrl = (fileName: string) =>
@@ -188,27 +204,45 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
 
   const openModal = (
-    src: string,
-    type: 'image' | 'video',
-    title = '',
-    description = ''
+    items: ModalMediaItem[],
+    startIndex: number
   ) => {
-    if (failedMedia.current.has(src)) return;
+    if (!items || items.length === 0) return;
 
-    setCurrentMedia({
-      url: src,
-      type,
-      altText: title,
-      title,
-      description,
-    });
+    // clamp index just in case
+    const safeIndex = Math.min(Math.max(startIndex, 0), items.length - 1);
+    const target = items[safeIndex];
+
+    // if the clicked image already failed to load once, don’t open
+    if (failedMedia.current.has(target.url)) return;
+
+    setModalItems(items);
+    setModalIndex(safeIndex);
     setIsModalOpen(true);
   };
 
-
   const closeModal = () => {
     setIsModalOpen(false);
+    setModalItems([]);
+    setModalIndex(0);
   };
+
+  useEffect(() => {
+    if (!isModalOpen || modalLength <= 1) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNextMedia();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrevMedia();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, modalLength, goToNextMedia, goToPrevMedia]);
 
   /* ────────── загрузка блоков ────────── */
   useEffect(() => {
@@ -242,11 +276,6 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     title?: string;
     description?: string;
     row?: number | string;
-  }
-
-  interface ImageSliderProps {
-    images: ImageItem[];
-    aspectRatio?: string;
   }
 
   interface ImageSliderProps {
@@ -445,6 +474,15 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
     // If we have rows → compute row/col placement per item
     let itemsForRender = rawItems as any[];
+
+    const modalItems: ModalMediaItem[] = itemsForRender.map((item: any) => ({
+      url: imageUrl(item.src),
+      type: 'image',
+      altText: item.title || '',
+      title: item.title || '',
+      description: item.description || '',
+    }));
+
     let columnsForGrid: number | undefined = b.content?.columns as number | undefined;
 
     if (hasRowInfo) {
@@ -453,7 +491,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
       itemsForRender = rawItems.map((item: any) => {
         const rawRow = String(item.row ?? '1');
-
+        
         if (!rowOrder.includes(rawRow)) {
           rowOrder.push(rawRow);
         }
@@ -499,28 +537,16 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
             }
           >
             <img
-              src={imageUrl(item.src)}
+              src={modalItems[i].url}
               alt={item.title || `Image ${i + 1} from collection`}
-              onClick={() =>
-                openModal(
-                  imageUrl(item.src),
-                  'image',
-                  item.title || '',
-                  item.description || ''
-                )
-              }
+              onClick={() => openModal(modalItems, i)}
               role="button"
               tabIndex={0}
               aria-label={item.title ? `View ${item.title}` : `View image ${i + 1}`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  openModal(
-                    imageUrl(item.src),
-                    'image',
-                    item.title || '',
-                    item.description || ''
-                  );
+                  openModal(modalItems, i);
                 }
               }}
             />
@@ -562,6 +588,14 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
           description?: string;
         }[];
 
+        const modalItems: ModalMediaItem[] = items.map((item) => ({
+          url: imageUrl(item.src),
+          type: 'image',
+          altText: item.title || '',
+          title: item.title || '',
+          description: item.description || '',
+        }));
+
         if (!items.length) return null;
 
         // 👇 new flag from Supabase JSON
@@ -579,16 +613,9 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
               const Pic = (
                 <ImageBlock key={`pic-${index}`}>
                   <img
-                    src={imageUrl(item.src)}
+                    src={modalItems[index].url}
                     alt={item.title || 'Collection image'}
-                    onClick={() =>
-                      openModal(
-                        imageUrl(item.src),
-                        'image',
-                        item.title || '',
-                        item.description || ''
-                      )
-                    }
+                    onClick={() => openModal(modalItems, index)}
                     role="button"
                     tabIndex={0}
                     aria-label={
@@ -597,12 +624,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        openModal(
-                          imageUrl(item.src),
-                          'image',
-                          item.title || '',
-                          item.description || ''
-                        );
+                        openModal(modalItems, index);
                       }
                     }}
                   />
@@ -966,9 +988,9 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
       })}
 
       {/* ——— модалка ——— */}
-      {isModalOpen && (
+      {isModalOpen && currentMedia && (
         <>
-          <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          <Modal isOpen={isModalOpen} onClose={closeModal}>
             <CloseButton
               onClick={closeModal}
               aria-label="Close modal"
@@ -981,6 +1003,60 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
               )}
             </CloseButton>
             <MediaContainer>
+              {modalLength > 1 && (
+                <>
+                  <button
+  type="button"
+  onClick={goToPrevMedia}
+  aria-label="Previous image"
+  style={{
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '24%',          // wide “blue” band
+    minWidth: '80px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: '0 16px',
+    zIndex: 2,
+  }}
+>
+  <img src={Left} alt="" />
+</button>
+
+
+                  <button
+  type="button"
+  onClick={goToNextMedia}
+  aria-label="Next image"
+  style={{
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: '24%',          // wide “blue” band
+    minWidth: '80px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    padding: '0 16px',
+    zIndex: 2,
+  }}
+>
+  <img src={Right} alt="" />
+</button>
+
+                </>
+              )}
+
               {currentMedia.type === 'image' && (
                 <img
                   src={currentMedia.url}
@@ -1008,12 +1084,12 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
             {(currentMedia.title || currentMedia.description || collection.work_title) && (
               <TextContainer>
                 {currentMedia.title && (
-                  <MODAL_TITLE style={{ paddingTop: '20px', paddingBottom: '5px' }}>
+                  <MODAL_TITLE style={{  }}>
                     {currentMedia.title}
                   </MODAL_TITLE>
                 )}
                 {currentMedia.description && (
-                  <MODAL_DESCRIPTION style={{ paddingTop: '10px', paddingBottom: '30px' }}>
+                  <MODAL_DESCRIPTION style={{  }}>
                     {currentMedia.description}
                   </MODAL_DESCRIPTION>
                 )}
@@ -1029,3 +1105,5 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 };
 
 export default CollectionComponent;
+
+//STARTED

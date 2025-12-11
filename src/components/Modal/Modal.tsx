@@ -24,12 +24,23 @@ const ModalOverlay = styled.div`
   box-sizing: border-box;
   overflow: hidden;
   animation: ${fadeInScale} 0.15s ease-out;
+
+  /* RED ZONES — horizontal “leave modal” bands */
+  /* base (mobile) */
+
+  /* tablet and up */
+  @media (min-width: 744px) {
+  }
+
+  /* big desktop */
+  @media (min-width: 1440px) {
+  }
 `;
 
 const ModalContent = styled.div`
   position: relative;
-  max-width: 95vw;
-  max-height: 90vh;
+  max-width: 100%;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -40,6 +51,7 @@ const ModalContent = styled.div`
 `;
 
 export const MediaContainer = styled.div`
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -54,7 +66,7 @@ export const MediaContainer = styled.div`
     height: auto;
     max-height: 80vh;
     width: auto;
-    max-width: 90vw;
+    max-width: 100%;
     object-fit: contain;
     display: block;
     padding: 0;
@@ -80,11 +92,9 @@ export const TextContainer = styled.div`
   width: 100%;
   max-width: 90vw;
   
-  padding: 15px 20px;
+  padding: 30px 20px;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0);
   margin-top: auto;
 `;
 
@@ -131,21 +141,24 @@ export const CloseButton = styled.button`
 `;
 
 export const MODAL_DESCRIPTION = styled.p`
-  font-family: var(--second-family);
-  font-size: 12px;
+  font-family: 'JetBrains Mono';
+  font-size: 14px;
   color: #808080;
 
   @media (min-width: 1440px) {
     font-size: 16px;
-    padding-bottom: 30px;
   }
 `;
 
 export const MODAL_TITLE = styled.h2`
-  font-family: var(--font-family);
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  line-height: 161.8%;
+  text-align: center;
   font-size: 18px;
   color: #fff;
-  padding-bottom: 32px;
+  padding-bottom: 4px;
 
   @media (min-width: 744px) {
     font-size: 20px;
@@ -233,3 +246,5 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, preventScroll 
 };
 
 export default Modal;
+
+//STARTED
