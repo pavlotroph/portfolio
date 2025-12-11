@@ -147,7 +147,7 @@ export const ModalArrowZone = styled.button<{ $side: 'left' | 'right' }>`
   left: ${({ $side }) => ($side === 'left' ? 0 : 'auto')};
   right: ${({ $side }) => ($side === 'right' ? 0 : 'auto')};
   width: 10%;          /* wide “blue” band */
-  min-width: 40px;
+  min-width: 60px;
   border: none;
   background: transparent;
   cursor: pointer;
