@@ -408,6 +408,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   const currentMedia = hasModalMedia ? modalItems[modalIndex] : null;
 
   const failedMedia = useRef<Set<string>>(new Set());
+  const modalHistoryRef = useRef(false);
 
     const modalLength = modalItems.length;
 
@@ -496,6 +497,38 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     setModalItems([]);
     setModalIndex(0);
   };
+
+    useEffect(() => {
+    if (!isModalOpen) return;
+
+    // Push a fake history entry once when modal opens
+    if (!modalHistoryRef.current) {
+      const prevState = window.history.state || {};
+      const modalState = { ...prevState, __modal: true };
+
+      window.history.pushState(modalState, '', window.location.href);
+      modalHistoryRef.current = true;
+    }
+
+    const handlePopState = () => {
+      // User pressed Back while modal is open → act like Escape
+      if (isModalOpen) {
+        setIsModalOpen(false);
+        setModalItems([]);
+        setModalIndex(0);
+        modalHistoryRef.current = false;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // If modal is closing/unmounting, we no longer care about that entry
+      modalHistoryRef.current = false;
+    };
+  }, [isModalOpen]);
+
 
   useEffect(() => {
     if (!isModalOpen || modalLength <= 1) return;
