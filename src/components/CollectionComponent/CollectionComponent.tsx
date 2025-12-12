@@ -172,11 +172,13 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   }, [translate]);
 
   // Wheel zoom (mouse / trackpad)
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.deltaY === 0) return;
 
-    // Only zoom, no scroll inside the modal
-    e.preventDefault();
+    // Don’t call preventDefault here – in some environments wheel listeners are passive,
+    // which causes “Unable to preventDefault inside passive event listener” spam.
+    // Body is already scroll-locked by the Modal, and this wrapper has overflow: hidden,
+    // so there’s no visible scroll to block anyway.
 
     const prevScale = scaleRef.current;
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -196,6 +198,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     setScale(nextScale);
     setTranslate(clamped);
   };
+
 
   // Pointer helpers
   const updatePointer = (id: number, x: number, y: number) => {
@@ -428,6 +431,14 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   /* ────────── helpers ────────── */
   const imageUrl = (fileName: string) =>
     `${supabaseUrl}/storage/v1/object/public/${bucket}/${collection.folder}/${fileName}`;
+
+  const isVideoFile = (fileName: string | undefined | null): boolean => {
+    if (!fileName || typeof fileName !== 'string') return false;
+    const dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex === -1) return false;
+    const ext = fileName.slice(dotIndex + 1).toLowerCase();
+    return ['mp4', 'webm', 'mov', 'm4v', 'ogg', 'ogv'].includes(ext);
+  };
 
   /* Validate tag to ensure it's a valid HTML tag and not a data URI */
   const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
@@ -760,6 +771,69 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     );
   };
 
+//VIDEO
+  interface AutoPlayVideoProps {
+  src: string;
+  alt?: string;
+}
+
+const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // If IntersectionObserver is not supported, just play muted loop.
+    if (typeof IntersectionObserver === 'undefined') {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch(() => {});
+      }
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry || !video) return;
+
+        if (entry.isIntersecting) {
+          const playPromise = video.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(() => {});
+          }
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      loop
+      muted
+      playsInline
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        objectFit: 'cover',
+      }}
+      aria-label={alt}
+    />
+  );
+};
 
 
 
@@ -778,13 +852,18 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     // If we have rows → compute row/col placement per item
     let itemsForRender = rawItems as any[];
 
-    const modalItems: ModalMediaItem[] = itemsForRender.map((item: any) => ({
-      url: imageUrl(item.src),
-      type: 'image',
-      altText: item.title || '',
-      title: item.title || '',
-      description: item.description || '',
-    }));
+    const modalItems: ModalMediaItem[] = itemsForRender.map((item: any) => {
+      const url = imageUrl(item.src);
+      const isVideo = isVideoFile(item.src);
+
+      return {
+        url,
+        type: isVideo ? 'video' : 'image',
+        altText: item.title || '',
+        title: item.title || '',
+        description: item.description || '',
+      };
+    });
 
     let columnsForGrid: number | undefined = b.content?.columns as number | undefined;
 
@@ -830,31 +909,45 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
         $itemsCount={itemsCountForGrid}
         $aspectRatio={aspectRatio}
       >
-        {itemsForRender.map((item: any, i: number) => (
-          <div
-            key={i}
-            style={
-              hasRowInfo
-                ? { gridRow: item._gridRow, gridColumn: item._gridCol }
-                : undefined
-            }
-          >
-            <img
-              src={modalItems[i].url}
-              alt={item.title || `Image ${i + 1} from collection`}
-              onClick={() => openModal(modalItems, i)}
-              role="button"
-              tabIndex={0}
-              aria-label={item.title ? `View ${item.title}` : `View image ${i + 1}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  openModal(modalItems, i);
-                }
-              }}
-            />
-          </div>
-        ))}
+        {itemsForRender.map((item: any, i: number) => {
+          const media = modalItems[i];
+          const isVideo = media.type === 'video';
+
+          return (
+            <div
+              key={i}
+              style={
+                hasRowInfo
+                  ? { gridRow: item._gridRow, gridColumn: item._gridCol }
+                  : undefined
+              }
+            >
+              {isVideo ? (
+                <AutoPlayVideo
+                  src={media.url}
+                  alt={item.title || `Video ${i + 1} from collection`}
+                />
+              ) : (
+                <img
+                  src={media.url}
+                  alt={item.title || `Image ${i + 1} from collection`}
+                  onClick={() => openModal(modalItems, i)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={
+                    item.title ? `View ${item.title}` : `View image ${i + 1}`
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openModal(modalItems, i);
+                    }
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </IMAGE_GALLERY>
     );
   };
@@ -891,13 +984,18 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
           description?: string;
         }[];
 
-        const modalItems: ModalMediaItem[] = items.map((item) => ({
-          url: imageUrl(item.src),
-          type: 'image',
-          altText: item.title || '',
-          title: item.title || '',
-          description: item.description || '',
-        }));
+        const modalItems: ModalMediaItem[] = items.map((item) => {
+          const url = imageUrl(item.src);
+          const isVideo = isVideoFile(item.src);
+
+          return {
+            url,
+            type: isVideo ? 'video' : 'image',
+            altText: item.title || '',
+            title: item.title || '',
+            description: item.description || '',
+          };
+        });
 
         if (!items.length) return null;
 
@@ -913,26 +1011,37 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
               // startWithText: text|image on first row
               const textFirst = startWithText ? isEven : !isEven;
 
+                            const media = modalItems[index];
+              const isVideo = media.type === 'video';
+
               const Pic = (
                 <ImageBlock key={`pic-${index}`}>
-                  <img
-                    src={modalItems[index].url}
-                    alt={item.title || 'Collection image'}
-                    onClick={() => openModal(modalItems, index)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={
-                      item.title ? `View ${item.title}` : 'View collection image'
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        openModal(modalItems, index);
+                  {isVideo ? (
+                    <AutoPlayVideo
+                      src={media.url}
+                      alt={item.title || 'Collection video'}
+                    />
+                  ) : (
+                    <img
+                      src={media.url}
+                      alt={item.title || 'Collection image'}
+                      onClick={() => openModal(modalItems, index)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={
+                        item.title ? `View ${item.title}` : 'View collection image'
                       }
-                    }}
-                  />
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openModal(modalItems, index);
+                        }
+                      }}
+                    />
+                  )}
                 </ImageBlock>
               );
+
 
               const Txt = (
                 <TextBlock key={`txt-${index}`}>
