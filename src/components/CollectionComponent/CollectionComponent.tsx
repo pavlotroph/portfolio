@@ -354,6 +354,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
       <img
         src={src}
         alt={alt}
+        loading="lazy"
         draggable={false}
         onLoad={onLoad}
         onError={onError}
@@ -376,6 +377,337 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
 };
 
 
+
+type PreloadedGridImageProps = {
+  src: string;
+  alt: string;
+  onClick?: () => void;
+  style?: React.CSSProperties;
+  draggable?: boolean;
+};
+
+const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
+  src,
+  alt,
+  onClick,
+  style,
+  draggable = false,
+}) => {
+  const [loaded, setLoaded] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoaded(false);
+    setVisible(false);
+
+    const img = new Image();
+    img.src = src;
+
+    img.onload = () => {
+      if (cancelled) return;
+      setLoaded(true);
+    };
+
+    img.onerror = () => {
+      // don’t render broken/half-loaded images at all
+      if (cancelled) return;
+      setLoaded(false);
+      // optional debug:
+      // console.error("❌ Gallery image failed to preload:", src);
+    };
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, [loaded]);
+
+  if (!loaded) return null;
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onClick={onClick}
+      draggable={draggable}
+      loading="lazy"
+      decoding="async"
+      style={{
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.6s ease",
+        ...style,
+      }}
+    />
+  );
+};
+
+
+
+
+  /* ────────────────────────────────────────────── */
+  /* HELPER                                         */
+  /* ────────────────────────────────────────────── */
+
+  interface ImageItem {
+    src: string;
+    title?: string;
+    description?: string;
+    row?: number | string;
+    aspectRatio?: string;
+  }
+
+  interface ImageSliderProps {
+    images: ImageItem[];
+    aspectRatio?: string;
+  }
+
+  const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
+    const slides = [images[images.length - 1], ...images, images[0]];
+
+    const [index, setIndex] = useState(1);
+    const [animate, setAnimate] = useState(true);
+    const [offset, setOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+
+    const transitioningRef = useRef(false);
+    const sliderRef = useRef<HTMLDivElement>(null);
+    const slideWidthRef = useRef(0);
+
+    // для рассчёта мгновенной скорости
+    const startXRef = useRef(0);
+    const lastXRef = useRef(0);
+    const startTimeRef = useRef(0);
+    const lastTimeRef = useRef(0);
+    const lastVelocityRef = useRef(0);
+
+    // интервал автоплей
+    const autoPlayRef = useRef<number>();
+
+    // Стрелки
+    const prevSlide = () => {
+      if (transitioningRef.current) return;
+      setAnimate(true);
+      setIndex(i => i - 1);
+      transitioningRef.current = true;
+    };
+    const nextSlide = () => {
+      if (transitioningRef.current) return;
+      setAnimate(true);
+      setIndex(i => i + 1);
+      transitioningRef.current = true;
+    };
+
+    // Drag logic
+    const onPointerDown = (e: React.PointerEvent) => {
+      if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
+      const el = sliderRef.current!;
+      el.setPointerCapture(e.pointerId);
+
+      setIsDragging(true);
+      slideWidthRef.current = el.clientWidth;
+      startXRef.current = e.clientX;
+      lastXRef.current = e.clientX;
+      startTimeRef.current = Date.now();
+      lastTimeRef.current = Date.now();
+      lastVelocityRef.current = 0;
+      setAnimate(false);
+    };
+
+    const onPointerMove = (e: React.PointerEvent) => {
+      if (!isDragging || transitioningRef.current) return;
+      const now = Date.now();
+      const dxLocal = e.clientX - lastXRef.current;
+      const dtLocal = now - lastTimeRef.current;
+      if (dtLocal > 0) lastVelocityRef.current = dxLocal / dtLocal;
+      lastXRef.current = e.clientX;
+      lastTimeRef.current = now;
+
+      const dx = e.clientX - startXRef.current;
+      setOffset(dx);
+    };
+
+    const onPointerUp = (e: React.PointerEvent) => {
+      if (!isDragging) return;
+      const el = sliderRef.current!;
+      el.releasePointerCapture(e.pointerId);
+
+      setIsDragging(false);
+
+      const dx = offset;
+      const vel = lastVelocityRef.current; // 👉 signed velocity
+      const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
+
+      let newIdx = index;
+
+      const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
+      const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
+
+      if (passedRight && !passedLeft) {
+        newIdx = index - 1;
+      } else if (passedLeft && !passedRight) {
+        newIdx = index + 1;
+      }
+      // if both or neither → newIdx stays index (no slide change)
+
+      setAnimate(true);
+      setOffset(0);
+
+      // (keep the click-fix logic we added earlier)
+      if (newIdx !== index && !transitioningRef.current) {
+        setIndex(newIdx);
+        transitioningRef.current = true;
+      } else {
+        transitioningRef.current = false;
+      }
+    };
+
+
+
+    const handleTransitionEnd = () => {
+      transitioningRef.current = false;
+      if (index === 0) {
+        setAnimate(false);
+        setIndex(images.length);
+      } else if (index === slides.length - 1) {
+        setAnimate(false);
+        setIndex(1);
+      }
+    };
+
+    // восстановление animate после программного сброса
+    useEffect(() => {
+      if (!animate) requestAnimationFrame(() => setAnimate(true));
+    }, [animate]);
+
+    // IntersectionObserver для видимости
+    useEffect(() => {
+      const obs = new IntersectionObserver(
+        ([entry]) => setIsVisible(entry.isIntersecting),
+        { threshold: 0.5 }
+      );
+      if (sliderRef.current) obs.observe(sliderRef.current);
+      return () => obs.disconnect();
+    }, []);
+
+    // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
+    useEffect(() => {
+      if (isVisible && !isDragging && !transitioningRef.current) {
+        autoPlayRef.current = window.setInterval(() => {
+          nextSlide();
+        }, 3000);
+      } else {
+        window.clearInterval(autoPlayRef.current);
+      }
+      return () => window.clearInterval(autoPlayRef.current);
+    }, [isVisible, isDragging]);
+
+    return (
+      <SliderWrapper
+        ref={sliderRef}
+        $aspectRatio={aspectRatio}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+      >
+        <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
+          <img src={Left} alt="Previous slide" />
+        </Arrow>
+        <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
+          <img src={Right} alt="Next slide" />
+        </Arrow>
+
+        <SliderContent
+          $index={index}
+          $animate={animate}
+          $offset={offset}
+          $isDragging={isDragging}
+          onTransitionEnd={handleTransitionEnd}
+        >
+          {slides.map((img, i) => (
+            <Slide key={i}>
+              <img src={img.src} alt={img.title || `Slide ${i + 1} of ${slides.length}`} draggable={false} />
+            </Slide>
+          ))}
+        </SliderContent>
+      </SliderWrapper>
+    );
+  };
+
+
+
+
+//VIDEO
+  interface AutoPlayVideoProps {
+  src: string;
+  alt?: string;
+}
+
+const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // If IntersectionObserver is not supported, just play muted loop.
+    if (typeof IntersectionObserver === 'undefined') {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.catch(() => {});
+      }
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry || !video) return;
+
+        if (entry.isIntersecting) {
+          const playPromise = video.play();
+          if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(() => {});
+          }
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      loop
+      muted
+      playsInline
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        objectFit: 'cover',
+      }}
+      aria-label={alt}
+    />
+  );
+};
 
 /* ────────────────────────────────────────────── */
 /* КОМПОНЕНТ                                      */
@@ -583,262 +915,6 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
 
 
-  /* ────────────────────────────────────────────── */
-  /* HELPER                                         */
-  /* ────────────────────────────────────────────── */
-
-  interface ImageItem {
-    src: string;
-    title?: string;
-    description?: string;
-    row?: number | string;
-    aspectRatio?: string;
-  }
-
-  interface ImageSliderProps {
-    images: ImageItem[];
-    aspectRatio?: string;
-  }
-
-  const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
-    const slides = [images[images.length - 1], ...images, images[0]];
-
-    const [index, setIndex] = useState(1);
-    const [animate, setAnimate] = useState(true);
-    const [offset, setOffset] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-
-    const transitioningRef = useRef(false);
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const slideWidthRef = useRef(0);
-
-    // для рассчёта мгновенной скорости
-    const startXRef = useRef(0);
-    const lastXRef = useRef(0);
-    const startTimeRef = useRef(0);
-    const lastTimeRef = useRef(0);
-    const lastVelocityRef = useRef(0);
-
-    // интервал автоплей
-    const autoPlayRef = useRef<number>();
-
-    // Стрелки
-    const prevSlide = () => {
-      if (transitioningRef.current) return;
-      setAnimate(true);
-      setIndex(i => i - 1);
-      transitioningRef.current = true;
-    };
-    const nextSlide = () => {
-      if (transitioningRef.current) return;
-      setAnimate(true);
-      setIndex(i => i + 1);
-      transitioningRef.current = true;
-    };
-
-    // Drag logic
-    const onPointerDown = (e: React.PointerEvent) => {
-      if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
-      const el = sliderRef.current!;
-      el.setPointerCapture(e.pointerId);
-
-      setIsDragging(true);
-      slideWidthRef.current = el.clientWidth;
-      startXRef.current = e.clientX;
-      lastXRef.current = e.clientX;
-      startTimeRef.current = Date.now();
-      lastTimeRef.current = Date.now();
-      lastVelocityRef.current = 0;
-      setAnimate(false);
-    };
-
-    const onPointerMove = (e: React.PointerEvent) => {
-      if (!isDragging || transitioningRef.current) return;
-      const now = Date.now();
-      const dxLocal = e.clientX - lastXRef.current;
-      const dtLocal = now - lastTimeRef.current;
-      if (dtLocal > 0) lastVelocityRef.current = dxLocal / dtLocal;
-      lastXRef.current = e.clientX;
-      lastTimeRef.current = now;
-
-      const dx = e.clientX - startXRef.current;
-      setOffset(dx);
-    };
-
-    const onPointerUp = (e: React.PointerEvent) => {
-      if (!isDragging) return;
-      const el = sliderRef.current!;
-      el.releasePointerCapture(e.pointerId);
-
-      setIsDragging(false);
-
-      const dx = offset;
-      const vel = lastVelocityRef.current; // 👉 signed velocity
-      const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
-
-      let newIdx = index;
-
-      const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
-      const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
-
-      if (passedRight && !passedLeft) {
-        newIdx = index - 1;
-      } else if (passedLeft && !passedRight) {
-        newIdx = index + 1;
-      }
-      // if both or neither → newIdx stays index (no slide change)
-
-      setAnimate(true);
-      setOffset(0);
-
-      // (keep the click-fix logic we added earlier)
-      if (newIdx !== index && !transitioningRef.current) {
-        setIndex(newIdx);
-        transitioningRef.current = true;
-      } else {
-        transitioningRef.current = false;
-      }
-    };
-
-
-
-    const handleTransitionEnd = () => {
-      transitioningRef.current = false;
-      if (index === 0) {
-        setAnimate(false);
-        setIndex(images.length);
-      } else if (index === slides.length - 1) {
-        setAnimate(false);
-        setIndex(1);
-      }
-    };
-
-    // восстановление animate после программного сброса
-    useEffect(() => {
-      if (!animate) requestAnimationFrame(() => setAnimate(true));
-    }, [animate]);
-
-    // IntersectionObserver для видимости
-    useEffect(() => {
-      const obs = new IntersectionObserver(
-        ([entry]) => setIsVisible(entry.isIntersecting),
-        { threshold: 0.5 }
-      );
-      if (sliderRef.current) obs.observe(sliderRef.current);
-      return () => obs.disconnect();
-    }, []);
-
-    // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
-    useEffect(() => {
-      if (isVisible && !isDragging && !transitioningRef.current) {
-        autoPlayRef.current = window.setInterval(() => {
-          nextSlide();
-        }, 3000);
-      } else {
-        window.clearInterval(autoPlayRef.current);
-      }
-      return () => window.clearInterval(autoPlayRef.current);
-    }, [isVisible, isDragging]);
-
-    return (
-      <SliderWrapper
-        ref={sliderRef}
-        $aspectRatio={aspectRatio}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-      >
-        <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
-          <img src={Left} alt="Previous slide" />
-        </Arrow>
-        <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
-          <img src={Right} alt="Next slide" />
-        </Arrow>
-
-        <SliderContent
-          $index={index}
-          $animate={animate}
-          $offset={offset}
-          $isDragging={isDragging}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          {slides.map((img, i) => (
-            <Slide key={i}>
-              <img src={img.src} alt={img.title || `Slide ${i + 1} of ${slides.length}`} draggable={false} />
-            </Slide>
-          ))}
-        </SliderContent>
-      </SliderWrapper>
-    );
-  };
-
-//VIDEO
-  interface AutoPlayVideoProps {
-  src: string;
-  alt?: string;
-}
-
-const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // If IntersectionObserver is not supported, just play muted loop.
-    if (typeof IntersectionObserver === 'undefined') {
-      const playPromise = video.play();
-      if (playPromise && typeof playPromise.then === 'function') {
-        playPromise.catch(() => {});
-      }
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry || !video) return;
-
-        if (entry.isIntersecting) {
-          const playPromise = video.play();
-          if (playPromise && typeof playPromise.then === 'function') {
-            playPromise.catch(() => {});
-          }
-        } else {
-          video.pause();
-        }
-      },
-      { threshold: 0.25 }
-    );
-
-    observer.observe(video);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
-  return (
-    <video
-      ref={videoRef}
-      src={src}
-      loop
-      muted
-      playsInline
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'block',
-        objectFit: 'cover',
-      }}
-      aria-label={alt}
-    />
-  );
-};
-
-
 
   /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
@@ -883,13 +959,18 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
               {isVideo ? (
                 <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
               ) : (
-                <img
-                  src={media.url}
-                  alt={item.title || `Image ${i + 1}`}
-                  onClick={() => openModal(modalItems, i)}
-                  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
-                  draggable={false}
-                />
+                <PreloadedGridImage
+  src={media.url}
+  alt={item.title || `Image ${i + 1}`}
+  onClick={() => openModal(modalItems, i)}
+  draggable={false}
+  style={{
+    width: "100%",
+    height: "100%",
+    display: "block",
+    objectFit: "cover",
+  }}
+/>
               )}
             </div>
           );
@@ -944,18 +1025,19 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
                   {isVideo ? (
                     <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
                   ) : (
-                    <img
-                      src={media.url}
-                      alt={item.title || `Image ${i + 1}`}
-                      onClick={() => openModal(modalItems, i)}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "block",
-                        objectFit: "cover",
-                      }}
-                      draggable={false}
-                    />
+                    <PreloadedGridImage
+  src={media.url}
+  alt={item.title || `Image ${i + 1}`}
+  onClick={() => openModal(modalItems, i)}
+  draggable={false}
+  style={{
+    width: "100%",
+    height: "100%",
+    display: "block",
+    objectFit: "cover",
+  }}
+/>
+
                   )}
                 </div>
               );
