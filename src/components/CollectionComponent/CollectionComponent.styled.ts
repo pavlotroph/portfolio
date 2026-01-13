@@ -318,7 +318,7 @@ export const SliderContent = styled.div<{
   transition: ${({ $animate, $isDragging }) =>
     !$animate || $isDragging
       ? 'none'
-      : 'transform 0.5s cubic-bezier(0.25, 0, 0.2, 1)'};
+      : 'transform 0.25s cubic-bezier(0.25, 0, 0.2, 1)'};
   transform: ${({ $index, $offset }) =>
     `translateX(calc(-${$index * 100}% + ${$offset}px))`};
 `;
@@ -374,6 +374,27 @@ export const Arrow = styled.button<{ $left?: boolean }>`
     }
   }
 `;
+
+export const ImageGalleryRows = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+
+  @media (min-width: 744px) {
+    gap: 1px;
+  }
+`;
+
+export const ImageGalleryRow = styled.div<{ $cols: number }>`
+  display: grid;
+  grid-template-columns: repeat(${({ $cols }) => Math.max(1, $cols)}, 1fr);
+  gap: 1px;
+
+  @media (min-width: 744px) {
+    gap: 1px;
+  }
+`;
+
 
 const IMAGE_BASEGRID = styled.div<IMAGE_PROPS>`
   display: grid;

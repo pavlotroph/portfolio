@@ -119,13 +119,13 @@ export const WorkItemContainer = styled.div`
   aspect-ratio: 21/9;
   
   @media screen and (min-width: 744px) {
-    aspect-ratio: 32/9;
+    aspect-ratio: 20/7;
     margin-bottom: 2px;
     margin-top: 2px;
   }
   
   @media screen and (min-width: 1440px) {
-    aspect-ratio: 48/9;
+    aspect-ratio: 32/9;
     margin-bottom: 3px;
     margin-top: 3px;
   }

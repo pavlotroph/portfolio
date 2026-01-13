@@ -18,6 +18,8 @@ import { Reveal } from '../../pages/Reveal/Reveal';
 
 import {
   IMAGE_GALLERY,
+  ImageGalleryRows,
+  ImageGalleryRow,
   SliderWrapper,
   SliderContent,
   Slide,
@@ -590,6 +592,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     title?: string;
     description?: string;
     row?: number | string;
+    aspectRatio?: string;
   }
 
   interface ImageSliderProps {
@@ -839,110 +842,53 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
 
   /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
-    const rawItems = b.content?.items || [];
-    const aspectRatio = b.content?.aspectRatio || '16 / 9';
+  const rawItems = (b.content?.items || []) as any[];
+  if (!rawItems.length) return null;
 
-    if (!rawItems.length) return null;
+  const globalAspectRatio = (b.content?.aspectRatio || "16 / 9") as string;
+  const rowAspectRatios = (b.content?.rowAspectRatios || {}) as Record<string, string>;
 
-    // Do we have any `row` info in items?
-    const hasRowInfo = rawItems.some(
-      (item: any) => item.row !== undefined && item.row !== null && item.row !== ''
-    );
+  const hasRowInfo = rawItems.some(
+    (item: any) => item.row !== undefined && item.row !== null && item.row !== ""
+  );
 
-    // If we have rows → compute row/col placement per item
-    let itemsForRender = rawItems as any[];
-
-    const modalItems: ModalMediaItem[] = itemsForRender.map((item: any) => {
+  const buildModalItems = (items: any[]) =>
+    items.map((item: any) => {
       const url = imageUrl(item.src);
       const isVideo = isVideoFile(item.src);
-
       return {
         url,
-        type: isVideo ? 'video' : 'image',
-        altText: item.title || '',
-        title: item.title || '',
-        description: item.description || '',
-      };
+        type: isVideo ? "video" : "image",
+        altText: item.title || "",
+        title: item.title || "",
+        description: item.description || "",
+      } as ModalMediaItem;
     });
 
-    let columnsForGrid: number | undefined = b.content?.columns as number | undefined;
-
-    if (hasRowInfo) {
-      const rowOrder: string[] = [];                // preserves order of rows (1,2,3,...)
-      const rowCounters = new Map<string, number>(); // how many items per row so far
-
-      itemsForRender = rawItems.map((item: any) => {
-        const rawRow = String(item.row ?? '1');
-        
-        if (!rowOrder.includes(rawRow)) {
-          rowOrder.push(rawRow);
-        }
-
-        const rowIdx = rowOrder.indexOf(rawRow) + 1; // grid row index (1-based)
-        const currentCount = rowCounters.get(rawRow) ?? 0;
-        const colIdx = currentCount + 1;
-
-        rowCounters.set(rawRow, colIdx);
-
-        return {
-          ...item,
-          _gridRow: rowIdx,
-          _gridCol: colIdx,
-        };
-      });
-
-      const maxCols = Array.from(rowCounters.values()).reduce(
-        (max, n) => (n > max ? n : max),
-        1
-      );
-
-      // In row-mode, our "column count" is the max items in a row
-      columnsForGrid = maxCols;
-    }
-
-    // What we pass to styled grid as "columns" – fallback to items.length if nothing else
-    const itemsCountForGrid = columnsForGrid ?? itemsForRender.length;
+  // Non-row mode: keep your existing behavior (simple grid)
+  if (!hasRowInfo) {
+    const modalItems = buildModalItems(rawItems);
+    const itemsCountForGrid = (b.content?.columns as number | undefined) ?? rawItems.length;
 
     return (
-      <IMAGE_GALLERY
-        key={b.id}
-        $itemsCount={itemsCountForGrid}
-        $aspectRatio={aspectRatio}
-      >
-        {itemsForRender.map((item: any, i: number) => {
+      <IMAGE_GALLERY key={b.id} $itemsCount={itemsCountForGrid} $aspectRatio={globalAspectRatio}>
+        {rawItems.map((item: any, i: number) => {
           const media = modalItems[i];
-          const isVideo = media.type === 'video';
+          const isVideo = media.type === "video";
+          const effectiveAspectRatio =
+            (item.aspectRatio && String(item.aspectRatio).trim()) || globalAspectRatio;
 
           return (
-            <div
-              key={i}
-              style={
-                hasRowInfo
-                  ? { gridRow: item._gridRow, gridColumn: item._gridCol }
-                  : undefined
-              }
-            >
+            <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
               {isVideo ? (
-                <AutoPlayVideo
-                  src={media.url}
-                  alt={item.title || `Video ${i + 1} from collection`}
-                />
+                <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
               ) : (
                 <img
                   src={media.url}
-                  alt={item.title || `Image ${i + 1} from collection`}
+                  alt={item.title || `Image ${i + 1}`}
                   onClick={() => openModal(modalItems, i)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={
-                    item.title ? `View ${item.title}` : `View image ${i + 1}`
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      openModal(modalItems, i);
-                    }
-                  }}
+                  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+                  draggable={false}
                 />
               )}
             </div>
@@ -950,7 +896,78 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
         })}
       </IMAGE_GALLERY>
     );
-  };
+  }
+
+  // Row mode: group by row and render each row as its own grid
+  const rowOrder: string[] = [];
+  const rows = new Map<string, any[]>();
+
+  for (const item of rawItems) {
+    const rowKey = String(item.row ?? "1");
+    if (!rows.has(rowKey)) {
+      rows.set(rowKey, []);
+      rowOrder.push(rowKey);
+    }
+    rows.get(rowKey)!.push(item);
+  }
+
+  // Flatten in row order for modal indexing
+  const flatItems = rowOrder.flatMap((rk) => rows.get(rk)!);
+  const modalItems = buildModalItems(flatItems);
+
+  // IMPORTANT: We don’t want IMAGE_GALLERY forcing a single grid layout here.
+  // So we render rows inside it and each row controls its own columns.
+  let globalIndex = 0;
+
+  return (
+  <IMAGE_GALLERY key={b.id} $itemsCount={1} $aspectRatio={globalAspectRatio}>
+    <ImageGalleryRows>
+      {rowOrder.map((rowKey) => {
+        const rowItems = rows.get(rowKey)!;
+        const cols = rowItems.length;
+
+        return (
+          <ImageGalleryRow key={rowKey} $cols={cols}>
+            {rowItems.map((item: any) => {
+              const media = modalItems[globalIndex];
+              const i = globalIndex;
+              globalIndex++;
+
+              const isVideo = media.type === "video";
+              const effectiveAspectRatio =
+                (item.aspectRatio && String(item.aspectRatio).trim()) ||
+                (rowAspectRatios[rowKey] && String(rowAspectRatios[rowKey]).trim()) ||
+                globalAspectRatio;
+
+              return (
+                <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
+                  {isVideo ? (
+                    <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
+                  ) : (
+                    <img
+                      src={media.url}
+                      alt={item.title || `Image ${i + 1}`}
+                      onClick={() => openModal(modalItems, i)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "block",
+                        objectFit: "cover",
+                      }}
+                      draggable={false}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </ImageGalleryRow>
+        );
+      })}
+    </ImageGalleryRows>
+  </IMAGE_GALLERY>
+);
+};
+
 
 
 
@@ -1025,7 +1042,7 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
                     <img
                       src={media.url}
                       alt={item.title || 'Collection image'}
-                      onClick={() => openModal(modalItems, index)}
+                      onClick={() => openModal([modalItems[index]], 0)}
                       role="button"
                       tabIndex={0}
                       aria-label={
