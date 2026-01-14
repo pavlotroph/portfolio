@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom';
 import QuoteBlock from '../../components/Quote/QuoteBlock';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useOutletContext } from "react-router-dom";
 
 export type WorkItemData = {
   slug?: string | null;   
@@ -33,11 +34,21 @@ export type Quote = {
   source: string;
 };
 
+type LayoutCtx = {
+  pageReady: boolean;
+  setPageReady: (v: boolean) => void;
+};
+
 const Photo: React.FC = () => {
   const [works, setWorks] = useState<WorkItemData[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>('ALL');
+  const { setPageReady } = useOutletContext<LayoutCtx>();
+  const [isWorksLoading, setIsWorksLoading] = useState(true);
+  const [isQuotesLoading, setIsQuotesLoading] = useState(true);
+  
+  const isPageReady = !isWorksLoading && !isQuotesLoading;
 
   const filteredWorks =
     filter === 'ALL'
@@ -45,29 +56,43 @@ const Photo: React.FC = () => {
       : works.filter(w => (w.category || '').toUpperCase() === filter);
 
   useEffect(() => {
+    let cancelled = false;
+  
     const fetchWorks = async () => {
-      const { data, error } = await supabase
-        .from('photography')
-        .select('*')
-        .order('id', { ascending: false }); // 👈 biggest id first
-
-      if (!error && data) {
-        setWorks(data as WorkItemData[]);
+      try {
+        const { data, error } = await supabase
+          .from('photography')
+          .select('*')
+          .order('id', { ascending: false });
+  
+        if (!cancelled && !error && data) {
+          setWorks(data as WorkItemData[]);
+        }
+      } finally {
+        if (!cancelled) setIsWorksLoading(false);
       }
     };
-
+  
     const fetchQuotes = async () => {
-      const { data, error } = await supabase.from('quotes').select('*');
-      if (error) {
-        console.error('Помилка при отриманні цитат:', error.message);
-      } else {
-        setQuotes(data);
+      try {
+        const { data, error } = await supabase.from('quotes').select('*');
+        if (error) console.error('Помилка при отриманні цитат:', error.message);
+        else if (!cancelled) setQuotes(data);
+      } finally {
+        if (!cancelled) setIsQuotesLoading(false);
       }
     };
-
+  
     fetchWorks();
     fetchQuotes();
+  
+    return () => {
+      cancelled = true;
+    };
   }, []);
+  useEffect(() => {
+    setPageReady(isPageReady);
+  }, [isPageReady, setPageReady]);
 
   useEffect(() => {
     if (quotes.length > 0) {

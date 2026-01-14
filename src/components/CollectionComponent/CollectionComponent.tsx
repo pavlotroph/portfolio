@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import { useLocation } from 'react-router-dom';
 import Modal, {
   MODAL_TITLE,
@@ -819,31 +819,46 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   };
 
 
-  const openModal = (
-    items: ModalMediaItem[],
-    startIndex: number
-  ) => {
-    if (!items || items.length === 0) return;
+  const openModal = useCallback(
+    (items: ModalMediaItem[], startIndex: number) => {
+      if (!items || items.length === 0) return;
 
-    // clamp index just in case
-    const safeIndex = Math.min(Math.max(startIndex, 0), items.length - 1);
-    const target = items[safeIndex];
+      // clamp index just in case
+      const safeIndex = Math.min(Math.max(startIndex, 0), items.length - 1);
+      const target = items[safeIndex];
 
-    // if the clicked image already failed to load once, don’t open
-    if (failedMedia.current.has(target.url)) return;
+      // if the clicked image already failed to load once, don’t open
+      if (failedMedia.current.has(target.url)) return;
 
-    setModalItems(items);
-    setModalIndex(safeIndex);
-    setIsModalOpen(true);
-  };
+      // Open the modal shell first (fast paint), then set heavy state on next frame
+      startTransition(() => {
+        setIsModalOpen(true);
+      });
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setModalItems([]);
-    setModalIndex(0);
-  };
+      requestAnimationFrame(() => {
+        startTransition(() => {
+          setModalItems(items);
+          setModalIndex(safeIndex);
+        });
+      });
+    },
+    []
+  );
 
-    useEffect(() => {
+  const closeModal = useCallback(() => {
+    startTransition(() => {
+      setIsModalOpen(false);
+    });
+
+    requestAnimationFrame(() => {
+      startTransition(() => {
+        setModalItems([]);
+        setModalIndex(0);
+      });
+    });
+  }, []);
+
+useEffect(() => {
     if (!isModalOpen) return;
 
     // Push a fake history entry once when modal opens
@@ -1499,7 +1514,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
       })}
 
       {/* ——— модалка ——— */}
-      {isModalOpen && currentMedia && (
+      {isModalOpen && (
         <>
           <Modal isOpen={isModalOpen} onClose={closeModal}>
             <CloseButton
@@ -1514,6 +1529,9 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
               )}
             </CloseButton>
             <MediaContainer>
+              {currentMedia ? (
+                <>
+
               {modalLength > 1 && (
   <>
     <ModalArrowZone
@@ -1559,17 +1577,23 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
                   }}
                 />
               )}
-            </MediaContainer>
-            {(currentMedia.title || currentMedia.description || collection.work_title) && (
+                </>
+              ) : (
+                <div style={{ width: '100%', height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Loading />
+                </div>
+              )}
+</MediaContainer>
+            {(currentMedia?.title || currentMedia?.description || collection.work_title) && (
               <TextContainer>
-                {currentMedia.title && (
+                {currentMedia?.title && (
                   <MODAL_TITLE style={{  }}>
-                    {currentMedia.title}
+                    {currentMedia?.title}
                   </MODAL_TITLE>
                 )}
-                {currentMedia.description && (
+                {currentMedia?.description && (
                   <MODAL_DESCRIPTION style={{  }}>
-                    {currentMedia.description}
+                    {currentMedia?.description}
                   </MODAL_DESCRIPTION>
                 )}
               </TextContainer>

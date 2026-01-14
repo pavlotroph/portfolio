@@ -11,6 +11,13 @@ margin: 0 auto;
 // position: fixed;
 bottom: 0; 
 z-index: 10;
+min-height: 420px;
+
+ &[data-loaded="false"] {
+    /* optional: avoid flashing placeholder text */
+    opacity: 1;
+  }
+
 @media screen and (min-width: 744px){
 
 

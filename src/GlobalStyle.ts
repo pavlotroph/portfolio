@@ -6,6 +6,8 @@ export const GlobalStyle = css`
     --second-family: 'JetBrains Mono', sans-serif;
   }
 
+  html { scrollbar-gutter: stable; }
+
   * {
     margin: 0;
     padding: 0;

@@ -8,7 +8,7 @@ import {
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
 } from '../CollectionComponent/CollectionComponent.styled';
-
+import DOMPurify from "dompurify";
 import styled from 'styled-components';
 
 export const FooterContainer = styled.footer`
@@ -56,35 +56,43 @@ const Footer: React.FC = () => {
     })();
   }, []);
 
-  if (!sections.length) return null;
-
   const grouped = sections.reduce<Record<string, FooterSection[]>>((acc, sec) => {
     acc[sec.label] = acc[sec.label] ? [...acc[sec.label], sec] : [sec];
     return acc;
   }, {});
 
-  return (
-    <FooterContainer role="contentinfo">
-      <CUSTOM_SPLITTER />
-      <CollectionAdditionalWrapper>
-        <CollectionHeader>
-          {Object.entries(grouped).map(([label, items]) => (
+  const isLoaded = sections.length > 0;
+
+return (
+  <FooterContainer
+    role="contentinfo"
+    data-loaded={isLoaded}
+    aria-busy={!isLoaded}
+  >
+    <CUSTOM_SPLITTER />
+    <CollectionAdditionalWrapper>
+      <CollectionHeader>
+        {isLoaded ? (
+          Object.entries(grouped).map(([label, items]) => (
             <CollectionWrapper key={label}>
               <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
 
               {items.length === 1 ? (
                 renderItem(items[0])
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {items.map(renderItem)}
                 </div>
               )}
             </CollectionWrapper>
-          ))}
-        </CollectionHeader>
-      </CollectionAdditionalWrapper>
-    </FooterContainer>
-  );
+          ))
+        ) : (
+          <div style={{ height: 220 }} />
+        )}
+      </CollectionHeader>
+    </CollectionAdditionalWrapper>
+  </FooterContainer>
+);
 };
 
 /* helper: render a footer item */
@@ -95,10 +103,14 @@ function renderItem(sec: FooterSection) {
   };
 
   const Tag = isValidTag(sec.tag) ? sec.tag : 'h3';
+  const cleanHtml = DOMPurify.sanitize(sec.text, {
+  ALLOWED_TAGS: ["br", "strong", "em", "span", "p", "h1", "h2", "h3", "a"],
+  ALLOWED_ATTR: ["href", "target", "rel"],
+});
 
   if (sec.link) {
     const external = /^https?:\/\//i.test(sec.link);
-
+    
     return (
       <FooterLink
         key={sec.id}
@@ -113,19 +125,19 @@ function renderItem(sec: FooterSection) {
       >
         <COLLECTION_4SEC_DESCRIPTION
           as={Tag}
-          dangerouslySetInnerHTML={{ __html: sec.text }}
+          dangerouslySetInnerHTML={{ __html: cleanHtml  }}
         />
       </FooterLink>
     );
   }
-
+  
   return (
-    <COLLECTION_4SEC_DESCRIPTION
-      key={sec.id}
-      as={Tag}
-      dangerouslySetInnerHTML={{ __html: sec.text }}
-    />
-  );
+  <COLLECTION_4SEC_DESCRIPTION
+    key={sec.id}
+    as={Tag}
+    dangerouslySetInnerHTML={{ __html: cleanHtml }}
+  />
+);
 }
 
 export default Footer;

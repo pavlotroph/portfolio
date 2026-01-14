@@ -62,7 +62,7 @@ export const HOME_BUTTON_TEXT = styled.span<{ $isClicked: boolean }>`
   position: relative;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 500;
-  font-size: 24px;
+  font-size: 18px;
   line-height: 64px;
   color: ${({ $isClicked }) => ($isClicked ? '#000000' : '#FFFFFF')};
   z-index: 1;

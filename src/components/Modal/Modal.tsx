@@ -24,6 +24,10 @@ const ModalOverlay = styled.div`
   box-sizing: border-box;
   overflow: hidden;
   animation: ${fadeInScale} 0.15s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 
   /* RED ZONES — horizontal “leave modal” bands */
   /* base (mobile) */
@@ -204,12 +208,16 @@ interface ModalProps {
 
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, preventScroll = true }) => {
-  if (!isOpen) return null;
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-  
+    if (!isOpen) return;
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+
+    // ✅ prevent select-all inside modal
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+    }
+  };
     /* ---------- ОТКРЫТИЕ модалки ---------- */
     if (preventScroll) {
       /* ① лог до фиксации */
@@ -254,10 +262,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, preventScroll 
         html.style.scrollBehavior = '';
       }
     };
-  }, [onClose, preventScroll]);
+  }, [isOpen, onClose, preventScroll]);
   
+  if (!isOpen) return null;
   
-
   return (
     <ModalOverlay 
       onClick={onClose}
