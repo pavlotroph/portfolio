@@ -169,7 +169,17 @@ useEffect(() => {
           </AnimatePresence>
         </WorkPhotoWrapp>
 
-        {currentQuote && <QuoteBlock quote={currentQuote} />}
+        <div
+          style={{
+            minHeight: 180, // reserve space so it won't push layout
+            opacity: isPageReady && currentQuote ? 1 : 0,
+            transition: "opacity 250ms ease",
+            pointerEvents: isPageReady && currentQuote ? "auto" : "none",
+          }}
+        >
+          {isPageReady && currentQuote ? <QuoteBlock quote={currentQuote} /> : null}
+        </div>
+
 
       </WorkContainer>
     </>

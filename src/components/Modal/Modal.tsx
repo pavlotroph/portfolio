@@ -1,21 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useLayoutEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 
-const fadeInScale = keyframes`
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to   { opacity: 1; }
 `;
 
-const ModalOverlay = styled.div`
+const fadeOut = keyframes`
+  from { opacity: 1; }
+  to   { opacity: 0; }
+`;
+
+const ModalOverlay = styled.div<{ $closing: boolean }>`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.8);
   z-index: 100;
   display: flex;
@@ -23,25 +21,17 @@ const ModalOverlay = styled.div`
   align-items: center;
   box-sizing: border-box;
   overflow: hidden;
-  animation: ${fadeInScale} 0.15s ease-out;
+  backdrop-filter: blur(4px);
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  /* RED ZONES — horizontal “leave modal” bands */
-  /* base (mobile) */
-
-  /* tablet and up */
-  @media (min-width: 744px) {
-  }
-
-  /* big desktop */
-  @media (min-width: 1440px) {
-  }
+  animation: ${({ $closing }) => ($closing ? fadeOut : fadeIn)} 0.2s ease-out;
+  pointer-events: ${({ $closing }) => ($closing ? 'none' : 'auto')};
 `;
 
-const ModalContent = styled.div`
+const ModalContent = styled.div<{ $closing: boolean }>`
   position: relative;
   max-width: 100%;
   max-height: 100%;
@@ -50,8 +40,9 @@ const ModalContent = styled.div`
   align-items: center;
   justify-content: center;
   background: transparent;
-  animation: ${fadeInScale} 0.15s ease-out;
   overflow: visible;
+
+  animation: ${({ $closing }) => ($closing ? fadeOut : fadeIn)} 0.15s ease-out;
 `;
 
 export const MediaContainer = styled.div`
@@ -76,6 +67,7 @@ export const MediaContainer = styled.div`
     padding: 0;
     margin: 0 auto;
     border: none;
+    
   }
 
   video {
@@ -145,13 +137,13 @@ export const CloseButton = styled.button`
 `;
 
 export const ModalArrowZone = styled.button<{ $side: 'left' | 'right' }>`
-  position: absolute;
+  position: fixed;
   top: 0;
   bottom: 0;
   left: ${({ $side }) => ($side === 'left' ? 0 : 'auto')};
   right: ${({ $side }) => ($side === 'right' ? 0 : 'auto')};
   width: 10%;          /* wide “blue” band */
-  min-width: 60px;
+  width: clamp(60px, 10vw, 140px);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -165,7 +157,7 @@ export const ModalArrowZone = styled.button<{ $side: 'left' | 'right' }>`
   img,
   svg {
     pointer-events: none;
-    width: clamp(12px, 1.1vw, 32px); 
+    width: clamp(12px, 1.1vw, 24px); 
     height: auto;
   }
 `;
@@ -208,72 +200,95 @@ interface ModalProps {
 
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, preventScroll = true }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') onClose();
+  const [mounted, setMounted] = React.useState(isOpen);
+  const [closing, setClosing] = React.useState(false);
 
-    // ✅ prevent select-all inside modal
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
-      e.preventDefault();
+  // keep mounted while we play fade-out
+  React.useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      setClosing(false);
+    } else if (mounted) {
+      setClosing(true);
     }
-  };
-    /* ---------- ОТКРЫТИЕ модалки ---------- */
-    if (preventScroll) {
-      /* ① лог до фиксации */
-      /* console.log('🡅 before lock', window.scrollY); */
-  
-      const y = window.scrollY;
-      document.body.dataset.scrollY = String(y);
-  
-      document.body.style.position = 'fixed';
-      document.body.style.top      = `-${y}px`;
-      document.body.style.left     = '0';
-      document.body.style.right    = '0';
-      document.body.style.width    = '100%';
-      document.body.style.overflow = 'hidden';
-    }
-  
-    document.addEventListener('keydown', handleKeyDown);
-  
-    /* ---------- ЗАКРЫТИЕ модалки ---------- */
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-  
-      if (preventScroll) {
-        /* ② лог сразу после снятия top, ДО scrollTo */
-        /* console.log('🡇 unlock, scrollY is', window.scrollY); */
-  
-        const y = parseInt(document.body.dataset.scrollY || '0', 10);
-  
-        // снимаем стили
-        document.body.style.position = '';
-        document.body.style.top      = '';
-        document.body.style.left     = '';
-        document.body.style.right    = '';
-        document.body.style.width    = '';
-        document.body.style.overflow = '';
-        delete document.body.dataset.scrollY;
-  
-        // возвращаем позицию (без анимации)
-        const html = document.documentElement;
-        html.style.scrollBehavior = 'auto';
-        window.scrollTo(0, y);
-        html.style.scrollBehavior = '';
+  }, [isOpen, mounted]);
+
+  // lock scroll while mounted (includes fade-out time)
+  useLayoutEffect(() => {
+    if (!mounted) return;
+
+    const requestClose = () => {
+      if (closing) return;
+      setClosing(true);
+      onClose(); // parent will set isOpen=false, but we stay mounted until animation ends
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') requestClose();
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
       }
     };
-  }, [isOpen, onClose, preventScroll]);
-  
-  if (!isOpen) return null;
-  
+
+    if (preventScroll) {
+      const y = window.scrollY;
+      document.body.dataset.scrollY = String(y);
+
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${y}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+
+      if (preventScroll) {
+        const y = parseInt(document.body.dataset.scrollY || '0', 10);
+
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        delete document.body.dataset.scrollY;
+
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
+        window.scrollTo(0, y);
+        html.style.scrollBehavior = prev;
+      }
+    };
+  }, [mounted, closing, onClose, preventScroll]);
+
+  if (!mounted) return null;
+
+  const requestClose = () => {
+    if (closing) return;
+    setClosing(true);
+    onClose();
+  };
+
   return (
-    <ModalOverlay 
-      onClick={onClose}
+    <ModalOverlay
+      $closing={closing}
+      onClick={requestClose}
+      onAnimationEnd={() => {
+        // only unmount AFTER fade-out is done
+        if (closing) setMounted(false);
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Image or video modal"
     >
-      <ModalContent onClick={(e) => e.stopPropagation()}>
+      <ModalContent $closing={closing} onClick={(e) => e.stopPropagation()}>
         {children}
       </ModalContent>
     </ModalOverlay>

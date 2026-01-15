@@ -164,7 +164,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     },
     []
   );
-
+  
   useEffect(() => {
     scaleRef.current = scale;
   }, [scale]);
@@ -174,7 +174,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   }, [translate]);
 
   // Wheel zoom (mouse / trackpad)
-    const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.deltaY === 0) return;
 
     // Don’t call preventDefault here – in some environments wheel listeners are passive,
@@ -384,6 +384,7 @@ type PreloadedGridImageProps = {
   onClick?: () => void;
   style?: React.CSSProperties;
   draggable?: boolean;
+  onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
 };
 
 const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
@@ -392,44 +393,9 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
   onClick,
   style,
   draggable = false,
+  onError,
 }) => {
-  const [loaded, setLoaded] = useState(false);
   const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setLoaded(false);
-    setVisible(false);
-
-    const img = new Image();
-    img.src = src;
-
-    img.onload = () => {
-      if (cancelled) return;
-      setLoaded(true);
-    };
-
-    img.onerror = () => {
-      // don’t render broken/half-loaded images at all
-      if (cancelled) return;
-      setLoaded(false);
-      // optional debug:
-      // console.error("❌ Gallery image failed to preload:", src);
-    };
-
-    return () => {
-      cancelled = true;
-    };
-  }, [src]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [loaded]);
-
-  if (!loaded) return null;
 
   return (
     <img
@@ -439,9 +405,11 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
       draggable={draggable}
       loading="lazy"
       decoding="async"
+      onLoad={() => setVisible(true)}
+      onError={onError}
       style={{
         opacity: visible ? 1 : 0,
-        transition: "opacity 0.6s ease",
+        transition: "opacity 0.35s ease",
         ...style,
       }}
     />
@@ -450,203 +418,202 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
 
 
 
+/* ────────────────────────────────────────────── */
+/* HELPER                                         */
+/* ────────────────────────────────────────────── */
 
-  /* ────────────────────────────────────────────── */
-  /* HELPER                                         */
-  /* ────────────────────────────────────────────── */
+interface ImageItem {
+  src: string;
+  title?: string;
+  description?: string;
+  row?: number | string;
+  aspectRatio?: string;
+}
 
-  interface ImageItem {
-    src: string;
-    title?: string;
-    description?: string;
-    row?: number | string;
-    aspectRatio?: string;
-  }
+interface ImageSliderProps {
+  images: ImageItem[];
+  aspectRatio?: string;
+}
 
-  interface ImageSliderProps {
-    images: ImageItem[];
-    aspectRatio?: string;
-  }
+const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
+  const slides = [images[images.length - 1], ...images, images[0]];
 
-  const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
-    const slides = [images[images.length - 1], ...images, images[0]];
+  const [index, setIndex] = useState(1);
+  const [animate, setAnimate] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
-    const [index, setIndex] = useState(1);
-    const [animate, setAnimate] = useState(true);
-    const [offset, setOffset] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
+  const transitioningRef = useRef(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const slideWidthRef = useRef(0);
 
-    const transitioningRef = useRef(false);
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const slideWidthRef = useRef(0);
+  // для рассчёта мгновенной скорости
+  const startXRef = useRef(0);
+  const lastXRef = useRef(0);
+  const startTimeRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const lastVelocityRef = useRef(0);
 
-    // для рассчёта мгновенной скорости
-    const startXRef = useRef(0);
-    const lastXRef = useRef(0);
-    const startTimeRef = useRef(0);
-    const lastTimeRef = useRef(0);
-    const lastVelocityRef = useRef(0);
+  // интервал автоплей
+  const autoPlayRef = useRef<number>();
 
-    // интервал автоплей
-    const autoPlayRef = useRef<number>();
-
-    // Стрелки
-    const prevSlide = () => {
-      if (transitioningRef.current) return;
-      setAnimate(true);
-      setIndex(i => i - 1);
-      transitioningRef.current = true;
-    };
-    const nextSlide = () => {
-      if (transitioningRef.current) return;
-      setAnimate(true);
-      setIndex(i => i + 1);
-      transitioningRef.current = true;
-    };
-
-    // Drag logic
-    const onPointerDown = (e: React.PointerEvent) => {
-      if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
-      const el = sliderRef.current!;
-      el.setPointerCapture(e.pointerId);
-
-      setIsDragging(true);
-      slideWidthRef.current = el.clientWidth;
-      startXRef.current = e.clientX;
-      lastXRef.current = e.clientX;
-      startTimeRef.current = Date.now();
-      lastTimeRef.current = Date.now();
-      lastVelocityRef.current = 0;
-      setAnimate(false);
-    };
-
-    const onPointerMove = (e: React.PointerEvent) => {
-      if (!isDragging || transitioningRef.current) return;
-      const now = Date.now();
-      const dxLocal = e.clientX - lastXRef.current;
-      const dtLocal = now - lastTimeRef.current;
-      if (dtLocal > 0) lastVelocityRef.current = dxLocal / dtLocal;
-      lastXRef.current = e.clientX;
-      lastTimeRef.current = now;
-
-      const dx = e.clientX - startXRef.current;
-      setOffset(dx);
-    };
-
-    const onPointerUp = (e: React.PointerEvent) => {
-      if (!isDragging) return;
-      const el = sliderRef.current!;
-      el.releasePointerCapture(e.pointerId);
-
-      setIsDragging(false);
-
-      const dx = offset;
-      const vel = lastVelocityRef.current; // 👉 signed velocity
-      const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
-
-      let newIdx = index;
-
-      const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
-      const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
-
-      if (passedRight && !passedLeft) {
-        newIdx = index - 1;
-      } else if (passedLeft && !passedRight) {
-        newIdx = index + 1;
-      }
-      // if both or neither → newIdx stays index (no slide change)
-
-      setAnimate(true);
-      setOffset(0);
-
-      // (keep the click-fix logic we added earlier)
-      if (newIdx !== index && !transitioningRef.current) {
-        setIndex(newIdx);
-        transitioningRef.current = true;
-      } else {
-        transitioningRef.current = false;
-      }
-    };
-
-
-
-    const handleTransitionEnd = () => {
-      transitioningRef.current = false;
-      if (index === 0) {
-        setAnimate(false);
-        setIndex(images.length);
-      } else if (index === slides.length - 1) {
-        setAnimate(false);
-        setIndex(1);
-      }
-    };
-
-    // восстановление animate после программного сброса
-    useEffect(() => {
-      if (!animate) requestAnimationFrame(() => setAnimate(true));
-    }, [animate]);
-
-    // IntersectionObserver для видимости
-    useEffect(() => {
-      const obs = new IntersectionObserver(
-        ([entry]) => setIsVisible(entry.isIntersecting),
-        { threshold: 0.5 }
-      );
-      if (sliderRef.current) obs.observe(sliderRef.current);
-      return () => obs.disconnect();
-    }, []);
-
-    // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
-    useEffect(() => {
-      if (isVisible && !isDragging && !transitioningRef.current) {
-        autoPlayRef.current = window.setInterval(() => {
-          nextSlide();
-        }, 3000);
-      } else {
-        window.clearInterval(autoPlayRef.current);
-      }
-      return () => window.clearInterval(autoPlayRef.current);
-    }, [isVisible, isDragging]);
-
-    return (
-      <SliderWrapper
-        ref={sliderRef}
-        $aspectRatio={aspectRatio}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-      >
-        <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
-          <img src={Left} alt="Previous slide" />
-        </Arrow>
-        <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
-          <img src={Right} alt="Next slide" />
-        </Arrow>
-
-        <SliderContent
-          $index={index}
-          $animate={animate}
-          $offset={offset}
-          $isDragging={isDragging}
-          onTransitionEnd={handleTransitionEnd}
-        >
-          {slides.map((img, i) => (
-            <Slide key={i}>
-              <img src={img.src} alt={img.title || `Slide ${i + 1} of ${slides.length}`} draggable={false} />
-            </Slide>
-          ))}
-        </SliderContent>
-      </SliderWrapper>
-    );
+  // Стрелки
+  const prevSlide = () => {
+    if (transitioningRef.current) return;
+    setAnimate(true);
+    setIndex(i => i - 1);
+    transitioningRef.current = true;
   };
+  const nextSlide = () => {
+    if (transitioningRef.current) return;
+    setAnimate(true);
+    setIndex(i => i + 1);
+    transitioningRef.current = true;
+  };
+
+  // Drag logic
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
+    const el = sliderRef.current!;
+    el.setPointerCapture(e.pointerId);
+
+    setIsDragging(true);
+    slideWidthRef.current = el.clientWidth;
+    startXRef.current = e.clientX;
+    lastXRef.current = e.clientX;
+    startTimeRef.current = Date.now();
+    lastTimeRef.current = Date.now();
+    lastVelocityRef.current = 0;
+    setAnimate(false);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || transitioningRef.current) return;
+    const now = Date.now();
+    const dxLocal = e.clientX - lastXRef.current;
+    const dtLocal = now - lastTimeRef.current;
+    if (dtLocal > 0) lastVelocityRef.current = dxLocal / dtLocal;
+    lastXRef.current = e.clientX;
+    lastTimeRef.current = now;
+
+    const dx = e.clientX - startXRef.current;
+    setOffset(dx);
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const el = sliderRef.current!;
+    el.releasePointerCapture(e.pointerId);
+
+    setIsDragging(false);
+
+    const dx = offset;
+    const vel = lastVelocityRef.current; // 👉 signed velocity
+    const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
+
+    let newIdx = index;
+
+    const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
+    const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
+
+    if (passedRight && !passedLeft) {
+      newIdx = index - 1;
+    } else if (passedLeft && !passedRight) {
+      newIdx = index + 1;
+    }
+    // if both or neither → newIdx stays index (no slide change)
+
+    setAnimate(true);
+    setOffset(0);
+
+    // (keep the click-fix logic we added earlier)
+    if (newIdx !== index && !transitioningRef.current) {
+      setIndex(newIdx);
+      transitioningRef.current = true;
+    } else {
+      transitioningRef.current = false;
+    }
+  };
+
+
+
+  const handleTransitionEnd = () => {
+    transitioningRef.current = false;
+    if (index === 0) {
+      setAnimate(false);
+      setIndex(images.length);
+    } else if (index === slides.length - 1) {
+      setAnimate(false);
+      setIndex(1);
+    }
+  };
+
+  // восстановление animate после программного сброса
+  useEffect(() => {
+    if (!animate) requestAnimationFrame(() => setAnimate(true));
+  }, [animate]);
+
+  // IntersectionObserver для видимости
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.5 }
+    );
+    if (sliderRef.current) obs.observe(sliderRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
+  useEffect(() => {
+    if (isVisible && !isDragging && !transitioningRef.current) {
+      autoPlayRef.current = window.setInterval(() => {
+        nextSlide();
+      }, 3000);
+    } else {
+      window.clearInterval(autoPlayRef.current);
+    }
+    return () => window.clearInterval(autoPlayRef.current);
+  }, [isVisible, isDragging]);
+
+  return (
+    <SliderWrapper
+      ref={sliderRef}
+      $aspectRatio={aspectRatio}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+    >
+      <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
+        <img src={Left} alt="Previous slide" />
+      </Arrow>
+      <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
+        <img src={Right} alt="Next slide" />
+      </Arrow>
+
+      <SliderContent
+        $index={index}
+        $animate={animate}
+        $offset={offset}
+        $isDragging={isDragging}
+        onTransitionEnd={handleTransitionEnd}
+      >
+        {slides.map((img, i) => (
+          <Slide key={i}>
+            <img src={img.src} alt={img.title || `Slide ${i + 1} of ${slides.length}`} draggable={false} />
+          </Slide>
+        ))}
+      </SliderContent>
+    </SliderWrapper>
+  );
+};
 
 
 
 
 //VIDEO
-  interface AutoPlayVideoProps {
+interface AutoPlayVideoProps {
   src: string;
   alt?: string;
 }
@@ -662,7 +629,7 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
     if (typeof IntersectionObserver === 'undefined') {
       const playPromise = video.play();
       if (playPromise && typeof playPromise.then === 'function') {
-        playPromise.catch(() => {});
+        playPromise.catch(() => { });
       }
       return;
     }
@@ -675,7 +642,7 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
         if (entry.isIntersecting) {
           const playPromise = video.play();
           if (playPromise && typeof playPromise.then === 'function') {
-            playPromise.catch(() => {});
+            playPromise.catch(() => { });
           }
         } else {
           video.pause();
@@ -747,7 +714,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   const failedMedia = useRef<Set<string>>(new Set());
   const modalHistoryRef = useRef(false);
 
-    const modalLength = modalItems.length;
+  const modalLength = modalItems.length;
 
   const goToPrevMedia = useCallback(() => {
     if (!hasModalMedia || modalLength === 0) return;
@@ -763,8 +730,27 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
 
 
   /* ────────── helpers ────────── */
-  const imageUrl = (fileName: string) =>
-    `${supabaseUrl}/storage/v1/object/public/${bucket}/${collection.folder}/${fileName}`;
+  const encodePath = (...parts: string[]) =>
+  parts.map((p) => encodeURIComponent(p)).join('/');
+
+const imageUrl = (fileName: string) =>
+  `${supabaseUrl}/storage/v1/object/public/${encodePath(bucket, collection.folder, fileName)}`;
+
+const lrName = (fileName: string) => {
+  const dot = fileName.lastIndexOf(".");
+  if (dot === -1) return `${fileName}LR`;         // edge case
+  const base = fileName.slice(0, dot);
+  const ext = fileName.slice(dot);               // includes ".webp"
+  return `${base}LR${ext}`;
+};
+
+const imageThumbLRUrl = (fileName: string) =>
+  `${supabaseUrl}/storage/v1/object/public/${encodePath(
+    bucket,
+    collection.folder,
+    "thumb",               // <-- your folder name
+    lrName(fileName)
+  )}`;
 
   const isVideoFile = (fileName: string | undefined | null): boolean => {
     if (!fileName || typeof fileName !== 'string') return false;
@@ -819,46 +805,36 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   };
 
 
-  const openModal = useCallback(
-    (items: ModalMediaItem[], startIndex: number) => {
-      if (!items || items.length === 0) return;
+  const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
+    // Open shell immediately (fast paint)
+    setIsModalOpen(true);
 
-      // clamp index just in case
-      const safeIndex = Math.min(Math.max(startIndex, 0), items.length - 1);
-      const target = items[safeIndex];
-
-      // if the clicked image already failed to load once, don’t open
-      if (failedMedia.current.has(target.url)) return;
-
-      // Open the modal shell first (fast paint), then set heavy state on next frame
-      startTransition(() => {
-        setIsModalOpen(true);
-      });
-
-      requestAnimationFrame(() => {
-        startTransition(() => {
-          setModalItems(items);
-          setModalIndex(safeIndex);
-        });
-      });
-    },
-    []
-  );
+    // Defer “heavy” state updates so they don’t block INP
+    startTransition(() => {
+      setModalItems(items);
+      setModalIndex(startIndex);
+    });
+  }, []);
 
   const closeModal = useCallback(() => {
-    startTransition(() => {
-      setIsModalOpen(false);
-    });
+    // Make the click close instant
+    setIsModalOpen(false);
 
-    requestAnimationFrame(() => {
+    // Do NOT clear items/index on the click.
+    // If you really want cleanup, do it later (won’t affect INP):
+    const cleanup = () =>
       startTransition(() => {
         setModalItems([]);
         setModalIndex(0);
       });
-    });
+
+    // @ts-ignore
+    if (typeof requestIdleCallback === "function") requestIdleCallback(cleanup, { timeout: 1200 });
+    else setTimeout(cleanup, 300);
   }, []);
 
-useEffect(() => {
+
+  useEffect(() => {
     if (!isModalOpen) return;
 
     // Push a fake history entry once when modal opens
@@ -933,143 +909,145 @@ useEffect(() => {
 
   /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
-  const rawItems = (b.content?.items || []) as any[];
-  if (!rawItems.length) return null;
+    const rawItems = (b.content?.items || []) as any[];
+    if (!rawItems.length) return null;
 
-  const globalAspectRatio = (b.content?.aspectRatio || "16 / 9") as string;
-  const rowAspectRatios = (b.content?.rowAspectRatios || {}) as Record<string, string>;
+    const globalAspectRatio = (b.content?.aspectRatio || "16 / 9") as string;
+    const rowAspectRatios = (b.content?.rowAspectRatios || {}) as Record<string, string>;
 
-  const hasRowInfo = rawItems.some(
-    (item: any) => item.row !== undefined && item.row !== null && item.row !== ""
-  );
+    const hasRowInfo = rawItems.some(
+      (item: any) => item.row !== undefined && item.row !== null && item.row !== ""
+    );
 
-  const buildModalItems = (items: any[]) =>
-    items.map((item: any) => {
-      const url = imageUrl(item.src);
-      const isVideo = isVideoFile(item.src);
-      return {
-        url,
-        type: isVideo ? "video" : "image",
-        altText: item.title || "",
-        title: item.title || "",
-        description: item.description || "",
-      } as ModalMediaItem;
-    });
+    const buildModalItems = (items: any[]) =>
+      items.map((item: any) => {
+        const url = imageUrl(item.src);
+        const isVideo = isVideoFile(item.src);
+        return {
+          url,
+          type: isVideo ? "video" : "image",
+          altText: item.title || "",
+          title: item.title || "",
+          description: item.description || "",
+        } as ModalMediaItem;
+      });
 
-  // Non-row mode: keep your existing behavior (simple grid)
-  if (!hasRowInfo) {
-    const modalItems = buildModalItems(rawItems);
-    const itemsCountForGrid = (b.content?.columns as number | undefined) ?? rawItems.length;
+    // Non-row mode: keep your existing behavior (simple grid)
+    if (!hasRowInfo) {
+      const modalItems = buildModalItems(rawItems);
+      const itemsCountForGrid = (b.content?.columns as number | undefined) ?? rawItems.length;
+
+      return (
+        <IMAGE_GALLERY key={b.id} $itemsCount={itemsCountForGrid} $aspectRatio={globalAspectRatio}>
+          {rawItems.map((item: any, i: number) => {
+            const media = modalItems[i];
+            const isVideo = media.type === "video";
+            const effectiveAspectRatio =
+              (item.aspectRatio && String(item.aspectRatio).trim()) || globalAspectRatio;
+
+            const fullSrc = imageUrl(item.src);
+const thumbSrc = imageThumbLRUrl(item.src);
+
+            return (
+              <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
+                {isVideo ? (
+                  <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
+                ) : (
+                  <PreloadedGridImage
+  src={thumbSrc}
+  alt={item.title || `Image ${i + 1}`}
+  onClick={() => openModal(modalItems, i)}
+  onError={(e) => {
+    const img = e.currentTarget;
+    if (img.src !== fullSrc) img.src = fullSrc; // fallback
+  }}
+  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+/>
+                )}
+              </div>
+            );
+          })}
+        </IMAGE_GALLERY>
+      );
+    }
+
+    // Row mode: group by row and render each row as its own grid
+    const rowOrder: string[] = [];
+    const rows = new Map<string, any[]>();
+
+    for (const item of rawItems) {
+      const rowKey = String(item.row ?? "1");
+      if (!rows.has(rowKey)) {
+        rows.set(rowKey, []);
+        rowOrder.push(rowKey);
+      }
+      rows.get(rowKey)!.push(item);
+    }
+
+    // Flatten in row order for modal indexing
+    const flatItems = rowOrder.flatMap((rk) => rows.get(rk)!);
+    const modalItems = buildModalItems(flatItems);
+
+    // IMPORTANT: We don’t want IMAGE_GALLERY forcing a single grid layout here.
+    // So we render rows inside it and each row controls its own columns.
+    let globalIndex = 0;
 
     return (
-      <IMAGE_GALLERY key={b.id} $itemsCount={itemsCountForGrid} $aspectRatio={globalAspectRatio}>
-        {rawItems.map((item: any, i: number) => {
-          const media = modalItems[i];
-          const isVideo = media.type === "video";
-          const effectiveAspectRatio =
-            (item.aspectRatio && String(item.aspectRatio).trim()) || globalAspectRatio;
+      <IMAGE_GALLERY key={b.id} $itemsCount={1} $aspectRatio={globalAspectRatio}>
+        <ImageGalleryRows>
+          {rowOrder.map((rowKey) => {
+            const rowItems = rows.get(rowKey)!;
+            const cols = rowItems.length;
 
-          return (
-            <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
-              {isVideo ? (
-                <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
-              ) : (
-                <PreloadedGridImage
-  src={media.url}
+            return (
+              <ImageGalleryRow key={rowKey} $cols={cols}>
+                {rowItems.map((item: any) => {
+                  const media = modalItems[globalIndex];
+                  const i = globalIndex;
+                  globalIndex++;
+
+                  const isVideo = media.type === "video";
+                  const effectiveAspectRatio =
+                    (item.aspectRatio && String(item.aspectRatio).trim()) ||
+                    (rowAspectRatios[rowKey] && String(rowAspectRatios[rowKey]).trim()) ||
+                    globalAspectRatio;
+                  const fullSrc = imageUrl(item.src);
+const thumbSrc = imageThumbLRUrl(item.src);
+
+                  return (
+                    <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
+                      {isVideo ? (
+                        <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
+                      ) : (
+                        <PreloadedGridImage
+  src={thumbSrc}
   alt={item.title || `Image ${i + 1}`}
   onClick={() => openModal(modalItems, i)}
-  draggable={false}
-  style={{
-    width: "100%",
-    height: "100%",
-    display: "block",
-    objectFit: "cover",
+  onError={(e) => {
+    const img = e.currentTarget;
+    if (img.src !== fullSrc) img.src = fullSrc;
   }}
+  draggable={false}
+  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
 />
-              )}
-            </div>
-          );
-        })}
+
+                      )}
+                    </div>
+                  );
+                })}
+              </ImageGalleryRow>
+            );
+          })}
+        </ImageGalleryRows>
       </IMAGE_GALLERY>
     );
-  }
-
-  // Row mode: group by row and render each row as its own grid
-  const rowOrder: string[] = [];
-  const rows = new Map<string, any[]>();
-
-  for (const item of rawItems) {
-    const rowKey = String(item.row ?? "1");
-    if (!rows.has(rowKey)) {
-      rows.set(rowKey, []);
-      rowOrder.push(rowKey);
-    }
-    rows.get(rowKey)!.push(item);
-  }
-
-  // Flatten in row order for modal indexing
-  const flatItems = rowOrder.flatMap((rk) => rows.get(rk)!);
-  const modalItems = buildModalItems(flatItems);
-
-  // IMPORTANT: We don’t want IMAGE_GALLERY forcing a single grid layout here.
-  // So we render rows inside it and each row controls its own columns.
-  let globalIndex = 0;
-
-  return (
-  <IMAGE_GALLERY key={b.id} $itemsCount={1} $aspectRatio={globalAspectRatio}>
-    <ImageGalleryRows>
-      {rowOrder.map((rowKey) => {
-        const rowItems = rows.get(rowKey)!;
-        const cols = rowItems.length;
-
-        return (
-          <ImageGalleryRow key={rowKey} $cols={cols}>
-            {rowItems.map((item: any) => {
-              const media = modalItems[globalIndex];
-              const i = globalIndex;
-              globalIndex++;
-
-              const isVideo = media.type === "video";
-              const effectiveAspectRatio =
-                (item.aspectRatio && String(item.aspectRatio).trim()) ||
-                (rowAspectRatios[rowKey] && String(rowAspectRatios[rowKey]).trim()) ||
-                globalAspectRatio;
-
-              return (
-                <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
-                  {isVideo ? (
-                    <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
-                  ) : (
-                    <PreloadedGridImage
-  src={media.url}
-  alt={item.title || `Image ${i + 1}`}
-  onClick={() => openModal(modalItems, i)}
-  draggable={false}
-  style={{
-    width: "100%",
-    height: "100%",
-    display: "block",
-    objectFit: "cover",
-  }}
-/>
-
-                  )}
-                </div>
-              );
-            })}
-          </ImageGalleryRow>
-        );
-      })}
-    </ImageGalleryRows>
-  </IMAGE_GALLERY>
-);
-};
+  };
 
 
 
 
 
-  const renderBlock = (b: CollectionBlockDB) => {
+  const renderBlock = useCallback((b: CollectionBlockDB) => {
     switch (b.type) {
       case 'IMAGE_SINGLE': {
         const aspectRatio = b.content?.aspectRatio || '2 / 1';
@@ -1125,7 +1103,7 @@ useEffect(() => {
               // startWithText: text|image on first row
               const textFirst = startWithText ? isEven : !isEven;
 
-                            const media = modalItems[index];
+              const media = modalItems[index];
               const isVideo = media.type === 'video';
 
               const Pic = (
@@ -1399,7 +1377,9 @@ useEffect(() => {
       default:
         return null;
     }
-  };
+  },
+    [collection.folder, bucket, source, openModal] // deps
+  );
 
   /* ────────── LOADING ────────── */
   if (isLoading) {
@@ -1514,7 +1494,7 @@ useEffect(() => {
       })}
 
       {/* ——— модалка ——— */}
-      {isModalOpen && (
+
         <>
           <Modal isOpen={isModalOpen} onClose={closeModal}>
             <CloseButton
@@ -1532,67 +1512,75 @@ useEffect(() => {
               {currentMedia ? (
                 <>
 
-              {modalLength > 1 && (
-  <>
-    <ModalArrowZone
-      type="button"
-      onClick={goToPrevMedia}
-      aria-label="Previous image"
-      $side="left"
-    >
-      <img src={Left} alt="" />
-    </ModalArrowZone>
+                  {modalLength > 1 && (
+                    <>
+                      <ModalArrowZone
+                        type="button"
+                        onClick={goToPrevMedia}
+                        aria-label="Previous image"
+                        $side="left"
+                      >
+                        <img src={Left} alt="" />
+                      </ModalArrowZone>
 
-    <ModalArrowZone
-      type="button"
-      onClick={goToNextMedia}
-      aria-label="Next image"
-      $side="right"
-    >
-      <img src={Right} alt="" />
-    </ModalArrowZone>
-  </>
-)}
-              {currentMedia.type === 'image' && (
-  <ZoomableImage
-    src={currentMedia.url}
-    alt={currentMedia.altText}
-    onLoad={() => {
-      // you can keep this empty or log if needed
-    }}
-    onError={() => {
-      console.error('❌ Image failed to load:', currentMedia.url);
-      failedMedia.current.add(currentMedia.url);
-    }}
-  />
-)}
+                      <ModalArrowZone
+                        type="button"
+                        onClick={goToNextMedia}
+                        aria-label="Next image"
+                        $side="right"
+                      >
+                        <img src={Right} alt="" />
+                      </ModalArrowZone>
+                    </>
+                  )}
+                  {currentMedia.type === 'image' && (
+                    <ZoomableImage
+                      src={currentMedia.url}
+                      alt={currentMedia.altText}
+                      onLoad={() => {
+                        // you can keep this empty or log if needed
+                      }}
+                      onError={() => {
+                        console.error('❌ Image failed to load:', currentMedia.url);
+                        failedMedia.current.add(currentMedia.url);
+                      }}
+                    />
+                  )}
 
-              {currentMedia.type === 'video' && currentMedia.url && (
-                <video
-                  src={currentMedia.url}
-                  controls
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '80vh',
-                  }}
-                />
-              )}
+                  {currentMedia.type === 'video' && currentMedia.url && (
+                    <video
+                      src={currentMedia.url}
+                      controls
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '80vh',
+                      }}
+                    />
+                  )}
                 </>
               ) : (
-                <div style={{ width: '100%', height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Loading />
+                <div
+                  style={{
+                    width: "100%",
+                    height: "80vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                 </div>
+
               )}
-</MediaContainer>
+            </MediaContainer>
             {(currentMedia?.title || currentMedia?.description || collection.work_title) && (
               <TextContainer>
                 {currentMedia?.title && (
-                  <MODAL_TITLE style={{  }}>
+                  <MODAL_TITLE style={{}}>
                     {currentMedia?.title}
                   </MODAL_TITLE>
                 )}
                 {currentMedia?.description && (
-                  <MODAL_DESCRIPTION style={{  }}>
+                  <MODAL_DESCRIPTION style={{}}>
                     {currentMedia?.description}
                   </MODAL_DESCRIPTION>
                 )}
@@ -1602,7 +1590,7 @@ useEffect(() => {
 
           </Modal>
         </>
-      )}
+
     </CollectionContainer>
   );
 };
