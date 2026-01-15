@@ -331,7 +331,6 @@ export const Slide = styled.div`
   align-items: center;
 
   img {
-    width: 100%;
     height: 100%;
     object-fit: cover;
   }
@@ -350,7 +349,7 @@ export const Arrow = styled.button<{ $left?: boolean }>`
   display: flex;
   align-items: center;
   width: 64px;
-  height: 64px;
+  height: 256px;
   justify-content: center;
   opacity: 0.66;
   transition: opacity 0.3s ease;
@@ -361,7 +360,7 @@ export const Arrow = styled.button<{ $left?: boolean }>`
 
   @media (min-width: 1080px) {
     width: 96px;
-    height: 96px;
+    height: 384px;
   }
 
   img {

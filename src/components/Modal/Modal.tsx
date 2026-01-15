@@ -52,6 +52,7 @@ export const MediaContainer = styled.div`
   align-items: center;
   padding: 0;
   max-height: 80vh;
+  min-height: 60vh;
   width: 100%;
   overflow: auto;
   box-sizing: border-box;

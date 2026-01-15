@@ -433,12 +433,29 @@ interface ImageItem {
 interface ImageSliderProps {
   images: ImageItem[];
   aspectRatio?: string;
+  keyboardNav?: boolean; // default false
+  resetKey?: number;
+
+  // NEW:
+  autoPlay?: boolean; // default true
+  startIndex?: number; // 0-based (real image index)
+  onActiveIndexChange?: (realIndex: number) => void; // 0..images.length-1
 }
 
-const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
+const ImageSlider: React.FC<ImageSliderProps> = ({
+  images,
+  aspectRatio,
+  autoPlay = true,
+  keyboardNav = false,
+  startIndex = 0,
+  resetKey = 0,
+  onActiveIndexChange,
+}) => {
   const slides = [images[images.length - 1], ...images, images[0]];
 
-  const [index, setIndex] = useState(1);
+  // start at startIndex (but +1 because of the "clone" at the beginning)
+  const [index, setIndex] = useState(startIndex + 1);
+
   const [animate, setAnimate] = useState(true);
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -448,36 +465,82 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const slideWidthRef = useRef(0);
 
-  // для рассчёта мгновенной скорости
   const startXRef = useRef(0);
   const lastXRef = useRef(0);
   const startTimeRef = useRef(0);
   const lastTimeRef = useRef(0);
   const lastVelocityRef = useRef(0);
 
-  // интервал автоплей
   const autoPlayRef = useRef<number>();
 
+  const [autoplayDisabledByUser, setAutoplayDisabledByUser] = useState(false);
+
+  // NEW: if parent changes startIndex (e.g. modal opens at clicked image)
+  useEffect(() => {
+  setAnimate(false);
+  setIndex(startIndex + 1);
+  setOffset(0);
+  setIsDragging(false);
+  transitioningRef.current = false;
+
+  const raf = requestAnimationFrame(() => setAnimate(true));
+  return () => cancelAnimationFrame(raf);
+}, [resetKey]); // ✅ only reset when modal opens (or gallery changes), not on every slide
+
+  // NEW: inform parent which real slide is active
+  const realIndex =
+    images.length > 0 ? ((index - 1 + images.length) % images.length) : 0;
+
+  useEffect(() => {
+    onActiveIndexChange?.(realIndex);
+  }, [realIndex, onActiveIndexChange]);
+
+  useEffect(() => {
+  if (!autoPlay) return;
+  if (!isVisible || isDragging) return;
+
+  // your existing interval code here...
+}, [autoPlay, isVisible, isDragging]);
+  
   // Стрелки
   const prevSlide = () => {
     if (transitioningRef.current) return;
     setAnimate(true);
     setIndex(i => i - 1);
     transitioningRef.current = true;
+    setAutoplayDisabledByUser(true);
   };
   const nextSlide = () => {
     if (transitioningRef.current) return;
     setAnimate(true);
     setIndex(i => i + 1);
     transitioningRef.current = true;
+    setAutoplayDisabledByUser(true);
   };
+useEffect(() => {
+  if (!keyboardNav) return;
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      prevSlide();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      nextSlide();
+    }
+  };
+
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [keyboardNav, prevSlide, nextSlide]);
 
   // Drag logic
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
     const el = sliderRef.current!;
     el.setPointerCapture(e.pointerId);
-
+    
+    setAutoplayDisabledByUser(true);
     setIsDragging(true);
     slideWidthRef.current = el.clientWidth;
     startXRef.current = e.clientX;
@@ -566,7 +629,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
 
   // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
   useEffect(() => {
-    if (isVisible && !isDragging && !transitioningRef.current) {
+    if (autoPlay && !autoplayDisabledByUser && isVisible && !isDragging && !transitioningRef.current) {
       autoPlayRef.current = window.setInterval(() => {
         nextSlide();
       }, 3000);
@@ -574,8 +637,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, aspectRatio }) => {
       window.clearInterval(autoPlayRef.current);
     }
     return () => window.clearInterval(autoPlayRef.current);
-  }, [isVisible, isDragging]);
-
+  }, [autoPlay, autoplayDisabledByUser, isVisible, isDragging]);
+  
   return (
     <SliderWrapper
       ref={sliderRef}
@@ -805,16 +868,17 @@ const imageThumbLRUrl = (fileName: string) =>
   };
 
 
-  const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
-    // Open shell immediately (fast paint)
-    setIsModalOpen(true);
+  const [modalSession, setModalSession] = useState(0);
 
-    // Defer “heavy” state updates so they don’t block INP
-    startTransition(() => {
-      setModalItems(items);
-      setModalIndex(startIndex);
-    });
-  }, []);
+const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
+  setModalIndex(startIndex);        // ✅ immediate (so slider knows where to start)
+  setIsModalOpen(true);
+  setModalSession((s) => s + 1);    // ✅ increments each open
+
+  startTransition(() => {
+    setModalItems(items);           // heavy update stays deferred
+  });
+}, []);
 
   const closeModal = useCallback(() => {
     // Make the click close instant
@@ -833,6 +897,7 @@ const imageThumbLRUrl = (fileName: string) =>
     else setTimeout(cleanup, 300);
   }, []);
 
+  const modalUsesSlider = modalItems.length > 0 && modalItems.every(m => m.type === "image");
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -868,6 +933,7 @@ const imageThumbLRUrl = (fileName: string) =>
 
   useEffect(() => {
     if (!isModalOpen || modalLength <= 1) return;
+    if (modalUsesSlider) return; // ✅ slider handles navigation
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
@@ -881,7 +947,7 @@ const imageThumbLRUrl = (fileName: string) =>
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, modalLength, goToNextMedia, goToPrevMedia]);
+}, [isModalOpen, modalLength, modalUsesSlider, goToNextMedia, goToPrevMedia]);
 
   /* ────────── загрузка блоков ────────── */
   useEffect(() => {
@@ -1028,7 +1094,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
     if (img.src !== fullSrc) img.src = fullSrc;
   }}
   draggable={false}
-  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+  style={{ height: "100%", display: "block", objectFit: "cover" }}
 />
 
                       )}
@@ -1509,69 +1575,91 @@ const thumbSrc = imageThumbLRUrl(item.src);
               )}
             </CloseButton>
             <MediaContainer>
-              {currentMedia ? (
-                <>
+  {currentMedia ? (
+    <>
+      {/* ✅ If modal items are ALL images — use the IMAGE_SINGLE slider */}
+      {modalItems.length > 0 && modalItems.every(m => m.type === "image") ? (
+        <ImageSlider
+  images={modalItems.map((m) => ({
+    src: m.url,
+    title: m.title,
+    description: m.description,
+  }))}
+  autoPlay={false}
+  keyboardNav={true}
+  startIndex={modalIndex}       // ✅ open at clicked thumb
+  resetKey={modalSession}       // ✅ apply startIndex only per-open
+  onActiveIndexChange={(i) => setModalIndex(i)} // keep text synced
+  aspectRatio={"auto"}
+/>
+      ) : (
+        <>
+          {/* fallback: your old arrows + zoomable image / video */}
+          {modalLength > 1 && (
+            <>
+              <ModalArrowZone
+                type="button"
+                onClick={goToPrevMedia}
+                aria-label="Previous image"
+                $side="left"
+              >
+                <img src={Left} alt="" />
+              </ModalArrowZone>
 
-                  {modalLength > 1 && (
-                    <>
-                      <ModalArrowZone
-                        type="button"
-                        onClick={goToPrevMedia}
-                        aria-label="Previous image"
-                        $side="left"
-                      >
-                        <img src={Left} alt="" />
-                      </ModalArrowZone>
+              <ModalArrowZone
+                type="button"
+                onClick={goToNextMedia}
+                aria-label="Next image"
+                $side="right"
+              >
+                <img src={Right} alt="" />
+              </ModalArrowZone>
+            </>
+          )}
 
-                      <ModalArrowZone
-                        type="button"
-                        onClick={goToNextMedia}
-                        aria-label="Next image"
-                        $side="right"
-                      >
-                        <img src={Right} alt="" />
-                      </ModalArrowZone>
-                    </>
-                  )}
-                  {currentMedia.type === 'image' && (
-                    <ZoomableImage
-                      src={currentMedia.url}
-                      alt={currentMedia.altText}
-                      onLoad={() => {
-                        // you can keep this empty or log if needed
-                      }}
-                      onError={() => {
-                        console.error('❌ Image failed to load:', currentMedia.url);
-                        failedMedia.current.add(currentMedia.url);
-                      }}
-                    />
-                  )}
+          {currentMedia.type === "image" && (
+            <ZoomableImage
+              src={currentMedia.url}
+              alt={currentMedia.altText}
+              onLoad={() => {}}
+              onError={() => {
+                console.error("❌ Image failed to load:", currentMedia.url);
+                failedMedia.current.add(currentMedia.url);
+              }}
+            />
+          )}
 
-                  {currentMedia.type === 'video' && currentMedia.url && (
-                    <video
-                      src={currentMedia.url}
-                      controls
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '80vh',
-                      }}
-                    />
-                  )}
-                </>
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "80vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                </div>
-
-              )}
-            </MediaContainer>
+          {currentMedia.type === "video" && currentMedia.url && (
+            <video
+              src={currentMedia.url}
+              controls
+              style={{ maxWidth: "100%", maxHeight: "80vh" }}
+            />
+          )}
+        </>
+      )}
+    </>
+  ) : (
+    <div
+      style={{
+        width: "100%",
+        height: "80vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <video
+        src={Loading}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{ width: 140, height: 140 }}
+      />
+    </div>
+  )}
+</MediaContainer>
             {(currentMedia?.title || currentMedia?.description || collection.work_title) && (
               <TextContainer>
                 {currentMedia?.title && (
