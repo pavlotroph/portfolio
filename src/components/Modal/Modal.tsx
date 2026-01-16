@@ -75,7 +75,7 @@ export const MediaContainer = styled.div`
     height: auto;
     max-height: 80vh;
     width: auto;
-    max-width: 90vw;
+    max-width: 100%;
     object-fit: contain;
     display: block;
     padding: 0;
