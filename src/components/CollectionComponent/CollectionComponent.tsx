@@ -7,6 +7,7 @@ import Modal, {
   MediaContainer,
   TextContainer,
   ModalArrowZone,
+
 } from '../Modal/Modal';
 import Loading from '../../assets/video/logo_animated_hq.webm';
 import { supabase, supabaseUrl } from '../../supabaseClient';
@@ -109,6 +110,7 @@ interface ZoomableImageProps {
   alt: string;
   onError?: () => void;
   onLoad?: () => void;
+  onZoomChange?: (zoomed: boolean) => void;
 }
 
 /**
@@ -122,6 +124,8 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   alt,
   onError,
   onLoad,
+  onZoomChange,
+  
 }) => {
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -137,7 +141,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
 
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const isPinchingRef = useRef(false);
-  const initialPinchDistanceRef = useRef(0);
+  const initialPinchDistanceRef = useRef<number | null>(null);
   const initialScaleRef = useRef(1);
 
   const MIN_SCALE = 1;
@@ -165,6 +169,24 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
     []
   );
   
+  useEffect(() => {
+  onZoomChange?.(scale > 1);
+}, [scale, onZoomChange]);
+
+useEffect(() => {
+  setScale(1);
+  setTranslate({ x: 0, y: 0 });
+  setIsPanning(false);
+
+  scaleRef.current = 1;
+  translateRef.current = { x: 0, y: 0 };
+
+  pointersRef.current.clear();
+  isPinchingRef.current = false;
+
+  onZoomChange?.(false);
+}, [src, onZoomChange]);
+
   useEffect(() => {
     scaleRef.current = scale;
   }, [scale]);
@@ -264,7 +286,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
       const dy = p2.y - p1.y;
       const dist = Math.hypot(dx, dy);
 
-      if (!initialPinchDistanceRef.current) return;
+      if (initialPinchDistanceRef.current == null) return;
 
       const rawScale =
         (dist / initialPinchDistanceRef.current) * initialScaleRef.current;
@@ -346,7 +368,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        touchAction: scale > 1 ? 'none' : 'pan-y',
+        touchAction: 'none',
         cursor:
           scale > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default',
       }}
@@ -435,6 +457,7 @@ interface ImageSliderProps {
   aspectRatio?: string;
   keyboardNav?: boolean; // default false
   resetKey?: number;
+  zoomable?: boolean;
 
   // NEW:
   autoPlay?: boolean; // default true
@@ -449,9 +472,12 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   keyboardNav = false,
   startIndex = 0,
   resetKey = 0,
+  zoomable = false,
   onActiveIndexChange,
 }) => {
   const slides = [images[images.length - 1], ...images, images[0]];
+
+  const hasMultiple = images.length > 1;
 
   // start at startIndex (but +1 because of the "clone" at the beginning)
   const [index, setIndex] = useState(startIndex + 1);
@@ -475,6 +501,17 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   const [autoplayDisabledByUser, setAutoplayDisabledByUser] = useState(false);
 
+  const [isZoomed, setIsZoomed] = useState(false);
+  const isZoomedRef = useRef(false);
+
+  useEffect(() => {
+  setIsZoomed(false);
+}, [index, resetKey]);
+
+  useEffect(() => {
+    isZoomedRef.current = isZoomed;
+  }, [isZoomed]);
+
   // NEW: if parent changes startIndex (e.g. modal opens at clicked image)
   useEffect(() => {
   setAnimate(false);
@@ -494,13 +531,6 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   useEffect(() => {
     onActiveIndexChange?.(realIndex);
   }, [realIndex, onActiveIndexChange]);
-
-  useEffect(() => {
-  if (!autoPlay) return;
-  if (!isVisible || isDragging) return;
-
-  // your existing interval code here...
-}, [autoPlay, isVisible, isDragging]);
   
   // Стрелки
   const prevSlide = () => {
@@ -518,7 +548,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     setAutoplayDisabledByUser(true);
   };
 useEffect(() => {
-  if (!keyboardNav) return;
+  if (!keyboardNav || !hasMultiple) return;
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft") {
@@ -532,10 +562,18 @@ useEffect(() => {
 
   window.addEventListener("keydown", onKeyDown);
   return () => window.removeEventListener("keydown", onKeyDown);
-}, [keyboardNav, prevSlide, nextSlide]);
+}, [keyboardNav, hasMultiple, prevSlide, nextSlide]);
 
   // Drag logic
   const onPointerDown = (e: React.PointerEvent) => {
+    if (!hasMultiple) return; 
+
+ // If image is zoomed in, user is panning/zooming — don't swipe slides.
+if (isZoomedRef.current) return;
+
+// Touch devices: disable slide swipe so pinch-zoom never fights the slider.
+if (zoomable && e.pointerType === "touch") return;
+
     if ((e.target as HTMLElement).closest('button') || transitioningRef.current) return;
     const el = sliderRef.current!;
     el.setPointerCapture(e.pointerId);
@@ -648,12 +686,16 @@ useEffect(() => {
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
     >
+      {hasMultiple && (
+  <>
       <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
         <img src={Left} alt="Previous slide" />
       </Arrow>
       <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
         <img src={Right} alt="Next slide" />
       </Arrow>
+      </>
+      )}
 
       <SliderContent
         $index={index}
@@ -664,7 +706,20 @@ useEffect(() => {
       >
         {slides.map((img, i) => (
           <Slide key={i}>
-            <img src={img.src} alt={img.title || `Slide ${i + 1} of ${slides.length}`} draggable={false} />
+            {zoomable ? (
+     <ZoomableImage
+       src={img.src}
+       alt={img.title || `Slide ${i + 1} of ${slides.length}`}
+       onZoomChange={setIsZoomed}
+       onError={() => console.error("❌ Image failed to load:", img.src)}
+     />
+   ) : (
+     <img
+       src={img.src}
+       alt={img.title || `Slide ${i + 1} of ${slides.length}`}
+      draggable={false}
+     />
+   )}
           </Slide>
         ))}
       </SliderContent>
@@ -673,7 +728,7 @@ useEffect(() => {
 };
 
 
-
+const ENABLE_SQUARE_MODAL = false; // flip to true if you want it back
 
 //VIDEO
 interface AutoPlayVideoProps {
@@ -1141,7 +1196,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
           title?: string;
           description?: string;
         }[];
-
+        
         const modalItems: ModalMediaItem[] = items.map((item) => {
           const url = imageUrl(item.src);
           const isVideo = isVideoFile(item.src);
@@ -1159,6 +1214,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
         // 👇 new flag from Supabase JSON
         const startWithText = !!b.content?.startWithText;
+        
 
         return (
           <>
@@ -1173,7 +1229,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
               const isVideo = media.type === 'video';
 
               const Pic = (
-                <ImageBlock key={`pic-${index}`}>
+                <ImageBlock className="square-media" key={`pic-${index}`}>
                   {isVideo ? (
                     <AutoPlayVideo
                       src={media.url}
@@ -1181,28 +1237,29 @@ const thumbSrc = imageThumbLRUrl(item.src);
                     />
                   ) : (
                     <img
-                      src={media.url}
-                      alt={item.title || 'Collection image'}
-                      onClick={() => openModal([modalItems[index]], 0)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={
-                        item.title ? `View ${item.title}` : 'View collection image'
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          openModal(modalItems, index);
-                        }
-                      }}
-                    />
+  src={media.url}
+  alt={item.title || "Collection image"}
+  onClick={ENABLE_SQUARE_MODAL ? () => openModal(modalItems, index) : undefined}
+  onKeyDown={
+    ENABLE_SQUARE_MODAL
+      ? (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openModal(modalItems, index);
+          }
+        }
+      : undefined
+  }
+  role={ENABLE_SQUARE_MODAL ? "button" : undefined}
+  tabIndex={ENABLE_SQUARE_MODAL ? 0 : undefined}
+/>
                   )}
                 </ImageBlock>
               );
 
 
               const Txt = (
-                <TextBlock key={`txt-${index}`}>
+                <TextBlock className="square-text" key={`txt-${index}`}>
                   {item.label && (
                     <h1>
                       {item.label.split('\n').map((line, i) => (
@@ -1354,7 +1411,6 @@ const thumbSrc = imageThumbLRUrl(item.src);
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${seg.text} (opens in new tab)`}
-                            style={{ textDecoration: 'none', color: 'inherit' }}
                           >
                             {element}
                           </a>
@@ -1587,6 +1643,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
   }))}
   autoPlay={false}
   keyboardNav={true}
+  zoomable={true}
   startIndex={modalIndex}       // ✅ open at clicked thumb
   resetKey={modalSession}       // ✅ apply startIndex only per-open
   onActiveIndexChange={(i) => setModalIndex(i)} // keep text synced

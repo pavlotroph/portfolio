@@ -59,8 +59,7 @@ export const MediaContainer = styled.div`
   background: transparent;
   /* no border - ensure images show without frame */
   img {
-    height: auto;
-    max-height: 80vh;
+    height: 24px;
     width: auto;
     max-width: 100%;
     object-fit: contain;
@@ -68,6 +67,7 @@ export const MediaContainer = styled.div`
     padding: 0;
     margin: 0 auto;
     border: none;
+  }
     
   }
 
@@ -99,8 +99,8 @@ export const CloseButton = styled.button`
   position: fixed;
   min-width: 44px;
   min-height: 44px;
-  width: 44px;
-  height: 44px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   top: 36px;
   right: 36px;

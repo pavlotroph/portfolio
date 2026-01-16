@@ -442,11 +442,13 @@ export const CollectionBlock = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin: 2rem 0;
+  .square-media { order: 1; }
+  .square-text  { order: 2; }
 
   @media (min-width: 744px) {
     flex-direction: row;
     align-items: center;
+     .square-media, .square-text { order: initial; }
     .image-container {
       max-width: 744px;
     }
@@ -459,25 +461,45 @@ export const CollectionBlock = styled.div`
 `;
 
 export const TextBlock = styled.div`
+  width: 100%;
+  aspect-ratio: 1 / 1;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+
   padding: 1rem;
   text-align: center;
-  aspect-ratio: 1;
+
+  /* ✅ this is the key: content can't make the square taller */
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0; /* important for line clamp in flex layouts */
+
   h1 {
     font-size: 32px;
+
+    /* ✅ keep long titles from breaking the square */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+
+    /* pick how many lines you allow */
+    -webkit-line-clamp: 6;
+
+    /* handle long words/URLs */
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   @media (min-width: 744px) {
     width: 50%;
-    text-align: center;
-    align-items: center;
-    margin: 0 auto;
     padding: 80px;
 
+    /* on desktop you may allow a bit more lines */
     h1 {
-      font-size: 32px;
+      -webkit-line-clamp: 8;
     }
   }
 `;
