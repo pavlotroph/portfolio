@@ -31,6 +31,7 @@ import {
   COLLECTION_1SEC_DESCRIPTION,
   CollectionContainer,
   CollectionHeader,
+  CollectionHeader2Sec,
   CollectionBlock,
   TextBlock,
   CollectionWrapper,
@@ -1383,28 +1384,28 @@ const thumbSrc = imageThumbLRUrl(item.src);
         );
 
       case 'TEXT_2SEC':
-        return (
-          <CollectionAdditionalWrapper>
-            <CollectionHeader
-              key={b.id}
-              style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
-            >
-              {b.content.sections.map((s: Section, i: number) => (
-                <CollectionWrapper key={i}>
-                  <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
-                  <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
-                    {s.text.split('\n').map((line, index) => (
-                      <React.Fragment key={index}>
-                        {line}
-                        <br />
-                      </React.Fragment>
-                    ))}
-                  </COLLECTION_4SEC_DESCRIPTION>
-                </CollectionWrapper>
+  return (
+    <CollectionAdditionalWrapper>
+      <CollectionHeader2Sec
+        key={b.id}
+        style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
+      >
+        {b.content.sections.map((s: Section, i: number) => (
+          <CollectionWrapper key={i}>
+            <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
+            <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
+              {s.text.split('\n').map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  <br />
+                </React.Fragment>
               ))}
-            </CollectionHeader>
-          </CollectionAdditionalWrapper>
-        );
+            </COLLECTION_4SEC_DESCRIPTION>
+          </CollectionWrapper>
+        ))}
+      </CollectionHeader2Sec>
+    </CollectionAdditionalWrapper>
+  );
 
         interface TextSegmentB {
           text: string;
@@ -1418,25 +1419,19 @@ const thumbSrc = imageThumbLRUrl(item.src);
       case 'TEXT_1SEC':
       case 'TEXT_1SEC_LP': {
         const normalizeSegmentTag = (tag?: string): keyof JSX.IntrinsicElements => {
-          if (typeof tag !== 'string') return 'span';
-          const lower = tag.toLowerCase();
-          if (lower.startsWith('data:') || lower.includes('/')) return 'span';
-          if (lower === 'h1') return 'h3';
-          if (lower === 'h2') return 'h4';
-          const allowed: Array<keyof JSX.IntrinsicElements> = [
-            'h3',
-            'h4',
-            'h5',
-            'h6',
-            'p',
-            'span',
-            'strong',
-            'em',
-          ];
-          return allowed.includes(lower as keyof JSX.IntrinsicElements)
-            ? (lower as keyof JSX.IntrinsicElements)
-            : 'span';
-        };
+  if (typeof tag !== 'string') return 'span';
+  const lower = tag.toLowerCase().trim();
+
+  // security / sanity (same idea as your other validator)
+  if (lower.startsWith('data:') || lower.includes(':') || lower.includes('/')) return 'span';
+
+  const allowed: Array<keyof JSX.IntrinsicElements> = [
+    'h1','h2','h3','h4','h5','h6',
+    'p','span','strong','em',
+  ];
+
+  return allowed.includes(lower as any) ? (lower as any) : 'span';
+};
 
         const renderTextWithBreaks = (text: string) =>
           text.split('\n').map((line, lineIdx, arr) => (

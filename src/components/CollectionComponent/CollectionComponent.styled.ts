@@ -155,26 +155,27 @@ export const COLLECTION_1SEC_TITLE = styled.h4`
 
 export const COLLECTION_1SEC_DESCRIPTION = styled.div`
   font-family: var(--font-family);
-  font-size: 14px;
   line-height: 162%;
   color: #fff;
 
-  @media (min-width: 1440px) {
-    font-size: 16px;
+  /* Only normal text uses this size */
+  :where(p, span, strong, em, a) {
+    font-size: 14px;
+
+    @media (min-width: 1440px) {
+      font-size: 16px;
+    }
   }
 
-  h1 {
+  /* Don’t override headings here — GlobalStyle owns them */
+
+  /* Make everything behave like inline segments (so you can build sentences) */
+  :where(h1, h2, h3, h4, h5, h6, p, span, strong, em) {
+    display: inline;
   }
-  h2 {
-  }
-  h3 {
-  }
-  span {
-  }
+
   a {
     text-decoration: underline;
-  }
-  a:hover {
   }
 `;
 
@@ -242,7 +243,7 @@ export const COLLECTION_TEXT_TITLE = styled.h2<{
   color: #fff;
 `;
 
-export const COLLECTION_4SEC_DESCRIPTION = styled.h2`
+export const COLLECTION_4SEC_DESCRIPTION = styled.div`
   padding-bottom: 8px;
 `;
 
@@ -265,6 +266,16 @@ export const CollectionHeader = styled.div<{ $isPhoto?: boolean }>`
     align-items: flex-start;
   }
 `;
+
+export const CollectionHeader2Sec = styled(CollectionHeader)`
+  /* only change behavior on desktop wide layout */
+  @media (min-width: 1440px) {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    column-gap: 460px;
+  }
+`;
+
 
 export const CollectionTextWrapper = styled.div`
   display: flex;

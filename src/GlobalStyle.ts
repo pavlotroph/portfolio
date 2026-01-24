@@ -74,6 +74,7 @@ export const GlobalStyle = css`
     font-family: 'Geist', sans-serif;
     font-style: normal;
     line-height: 161.8%;
+    font-size: 16px;
   }
 
   h3 {
