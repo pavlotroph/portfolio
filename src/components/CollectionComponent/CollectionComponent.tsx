@@ -111,6 +111,9 @@ interface ZoomableImageProps {
   onError?: () => void;
   onLoad?: () => void;
   onZoomChange?: (zoomed: boolean) => void;
+
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
 }
 
 /**
@@ -125,8 +128,15 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
   onError,
   onLoad,
   onZoomChange,
+  onSwipeLeft,
+  onSwipeRight,
   
 }) => {
+  const swipePointerIdRef = useRef<number | null>(null);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeDeltaRef = useRef({ dx: 0, dy: 0 });
+  const swipeStartTimeRef = useRef(0);
+
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -270,12 +280,36 @@ useEffect(() => {
       translateStartRef.current = translateRef.current;
       isPinchingRef.current = false;
     }
+    if (e.pointerType === "touch") {
+  if (activeCount === 1 && scaleRef.current === 1) {
+    swipePointerIdRef.current = e.pointerId;
+    swipeStartRef.current = { x: e.clientX, y: e.clientY };
+    swipeDeltaRef.current = { dx: 0, dy: 0 };
+    swipeStartTimeRef.current = Date.now();
+  } else {
+    swipePointerIdRef.current = null;
+    swipeStartRef.current = null;
+  }
+}
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.has(e.pointerId)) return;
 
     updatePointer(e.pointerId, e.clientX, e.clientY);
+
+    if (
+  swipePointerIdRef.current === e.pointerId &&
+  swipeStartRef.current &&
+  scaleRef.current === 1 &&
+  !isPinchingRef.current &&
+  pointersRef.current.size === 1
+) {
+  swipeDeltaRef.current = {
+    dx: e.clientX - swipeStartRef.current.x,
+    dy: e.clientY - swipeStartRef.current.y,
+  };
+}
 
     // Pinch zoom (touch)
     if (isPinchingRef.current) {
@@ -340,6 +374,30 @@ useEffect(() => {
     if (el && el.hasPointerCapture(e.pointerId)) {
       el.releasePointerCapture(e.pointerId);
     }
+    if (
+  swipePointerIdRef.current === e.pointerId &&
+  swipeStartRef.current &&
+  scaleRef.current === 1 &&
+  !isPinchingRef.current
+) {
+  const { dx, dy } = swipeDeltaRef.current;
+  const dt = Date.now() - swipeStartTimeRef.current;
+
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
+
+  const SWIPE_PX = 50;
+  const MAX_MS = 700;
+
+  if (dt <= MAX_MS && absDx >= SWIPE_PX && absDx > absDy * 1.2) {
+    if (dx < 0) onSwipeLeft?.();  // swipe left → next
+    else onSwipeRight?.();        // swipe right → prev
+  }
+}
+
+// cleanup
+swipePointerIdRef.current = null;
+swipeStartRef.current = null;
     endInteraction(e.pointerId);
   };
 
@@ -533,20 +591,24 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   }, [realIndex, onActiveIndexChange]);
   
   // Стрелки
-  const prevSlide = () => {
-    if (transitioningRef.current) return;
-    setAnimate(true);
-    setIndex(i => i - 1);
-    transitioningRef.current = true;
-    setAutoplayDisabledByUser(true);
-  };
-  const nextSlide = () => {
-    if (transitioningRef.current) return;
-    setAnimate(true);
-    setIndex(i => i + 1);
-    transitioningRef.current = true;
-    setAutoplayDisabledByUser(true);
-  };
+  const prevSlide = (fromUser: boolean = true) => {
+  if (transitioningRef.current) return;
+  setAnimate(true);
+  setIndex(i => i - 1);
+  transitioningRef.current = true;
+
+  if (fromUser) setAutoplayDisabledByUser(true);
+};
+
+const nextSlide = (fromUser: boolean = true) => {
+  if (transitioningRef.current) return;
+  setAnimate(true);
+  setIndex(i => i + 1);
+  transitioningRef.current = true;
+
+  if (fromUser) setAutoplayDisabledByUser(true);
+};
+
 useEffect(() => {
   if (!keyboardNav || !hasMultiple) return;
 
@@ -669,7 +731,7 @@ if (zoomable && e.pointerType === "touch") return;
   useEffect(() => {
     if (autoPlay && !autoplayDisabledByUser && isVisible && !isDragging && !transitioningRef.current) {
       autoPlayRef.current = window.setInterval(() => {
-        nextSlide();
+        nextSlide(false);
       }, 3000);
     } else {
       window.clearInterval(autoPlayRef.current);
@@ -688,12 +750,13 @@ if (zoomable && e.pointerType === "touch") return;
     >
       {hasMultiple && (
   <>
-      <Arrow $left onClick={prevSlide} aria-label="Previous slide" role="button" tabIndex={0}>
-        <img src={Left} alt="Previous slide" />
-      </Arrow>
-      <Arrow onClick={nextSlide} aria-label="Next slide" role="button" tabIndex={0}>
-        <img src={Right} alt="Next slide" />
-      </Arrow>
+      <Arrow $left onClick={() => prevSlide(true)} aria-label="Previous slide" role="button" tabIndex={0}>
+  <img src={Left} alt="Previous slide" />
+</Arrow>
+
+<Arrow onClick={() => nextSlide(true)} aria-label="Next slide" role="button" tabIndex={0}>
+  <img src={Right} alt="Next slide" />
+</Arrow>
       </>
       )}
 
@@ -712,6 +775,8 @@ if (zoomable && e.pointerType === "touch") return;
        alt={img.title || `Slide ${i + 1} of ${slides.length}`}
        onZoomChange={setIsZoomed}
        onError={() => console.error("❌ Image failed to load:", img.src)}
+       onSwipeLeft={nextSlide}
+  onSwipeRight={prevSlide}
      />
    ) : (
      <img
