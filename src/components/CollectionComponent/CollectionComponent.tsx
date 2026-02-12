@@ -34,7 +34,8 @@ import {
   CollectionHeader2Sec,
   CollectionBlock,
   TextBlock,
-  CollectionWrapper,
+  TEXT_MBLOCK_WRAPPER,
+  TEXT_MBLOCK_WRAPPER_LIGHT,
   CollectionAdditionalWrapper,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
@@ -1367,7 +1368,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
               style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
             >
               {b.content.sections.map((s: Section, i: number) => (
-                <CollectionWrapper key={i}>
+                <TEXT_MBLOCK_WRAPPER key={i}>
                   <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
                   <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
                     {s.text.split('\n').map((line, index) => (
@@ -1377,7 +1378,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                       </React.Fragment>
                     ))}
                   </COLLECTION_4SEC_DESCRIPTION>
-                </CollectionWrapper>
+                </TEXT_MBLOCK_WRAPPER>
               ))}
             </CollectionHeader>
           </CollectionAdditionalWrapper>
@@ -1391,7 +1392,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
         style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
       >
         {b.content.sections.map((s: Section, i: number) => (
-          <CollectionWrapper key={i}>
+          <TEXT_MBLOCK_WRAPPER_LIGHT key={i}>
             <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
             <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
               {s.text.split('\n').map((line, index) => (
@@ -1401,7 +1402,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                 </React.Fragment>
               ))}
             </COLLECTION_4SEC_DESCRIPTION>
-          </CollectionWrapper>
+          </TEXT_MBLOCK_WRAPPER_LIGHT>
         ))}
       </CollectionHeader2Sec>
     </CollectionAdditionalWrapper>
@@ -1524,7 +1525,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
         // still ok to keep internal title for iframe accessibility
         const title: string = content.title || 'YouTube video';
 
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1&modestbranding=1&rel=0`;
+        const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0&controls=1&rel=0&playsinline=1`;
 
         return (
           <YouTubePlayerWrapper key={b.id}>
@@ -1643,13 +1644,13 @@ const thumbSrc = imageThumbLRUrl(item.src);
                 };
 
                 return (
-                  <CollectionWrapper key={i} $isPhoto={isPhoto}>
+                  <TEXT_MBLOCK_WRAPPER key={i} $isPhoto={isPhoto}>
                     <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
                     <COLLECTION_4SEC_DESCRIPTION
                       as={normalizeTag(s.tag)}
                       dangerouslySetInnerHTML={{ __html: s.text }}
                     />
-                  </CollectionWrapper>
+                  </TEXT_MBLOCK_WRAPPER>
                 );
               }
             )}

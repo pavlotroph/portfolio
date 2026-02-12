@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   CollectionHeader,
-  CollectionWrapper,
+  TEXT_MBLOCK_WRAPPER,
   CollectionAdditionalWrapper,
   CUSTOM_SPLITTER,
   COLLECTION_4SEC_TITLE,
@@ -74,7 +74,7 @@ return (
       <CollectionHeader>
         {isLoaded ? (
           Object.entries(grouped).map(([label, items]) => (
-            <CollectionWrapper key={label}>
+            <TEXT_MBLOCK_WRAPPER key={label}>
               <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
 
               {items.length === 1 ? (
@@ -84,7 +84,7 @@ return (
                   {items.map(renderItem)}
                 </div>
               )}
-            </CollectionWrapper>
+            </TEXT_MBLOCK_WRAPPER>
           ))
         ) : (
           <div style={{ height: 220 }} />

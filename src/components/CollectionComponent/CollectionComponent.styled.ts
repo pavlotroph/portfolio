@@ -179,7 +179,7 @@ export const COLLECTION_1SEC_DESCRIPTION = styled.div`
   }
 `;
 
-export const CollectionWrapper = styled.div<{ $isPhoto?: boolean }>`
+export const TEXT_MBLOCK_WRAPPER = styled.div<{ $isPhoto?: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -192,6 +192,18 @@ export const CollectionWrapper = styled.div<{ $isPhoto?: boolean }>`
 
   @media (min-width: 1440px) {
     width: 300px;
+  }
+`;
+
+export const TEXT_MBLOCK_WRAPPER_LIGHT = styled.div<{ $isPhoto?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: auto;
+  padding-bottom: ${props => props.$isPhoto ? '16px' : '32px'};
+
+  @media (min-width: 744px) {
+    width: 50%;
   }
 `;
 
@@ -272,7 +284,6 @@ export const CollectionHeader2Sec = styled(CollectionHeader)`
   @media (min-width: 1440px) {
     justify-content: flex-start;
     flex-wrap: nowrap;
-    column-gap: 460px;
   }
 `;
 

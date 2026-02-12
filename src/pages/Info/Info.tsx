@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import QuoteBlock from '../../components/Quote/QuoteBlock';
 import {
   CollectionContainer,
-  CollectionWrapper,
+  TEXT_MBLOCK_WRAPPER,
   CollectionAdditionalWrapper,
   CollectionHeader,
   COLLECTION_1SEC_TITLE,
@@ -120,7 +120,7 @@ const Info: React.FC = () => {
               }
 
               return (
-                <CollectionWrapper key={i}>
+                <TEXT_MBLOCK_WRAPPER key={i}>
                   <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
                   <COLLECTION_4SEC_DESCRIPTION
                     as={validTag as any}
@@ -128,7 +128,7 @@ const Info: React.FC = () => {
                   >
                     {content}
                   </COLLECTION_4SEC_DESCRIPTION>
-                </CollectionWrapper>
+                </TEXT_MBLOCK_WRAPPER>
               );
 
             })}
