@@ -54,17 +54,17 @@ export const HeaderWrapper = styled.div`
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
-  padding: 14px 18px;
+  padding: 14px 12px;
   justify-content: space-between;
   align-items: center;
   border: none;
   outline: none;
   position: relative;
   @media screen and (min-width: 768px) {
-    padding: 14px 24px;
+    padding: 14px 12px;
   }
   @media screen and (min-width: 1460px) {
-    padding: 14px 0px;
+    padding: 14px 12px;
   }
 `;
 export const Logo = styled(NavLink)`

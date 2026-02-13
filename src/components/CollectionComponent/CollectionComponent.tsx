@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
-import { useLocation } from 'react-router-dom';
+import {
+useLocation } from 'react-router-dom';
 import Modal, {
   MODAL_TITLE,
   MODAL_DESCRIPTION,
@@ -29,7 +30,7 @@ import {
   COLLECTION_TEXT_TITLE,
   COLLECTION_1SEC_TITLE,
   COLLECTION_1SEC_DESCRIPTION,
-  CollectionContainer,
+  WRAPPER_GLOBAL,
   CollectionHeader,
   CollectionHeader2Sec,
   CollectionBlock,
@@ -49,6 +50,16 @@ import {
   YouTubePlayerWrapper,
   YouTubeIframeContainer,
   ContentBlockWrapper,
+
+  WRAPPER_COMPONENT,
+  WRAPPER_BLOCKS,
+  CONTENT_TEXT_BLOCK,
+  CONTENT_MEDIA_BLOCK,
+  CONTENT_EMPTY_BLOCK,
+  CONTENT_TEXT_HEADING,
+  CONTENT_TEXT_BODY,
+  CONTENT_LINK,
+  CONTENT_MEDIA_INNER,
 } from './CollectionComponent.styled';
 
 /* ────────────────────────────────────────────── */
@@ -66,7 +77,8 @@ export type BlockType =
   | 'TEXT_4SEC' | 'TEXT_2SEC'
   | 'TEXT_1SEC' | 'TEXT_1SEC_LP' | 'TEXT_TITLE'
   | 'YOUTUBE_PLAYER'
-  | 'SPLITTER' | 'SPLITTER_SPACE' | 'SPLITTER_DEFAULT';
+  | 'SPLITTER' | 'SPLITTER_SPACE' | 'SPLITTER_DEFAULT'
+  | 'CONTENT';
 
 export interface CollectionBlockDB {
   id: number;
@@ -1235,8 +1247,213 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
 
 
-  const renderBlock = useCallback((b: CollectionBlockDB) => {
+  /* ────────── CONTENT helpers ────────── */
+const normalizeAlign = (a: any): 'left' | 'center' | 'right' => {
+  const s = typeof a === 'string' ? a.toLowerCase().trim() : 'left';
+  if (s.startsWith('right')) return 'right';
+  if (s.startsWith('center')) return 'center';
+  return 'left';
+};
+
+const paddingToCss = (pad: any, fallback: string): string => {
+  const raw = typeof pad === 'string' ? pad : fallback;
+  const nums = raw
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => Number(x));
+
+  const safe = (n: any) => (Number.isFinite(n) ? Math.max(0, Math.min(128, n)) : 0);
+
+  // Accept 1, 2, or 4 values (CSS-like behavior)
+  let t = 0, r = 0, b = 0, l = 0;
+  if (nums.length === 1) {
+    t = r = b = l = safe(nums[0]);
+  } else if (nums.length === 2) {
+    t = b = safe(nums[0]);
+    r = l = safe(nums[1]);
+  } else if (nums.length >= 4) {
+    t = safe(nums[0]);
+    r = safe(nums[1]);
+    b = safe(nums[2]);
+    l = safe(nums[3]);
+  } else {
+    // invalid → fallback
+    return paddingToCss(fallback, fallback);
+  }
+
+  return `${t}px ${r}px ${b}px ${l}px`;
+};
+
+const renderMultiline = (text: any) => {
+  const s = typeof text === 'string' ? text : '';
+  const lines = s.split('\n');
+  return lines.map((line, i) => (
+    <React.Fragment key={i}>
+      {line}
+      {i < lines.length - 1 ? <br /> : null}
+    </React.Fragment>
+  ));
+};
+
+const renderBlock = useCallback((b: CollectionBlockDB) => {
     switch (b.type) {
+
+case 'CONTENT': {
+  const contentItems = Array.isArray(b.content?.items) ? b.content.items : [];
+
+  const componentPaddingCss = paddingToCss(b.content?.componentPadding, '0,0,0,0');
+
+  return (
+    <WRAPPER_COMPONENT $padding={componentPaddingCss}>
+      <WRAPPER_BLOCKS data-count={contentItems.length}>
+        {contentItems.map((it: any, idx: number) => {
+          const blockKind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : 'empty';
+
+          // Defaults: text=24px padding, media/empty=0px padding
+          const paddingCss =
+            blockKind === 'text'
+              ? paddingToCss(it?.padding, '24,24,24,24')
+              : paddingToCss(it?.padding, '0,0,0,0');
+
+          if (blockKind === 'text') {
+            const blockItems = Array.isArray(it?.block_items) ? it.block_items : [];
+
+            return (
+              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss}>
+                {blockItems.map((t: any, j: number) => {
+                  const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
+                  const isHeading = obj === 'heading';
+
+                  const tagRaw = typeof t?.style === 'string' ? t.style.toLowerCase().trim() : '';
+                  const fallbackTag = isHeading ? 'h4' : 'h3';
+                  const tag = (['h1','h2','h3','h4','h5','h6','p','span','strong','em'].includes(tagRaw) ? tagRaw : fallbackTag) as any;
+
+                  const align = normalizeAlign(t?.alignment);
+                  const size = Number(t?.size ?? 0);
+                  const sizeStyle = Number.isFinite(size) && size > 0 ? { fontSize: Math.min(128, size) } : undefined;
+
+                  const href = typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
+                    ? t.link.trim()
+                    : null;
+
+                  const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
+
+                  const lineNode = (
+                    <Line as={tag} $align={align} style={sizeStyle}>
+                      {renderMultiline(t?.text)}
+                    </Line>
+                  );
+
+                  if (!href) return <React.Fragment key={`content-textline-${idx}-${j}`}>{lineNode}</React.Fragment>;
+
+                  return (
+                    <CONTENT_LINK
+                      key={`content-textline-${idx}-${j}`}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
+                    >
+                      {lineNode}
+                    </CONTENT_LINK>
+                  );
+                })}
+              </CONTENT_TEXT_BLOCK>
+            );
+          }
+
+          if (blockKind === 'media') {
+            const aspectRatio =
+              typeof it?.aspectRatio === 'string' && it.aspectRatio.trim()
+                ? it.aspectRatio
+                : (typeof it?.content?.aspectRatio === 'string' ? it.content.aspectRatio : '16 / 9');
+
+            const items = Array.isArray(it?.items) ? it.items : (Array.isArray(it?.content?.items) ? it.content.items : []);
+            const first = items?.[0];
+            const mediaName = typeof first?.media === 'string' ? first.media : '';
+
+            if (!mediaName) {
+              return <CONTENT_EMPTY_BLOCK key={`content-media-empty-${idx}`} $padding={paddingCss} />;
+            }
+
+            const url = imageUrl(mediaName);
+            const isVideo = isVideoFile(mediaName);
+
+            const wantsModal =
+              typeof first?.modal === 'string' && first.modal.toLowerCase().trim() === 'yes';
+
+            const modalImageItems: ModalMediaItem[] = (Array.isArray(items) ? items : [])
+              .filter((x: any) => typeof x?.media === 'string' && x.media && !isVideoFile(x.media))
+              .map((x: any) => ({
+                url: imageUrl(String(x.media)),
+                type: 'image',
+                altText: x?.title ? String(x.title) : '',
+                title: x?.title ? String(x.title) : '',
+                description: x?.description ? String(x.description) : '',
+              }));
+
+            const handleContentMediaClick = () => {
+              // Only images open modal in this system (per spec)
+              if (!wantsModal) return;
+              if (isVideo) return;
+              if (!modalImageItems.length) return;
+              openModal(modalImageItems, 0);
+            };
+
+            return (
+              <CONTENT_MEDIA_BLOCK
+                key={`content-media-${idx}`}
+                $padding={paddingCss}
+                $aspectRatio={aspectRatio}
+                role="group"
+                aria-label={first?.title ? String(first.title) : 'Media'}
+                data-modal={wantsModal ? 'yes' : 'no'}
+                onClick={wantsModal && !isVideo ? handleContentMediaClick : undefined}
+                tabIndex={wantsModal && !isVideo ? 0 : -1}
+                onKeyDown={(e) => {
+                  if (!(wantsModal && !isVideo)) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleContentMediaClick();
+                  }
+                }}
+              >
+                <CONTENT_MEDIA_INNER>
+                  {isVideo ? (
+                    <video
+                      src={url}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={url}
+                      alt={first?.title ? String(first.title) : ''}
+                      loading="lazy"
+                    />
+                  )}
+                </CONTENT_MEDIA_INNER>
+              </CONTENT_MEDIA_BLOCK>
+            );
+          }
+
+          // empty block (default)
+          return (
+            <CONTENT_EMPTY_BLOCK
+              key={`content-empty-${idx}`}
+              $padding={paddingCss}
+            />
+          );
+        })}
+      </WRAPPER_BLOCKS>
+    </WRAPPER_COMPONENT>
+  );
+}
+
       case 'IMAGE_SINGLE': {
         const aspectRatio = b.content?.aspectRatio || '2 / 1';
         const images: ImageItem[] = b.content.items?.map((image: any) => ({
@@ -1592,7 +1809,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
   /* ────────── MAIN JSX ────────── */
   const isPhoto = source === 'photo';
   return (
-    <CollectionContainer $isPhoto={isPhoto}>
+    <WRAPPER_GLOBAL $isPhoto={isPhoto}>
       {/* ——— верхний титул и фильтр ——— */}
       {showFilter && (
         <WorkTitelContainer>
@@ -1671,7 +1888,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
             key={b.id}
             amount={isGallery ? 0.08 : undefined}  // 👈 tall galleries trigger almost immediately
           >
-            <ContentBlockWrapper>{node}</ContentBlockWrapper>
+            {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
           </Reveal>
         );
       })}
@@ -1797,7 +2014,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
           </Modal>
         </>
 
-    </CollectionContainer>
+    </WRAPPER_GLOBAL>
   );
 };
 

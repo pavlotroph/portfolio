@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import VideoLogo from "../../assets/video/logo_animated_hq.webm";
+import VideoLogoWebm from "../../assets/video/logo_animated_hq.webm";
+import VideoLogoMp4 from "../../assets/video/logo.mp4";
 
 // Анімації
 const fadeOutAnimation = keyframes`
@@ -73,7 +74,11 @@ const Preloader = ({ onComplete }: { onComplete: () => void }) => {
     // Запускаємо ефект удару та відео відразу
     setPlayVideo(true);
     if (videoRef.current) {
-      videoRef.current.play().catch(e => console.error("Video play error:", e));
+      videoRef.current.play().catch(e => {
+        if (e.name !== 'AbortError') {
+          console.error("Video play error:", e);
+        }
+      });
     }
 
     // Ховаємо Preloader через 3 секунди після запуску
@@ -88,13 +93,14 @@ const Preloader = ({ onComplete }: { onComplete: () => void }) => {
   return (
     <PreloaderContainer $fadeOut={fadeOut}>
       <VideoContainer $playVideo={playVideo}>
-        <Video 
+        <Video
           ref={videoRef}
-          muted 
+          muted
           loop={false}
           preload="auto"
         >
-          <source src={VideoLogo} type="video/mp4" />
+          <source src={VideoLogoWebm} type="video/webm" />
+          <source src={VideoLogoMp4} type="video/mp4" />
           Your browser does not support the video tag.
         </Video>
       </VideoContainer>

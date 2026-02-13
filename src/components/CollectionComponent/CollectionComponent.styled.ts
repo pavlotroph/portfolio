@@ -5,13 +5,74 @@ type Align = 'left' | 'center' | 'right';
 /* ────────────────────────────────────────────── */
 /* ОБЩАЯ ОБЁРТКА                                  */
 /* ────────────────────────────────────────────── */
-export const CollectionContainer = styled.div<{ $isPhoto?: boolean }>`
+export const WRAPPER_GLOBAL = styled.div<{ $isPhoto?: boolean }>`
   width: 100%;
   margin: 0 auto;
   margin-bottom: 0px;
   position: relative;
   @media (min-width: 1440px) {
     max-width: 100%;
+  }
+`;
+
+// Back-compat export (old name)
+export const CollectionContainer = WRAPPER_GLOBAL;
+
+/* ────────────────────────────────────────────── */
+/* NEW WRAPPERS (CONTENT system)                  */
+/* ────────────────────────────────────────────── */
+
+export const WRAPPER_COMPONENT = styled.div<{ $padding?: string }>`
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: ${({ $padding }) => $padding ?? '0px'};
+
+  position: relative;
+  width: 100%;
+  height: fit-content;
+
+  background: #000000;
+`;
+
+export const WRAPPER_BLOCKS = styled.div`
+  /* WRAPPER_BLOCKS */
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  justify-content: center;
+  align-items: start;
+  align-content: center;
+
+  padding: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+
+  width: 100%;
+  max-width: 1440px;
+  height: fit-content;
+
+  background: #000000;
+
+  /* Special rule:
+     If there are exactly 4 blocks, we want 4-per-row when there's room,
+     otherwise jump to 2-per-row (avoid 3+1). */
+  &[data-count="4"] {
+    grid-template-columns: repeat(4, minmax(240px, 1fr));
+  }
+
+  @media (max-width: 960px) {
+    &[data-count="4"] {
+      grid-template-columns: repeat(2, minmax(240px, 1fr));
+    }
+  }
+
+  @media (max-width: 520px) {
+    &[data-count="4"] {
+      grid-template-columns: repeat(1, minmax(240px, 1fr));
+    }
   }
 `;
 
@@ -591,4 +652,131 @@ export const TopSplitter = styled(CUSTOM_SPLITTER)`
   @media (min-width: 744px) {
     top: 78px;
   }
+`;
+
+/* ────────────────────────────────────────────── */
+/* CONTENT (new universal system)                 */
+/* ────────────────────────────────────────────── */
+
+export const CONTENT_TEXT_BLOCK = styled.div<{ $padding: string }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+
+  width: 100%;
+  min-width: 240px;
+  height: fit-content;
+
+  padding: ${({ $padding }) => $padding};
+
+  flex: 1 1 0;
+`;
+
+const contentAlignCss = ($align: any) => {
+  const a = typeof $align === 'string' ? $align : 'left';
+  if (a === 'right') return css`align-self: flex-end; text-align: right;`;
+  if (a === 'center') return css`align-self: center; text-align: center;`;
+  return css`align-self: flex-start; text-align: left;`;
+};
+
+export const CONTENT_TEXT_HEADING = styled.h4<{ $align: 'left' | 'center' | 'right' }>`
+  width: 100%;
+  height: fit-content;
+  margin: 0;
+
+  color: #808080;
+
+  ${({ $align }) => contentAlignCss($align)}
+
+  /* Inside auto layout */
+  flex: none;
+flex-grow: 0;
+`;
+
+export const CONTENT_TEXT_BODY = styled.h3<{ $align: 'left' | 'center' | 'right' }>`
+  width: 100%;
+  height: fit-content;
+  margin: 0;
+
+  max-height: 320px;
+  overflow: hidden;
+
+  color: #ffffff;
+
+  ${({ $align }) => contentAlignCss($align)}
+
+  /* Inside auto layout */
+  flex: none;
+flex-grow: 0;
+`;
+
+export const CONTENT_LINK = styled.a`
+  width: 100%;
+  display: block;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+
+export const CONTENT_MEDIA_BLOCK = styled.div<{ $padding: string; $aspectRatio: string }>`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+  min-width: 240px;
+  height: auto;
+
+  padding: ${({ $padding }) => $padding};
+
+  aspect-ratio: ${({ $aspectRatio }) => $aspectRatio};
+
+  flex: 1 1 0;
+
+  position: relative;
+  overflow: hidden;
+
+
+  &[data-modal='yes'] {
+    cursor: pointer;
+  }
+
+  &[data-modal='yes']:hover {
+    opacity: 0.96;
+  }
+`;
+
+export const CONTENT_MEDIA_INNER = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  img,
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+`;
+
+export const CONTENT_EMPTY_BLOCK = styled.div<{ $padding: string }>`
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  min-width: 240px;
+
+  padding: ${({ $padding }) => $padding};
+
+  flex: 1 1 0;
+
+  align-self: stretch;
+  min-height: 1px;
 `;

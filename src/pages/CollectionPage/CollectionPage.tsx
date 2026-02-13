@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { Helmet } from 'react-helmet-async';
 
 import CollectionComponent from '../../components/CollectionComponent/CollectionComponent';
 import CollectionSlider from '../../components/CollectionsSwiper/CollectionsSwiper';
-import Loading from '../../assets/video/logo_animated_hq.webm';
+import LoadingWebm from '../../assets/video/logo_animated_hq.webm';
+import LoadingMp4 from '../../assets/video/logo.mp4';
 import { NotFoundWraperr, NotFoundText } from '../Work/Work.styled';
 
 interface WorkRecord {
@@ -95,6 +96,15 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
     }
   }, [loading]);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (loading && videoRef.current) {
+      videoRef.current.play().catch(e => {
+        if (e.name !== 'AbortError') console.error('Loading video play error:', e);
+      });
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div style={{
@@ -105,7 +115,17 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
         justifyContent: 'center',
         background: '#000',
       }}>
-        <video src={Loading} autoPlay loop muted playsInline aria-label="Loading animation" style={{ width: 150, height: 150 }} />
+        <video
+          ref={videoRef}
+          loop
+          muted
+          playsInline
+          aria-label="Loading animation"
+          style={{ width: 150, height: 150 }}
+        >
+          <source src={LoadingWebm} type="video/webm" />
+          <source src={LoadingMp4} type="video/mp4" />
+        </video>
       </div>
     );
   }

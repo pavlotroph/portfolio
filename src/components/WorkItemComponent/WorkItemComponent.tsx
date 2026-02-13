@@ -8,7 +8,8 @@ import {
   OriginalLayer,
   HoverGradient
 } from '../../pages/Work/Work.styled';
-import Loading from '../../assets/video/logo_animated_hq.webm';
+import LoadingWebm from '../../assets/video/logo_animated_hq.webm';
+import LoadingMp4 from '../../assets/video/logo.mp4';
 import { WorkItemData } from '../../pages/Work/Work';
 
 interface WorkItemComponentProps {
@@ -26,6 +27,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   const [isOriginalLoaded, setIsOriginalLoaded] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const loadingVideoRef = useRef<HTMLVideoElement>(null);
 
   const { folder, image_name, title, preview_url, vimeo_id } = work;
   const isVimeo = Boolean(vimeo_id);
@@ -60,7 +62,11 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   useEffect(() => {
     if (isHovered && isVideo && !isVimeo && videoRef.current) {
       videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(console.error);
+      videoRef.current.play().catch(error => {
+        if (error.name !== 'AbortError') {
+          console.error('Video play interrupted:', error);
+        }
+      });
     } else if ((!isHovered || isVimeo) && isVideo && videoRef.current) {
       videoRef.current.pause();
     }
@@ -70,6 +76,14 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) =
   isHovered && (isVideo || isVimeo) && !isVideoReady;
 
   const showLoaderOverlay = isLoading || showHoverVideoLoader;
+
+  useEffect(() => {
+    if (showLoaderOverlay && loadingVideoRef.current) {
+      loadingVideoRef.current.play().catch(e => {
+        if (e.name !== 'AbortError') console.error('Loading video play error:', e);
+      });
+    }
+  }, [showLoaderOverlay]);
 
   const handleMouseEnter = () => {
   setIsHovered(true);
@@ -102,14 +116,16 @@ const handleMouseLeave = () => {
   }}
 >
   <video
-    src={Loading}
-    autoPlay
+    ref={loadingVideoRef}
     loop
     muted
     playsInline
     aria-label="Loading animation"
     style={{ width: '100px', height: '100px' }}
-  />
+  >
+    <source src={LoadingWebm} type="video/webm" />
+    <source src={LoadingMp4} type="video/mp4" />
+  </video>
 </div>
       {/* Base layer – preview stays visible once loaded */}
 <PreviewLayer
