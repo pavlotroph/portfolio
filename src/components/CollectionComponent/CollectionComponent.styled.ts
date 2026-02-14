@@ -658,19 +658,28 @@ export const TopSplitter = styled(CUSTOM_SPLITTER)`
 /* CONTENT (new universal system)                 */
 /* ────────────────────────────────────────────── */
 
-export const CONTENT_TEXT_BLOCK = styled.div<{ $padding: string }>`
+export const CONTENT_TEXT_BLOCK = styled.div<{ $padding: string; $aspectRatio?: string | null }>`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 20px;
+  justify-content: center;
 
   width: 100%;
   min-width: 240px;
-  height: fit-content;
+
+  ${({ $aspectRatio }) =>
+    $aspectRatio
+      ? css`
+          aspect-ratio: ${$aspectRatio};
+          height: auto;
+          overflow: hidden;
+        `
+      : css`
+          height: fit-content;
+        `}
 
   padding: ${({ $padding }) => $padding};
-
-  flex: 1 1 0;
 `;
 
 const contentAlignCss = ($align: any) => {

@@ -56,6 +56,21 @@ export const GlobalStyle = css`
 
   h1 {
     font-weight: 600;
+    font-size: 22px;
+    font-family: 'Geist', sans-serif;
+    line-height: 161.8%;
+
+    @media (min-width: 744px) {
+      font-size: 24px;
+    }
+
+    @media (min-width: 1440px) {
+      font-size: 28px;
+    }
+  }
+
+  h2 {
+    font-weight: 600;
     font-size: 18px;
     font-family: 'Geist', sans-serif;
     line-height: 161.8%;
@@ -69,7 +84,18 @@ export const GlobalStyle = css`
     }
   }
 
-  h2 {
+  h3 {
+    font-weight: 600;
+    font-size: 14px;
+    font-family: 'Geist', sans-serif;
+    line-height: 161.8%;
+
+    @media (min-width: 1440px) {
+      font-size: 16px;
+    }
+  }
+
+  h4 {
     font-weight: 400;
     font-family: 'Geist', sans-serif;
     font-style: normal;
@@ -84,7 +110,7 @@ export const GlobalStyle = css`
     }
   }
 
-  h3 {
+  h5 {
     font-weight: 400;
     font-size: 14px;
     font-family: 'Geist', sans-serif;
@@ -96,7 +122,7 @@ export const GlobalStyle = css`
     }
   }
 
-  h4 {
+  h6 {
     font-family: 'JetBrains Mono';
     font-style: normal;
     font-size: 14px;

@@ -1248,6 +1248,39 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
 
   /* ────────── CONTENT helpers ────────── */
+const aspectLockToCss = (raw: any): string | null => {
+  if (typeof raw !== 'string') return null;
+
+  const v = raw.trim().toLowerCase();
+  if (!v || v === 'no' || v === 'none' || v === 'off' || v === '0') return null;
+
+  // Accept formats like "1:1", "16:9", "32 / 9", "1/1"
+  const compact = v.replace(/\s+/g, '');
+
+  const parsePair = (a: string, b: string) => {
+    const an = Number(a);
+    const bn = Number(b);
+    if (!Number.isFinite(an) || !Number.isFinite(bn)) return null;
+    if (an <= 0 || bn <= 0) return null;
+    return `${an} / ${bn}`;
+  };
+
+  if (compact.includes(':')) {
+    const [a, b] = compact.split(':');
+    return a && b ? parsePair(a, b) : null;
+  }
+
+  if (compact.includes('/')) {
+    const [a, b] = compact.split('/');
+    return a && b ? parsePair(a, b) : null;
+  }
+
+  // If someone already wrote CSS form like "1 / 1", keep it as-is
+  if (raw.includes('/')) return raw.trim();
+
+  return null;
+};
+
 const normalizeAlign = (a: any): 'left' | 'center' | 'right' => {
   const s = typeof a === 'string' ? a.toLowerCase().trim() : 'left';
   if (s.startsWith('right')) return 'right';
@@ -1318,9 +1351,11 @@ case 'CONTENT': {
 
           if (blockKind === 'text') {
             const blockItems = Array.isArray(it?.block_items) ? it.block_items : [];
-
+            const aspectRatioLock = aspectLockToCss(
+              it?.['aspect-ratio'] ?? it?.aspectRatio ?? it?.aspect_ratio
+            );
             return (
-              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss}>
+              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock}>
                 {blockItems.map((t: any, j: number) => {
                   const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
                   const isHeading = obj === 'heading';
