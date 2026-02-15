@@ -5,7 +5,7 @@ const GoogleSearch: React.FC = () => {
   return (
     <GoogleSearchWrapper role="search" aria-label="Site search">
       <SearchForm action="https://www.google.com/search" method="get">
-        <input type="hidden" name="sitesearch" value="pavlo-protfolio.vercel.app" />
+        <input type="hidden" name="sitesearch" value="pavlotroph.com" />
         <label htmlFor="site-search-input" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
           Search this site
         </label>

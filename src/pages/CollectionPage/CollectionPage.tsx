@@ -169,7 +169,7 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
         <meta name="description" content={metaDescription} />
         <meta property="og:title" content={`${project.title} | Pavlo Troph Portfolio`} />
         <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={`https://pavlo-protfolio.vercel.app/${source}/${canonicalSlugOrId}`}/>
+        <meta property="og:url" content={`https://pavlotroph.com/${source}/${canonicalSlugOrId}`}/>
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${project.title} | Pavlo Troph Portfolio`} />

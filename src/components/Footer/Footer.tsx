@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   CollectionHeader,
-  TEXT_MBLOCK_WRAPPER,
   CollectionAdditionalWrapper,
   CUSTOM_SPLITTER,
-  COLLECTION_4SEC_TITLE,
-  COLLECTION_4SEC_DESCRIPTION,
 } from '../CollectionComponent/CollectionComponent.styled';
-import DOMPurify from "dompurify";
 import styled from 'styled-components';
+
+import {
+  WRAPPER_COMPONENT,
+  WRAPPER_BLOCKS,
+  CONTENT_TEXT_BLOCK,
+  CONTENT_TEXT_HEADING,
+  CONTENT_TEXT_BODY,
+  CONTENT_INLINE_LINK,
+} from '../CollectionComponent/CollectionComponent.styled';
 
 export const FooterContainer = styled.footer`
   width: 100%;
@@ -38,6 +43,206 @@ type FooterSection = {
   link?: string | null;
 };
 
+/* ────────── CONTENT helpers (mirrors CollectionComponent.tsx) ────────── */
+const aspectLockToCss = (raw: any): string | null => {
+  if (typeof raw !== 'string') return null;
+
+  const v = raw.trim().toLowerCase();
+  if (!v || v === 'no' || v === 'none' || v === 'off' || v === '0') return null;
+
+  const compact = v.replace(/\s+/g, '');
+
+  const parsePair = (a: string, b: string) => {
+    const an = Number(a);
+    const bn = Number(b);
+    if (!Number.isFinite(an) || !Number.isFinite(bn)) return null;
+    if (an <= 0 || bn <= 0) return null;
+    return `${an} / ${bn}`;
+  };
+
+  if (compact.includes(':')) {
+    const [a, b] = compact.split(':');
+    return a && b ? parsePair(a, b) : null;
+  }
+
+  if (compact.includes('/')) {
+    const [a, b] = compact.split('/');
+    return a && b ? parsePair(a, b) : null;
+  }
+
+  if (raw.includes('/')) return raw.trim();
+
+  return null;
+};
+
+const normalizeAlign = (a: any): 'left' | 'center' | 'right' => {
+  const s = typeof a === 'string' ? a.toLowerCase().trim() : 'left';
+  if (s.startsWith('right')) return 'right';
+  if (s.startsWith('center')) return 'center';
+  return 'left';
+};
+
+const paddingToCss = (pad: any, fallback: string): string => {
+  const raw = typeof pad === 'string' ? pad : fallback;
+  const nums = raw
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((x) => Number(x));
+
+  const safe = (n: any) => (Number.isFinite(n) ? Math.max(0, Math.min(128, n)) : 0);
+
+  let t = 0, r = 0, b = 0, l = 0;
+  if (nums.length === 1) {
+    t = r = b = l = safe(nums[0]);
+  } else if (nums.length === 2) {
+    t = b = safe(nums[0]);
+    r = l = safe(nums[1]);
+  } else if (nums.length >= 4) {
+    t = safe(nums[0]);
+    r = safe(nums[1]);
+    b = safe(nums[2]);
+    l = safe(nums[3]);
+  } else {
+    return paddingToCss(fallback, fallback);
+  }
+
+  return `${t}px ${r}px ${b}px ${l}px`;
+};
+
+const renderMultiline = (text: any) => {
+  const s = typeof text === 'string' ? text : '';
+  const lines = s.split('\n');
+  return lines.map((line, i) => (
+    <React.Fragment key={i}>
+      {line}
+      {i < lines.length - 1 ? <br /> : null}
+    </React.Fragment>
+  ));
+};
+
+type ContentJson = {
+  items: any[];
+  componentPadding?: string;
+};
+
+const isInlineFlag = (v: any) => v === true || v === 'true' || v === 'yes' || v === 1 || v === '1';
+
+// Footer DB may contain legacy HTML (e.g. <br/>). We normalize to plain text + newlines.
+// If you ever need rich formatting (strong/em), move that into structured CONTENT instead of HTML.
+const htmlToPlain = (raw: any) => {
+  const s = typeof raw === 'string' ? raw : '';
+  return s
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/?[^>]+>/g, '')
+    .trim();
+};
+
+const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
+  const contentItems = Array.isArray(content?.items) ? content.items : [];
+  const componentPaddingCss = paddingToCss(content?.componentPadding, '0,0,0,0');
+
+  const renderTextLine = useCallback((t: any, key: string, forceInline: boolean) => {
+    const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
+    const isHeading = obj === 'heading';
+
+    const tagRaw = typeof t?.style === 'string' ? t.style.toLowerCase().trim() : '';
+    const fallbackTag = isHeading ? 'h4' : 'h3';
+    const tag = (['h1','h2','h3','h4','h5','h6','p','span','strong','em'].includes(tagRaw) ? tagRaw : fallbackTag) as any;
+
+    const align = normalizeAlign(t?.alignment);
+
+    const href =
+      typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
+        ? t.link.trim()
+        : null;
+
+    const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
+
+    const lineNode = (
+      <Line
+        as={tag}
+        $align={align}
+        style={forceInline ? { display: 'inline', width: 'auto', maxHeight: 'none', overflow: 'visible' } : undefined}
+      >
+        {renderMultiline(t?.text)}
+      </Line>
+    );
+
+    if (!href) return <React.Fragment key={key}>{lineNode}</React.Fragment>;
+
+    const isHttp = /^https?:\/\//i.test(href);
+    // Footer wants its own hover treatment:
+    const LinkTag: any = forceInline ? CONTENT_INLINE_LINK : FooterLink;
+
+    return (
+      <LinkTag
+        key={key}
+        href={href}
+        target={isHttp ? '_blank' : undefined}
+        rel={isHttp ? 'noopener noreferrer' : undefined}
+        aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
+      >
+        {lineNode}
+      </LinkTag>
+    );
+  }, []);
+
+  return (
+    <WRAPPER_COMPONENT $padding={componentPaddingCss}>
+      <WRAPPER_BLOCKS data-count={contentItems.length}>
+        {contentItems.map((it: any, idx: number) => {
+          const blockKind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : 'empty';
+
+          const paddingCss =
+            blockKind === 'text'
+              ? paddingToCss(it?.padding, '24,24,24,24')
+              : paddingToCss(it?.padding, '0,0,0,0');
+
+          if (blockKind !== 'text') return <div key={`content-empty-${idx}`} />;
+
+          const blockItems = Array.isArray(it?.block_items) ? it.block_items : [];
+          const aspectRatioLock = aspectLockToCss(it?.['aspect-ratio'] ?? it?.aspectRatio ?? it?.aspect_ratio);
+
+          // Inline grouping so sentence parts don’t get spaced out by block gap.
+          const nodes: React.ReactNode[] = [];
+          let inlineGroup: any[] = [];
+
+          const flushInline = () => {
+            if (!inlineGroup.length) return;
+            nodes.push(
+              <div key={`inline-wrap-${idx}-${nodes.length}`} style={{ width: '100%' }}>
+                {inlineGroup.map((t, j) => renderTextLine(t, `inline-${idx}-${j}`, true))}
+              </div>
+            );
+            inlineGroup = [];
+          };
+
+          blockItems.forEach((t: any, j: number) => {
+            const wantInline = isInlineFlag(t?.inline);
+
+            if (wantInline) {
+              inlineGroup.push(t);
+              return;
+            }
+
+            flushInline();
+            nodes.push(renderTextLine(t, `block-${idx}-${j}`, false));
+          });
+
+          flushInline();
+
+          return (
+            <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock}>
+              {nodes}
+            </CONTENT_TEXT_BLOCK>
+          );
+        })}
+      </WRAPPER_BLOCKS>
+    </WRAPPER_COMPONENT>
+  );
+};
+
 const Footer: React.FC = () => {
   const [sections, setSections] = useState<FooterSection[]>([]);
 
@@ -63,81 +268,43 @@ const Footer: React.FC = () => {
 
   const isLoaded = sections.length > 0;
 
-return (
-  <FooterContainer
-    role="contentinfo"
-    data-loaded={isLoaded}
-    aria-busy={!isLoaded}
-  >
-    <CUSTOM_SPLITTER />
-    <CollectionAdditionalWrapper>
-      <CollectionHeader>
-        {isLoaded ? (
-          Object.entries(grouped).map(([label, items]) => (
-            <TEXT_MBLOCK_WRAPPER key={label}>
-              <COLLECTION_4SEC_TITLE>{label}</COLLECTION_4SEC_TITLE>
-
-              {items.length === 1 ? (
-                renderItem(items[0])
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {items.map(renderItem)}
-                </div>
-              )}
-            </TEXT_MBLOCK_WRAPPER>
-          ))
-        ) : (
-          <div style={{ height: 220 }} />
-        )}
-      </CollectionHeader>
-    </CollectionAdditionalWrapper>
-  </FooterContainer>
-);
-};
-
-/* helper: render a footer item */
-function renderItem(sec: FooterSection) {
-  const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
-    if (typeof tag !== 'string') return false;
-    return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
+  const footerContent: ContentJson = {
+    componentPadding: '0,0,0,0',
+    items: Object.entries(grouped).map(([label, items]) => ({
+      block: 'text',
+      padding: '0, 0, 0, 0',
+      block_items: [
+        {
+          link: 'none',
+          size: 0,
+          text: label,
+          style: 'h6',
+          object: 'heading',
+          alignment: 'left',
+        },
+        ...items.map((sec) => ({
+          link: sec.link ? sec.link : 'none',
+          size: 0,
+          text: htmlToPlain(sec.text) + "\n",
+          style: sec.tag ? sec.tag : 'h3',
+          object: 'body',
+          alignment: 'left',
+          inline: 'yes'
+        })),
+      ],
+    })),
   };
 
-  const Tag = isValidTag(sec.tag) ? sec.tag : 'h3';
-  const cleanHtml = DOMPurify.sanitize(sec.text, {
-  ALLOWED_TAGS: ["br", "strong", "em", "span", "p", "h1", "h2", "h3", "a"],
-  ALLOWED_ATTR: ["href", "target", "rel"],
-});
-
-  if (sec.link) {
-    const external = /^https?:\/\//i.test(sec.link);
-    
-    return (
-      <FooterLink
-        key={sec.id}
-        href={sec.link}
-        target={external ? '_blank' : undefined}
-        rel={external ? 'noopener noreferrer' : undefined}
-        aria-label={
-          sec.text
-            ? `${sec.text}${external ? ' (opens in new tab)' : ''}`
-            : undefined
-        }
-      >
-        <COLLECTION_4SEC_DESCRIPTION
-          as={Tag}
-          dangerouslySetInnerHTML={{ __html: cleanHtml  }}
-        />
-      </FooterLink>
-    );
-  }
-  
   return (
-  <COLLECTION_4SEC_DESCRIPTION
-    key={sec.id}
-    as={Tag}
-    dangerouslySetInnerHTML={{ __html: cleanHtml }}
-  />
-);
-}
+    <FooterContainer role="contentinfo" data-loaded={isLoaded} aria-busy={!isLoaded}>
+      <CUSTOM_SPLITTER />
+      <CollectionAdditionalWrapper>
+        <CollectionHeader>
+          {isLoaded ? <StaticCONTENT content={footerContent} /> : <div style={{ height: 220 }} />}
+        </CollectionHeader>
+      </CollectionAdditionalWrapper>
+    </FooterContainer>
+  );
+};
 
 export default Footer;

@@ -59,6 +59,7 @@ import {
   CONTENT_TEXT_HEADING,
   CONTENT_TEXT_BODY,
   CONTENT_LINK,
+  CONTENT_INLINE_LINK,
   CONTENT_MEDIA_INNER,
 } from './CollectionComponent.styled';
 
@@ -1329,6 +1330,72 @@ const renderMultiline = (text: any) => {
   ));
 };
 
+
+const renderTextWithInlineLinks = (input: any) => {
+  const text = typeof input === 'string' ? input : '';
+  if (!text) return null;
+
+  const renderLine = (line: string, lineKey: string) => {
+    // Create regex per-line to avoid shared state from global RegExp
+    const urlTag = /\[url=(.+?)\]([\s\S]*?)\[\/url\]/gi;
+
+    const nodes: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = urlTag.exec(line)) !== null) {
+      const full = match[0];
+      const hrefRaw = match[1] ?? '';
+      const labelRaw = match[2] ?? '';
+
+      const start = match.index;
+      const end = start + full.length;
+
+      if (start > lastIndex) {
+        nodes.push(line.slice(lastIndex, start));
+      }
+
+      const href = String(hrefRaw).trim();
+      const label = String(labelRaw);
+
+      // Basic safety: allow only http(s) URLs
+      const safeHref = /^https?:\/\//i.test(href) ? href : null;
+
+      if (safeHref) {
+        nodes.push(
+          <CONTENT_INLINE_LINK
+            key={`${lineKey}-url-${start}`}
+            href={safeHref}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {label}
+          </CONTENT_INLINE_LINK>
+        );
+      } else {
+        // If malformed, render as plain text
+        nodes.push(label);
+      }
+
+      lastIndex = end;
+    }
+
+    if (lastIndex < line.length) {
+      nodes.push(line.slice(lastIndex));
+    }
+
+    return nodes;
+  };
+
+  const lines = text.split('\n');
+  return lines.map((line, i) => (
+    <React.Fragment key={`inline-${i}`}>
+      {renderLine(line, `inline-${i}`)}
+      {i < lines.length - 1 ? <br /> : null}
+    </React.Fragment>
+  ));
+};
+
 const renderBlock = useCallback((b: CollectionBlockDB) => {
     switch (b.type) {
 
@@ -1376,7 +1443,7 @@ case 'CONTENT': {
 
                   const lineNode = (
                     <Line as={tag} $align={align} style={sizeStyle}>
-                      {renderMultiline(t?.text)}
+                      {href ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
                     </Line>
                   );
 

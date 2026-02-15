@@ -108,7 +108,7 @@ const Photo: React.FC = () => {
         <meta property="og:title" content="Photography" />
         <meta name="description" content="Photography portfolio by Pavlo Troph — automotive, cinematic frames, and environment studies." />
         <meta property="og:description" content="Photography portfolio by Pavlo Troph — automotive, cinematic frames, and environment studies." />
-        <meta property="og:url" content="https://pavlo-protfolio.vercel.app/photography" />
+        <meta property="og:url" content="https://pavlotroph.com/photography" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Photography | Pavlo Troph Portfolio" />

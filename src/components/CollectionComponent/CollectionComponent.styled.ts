@@ -708,10 +708,8 @@ export const CONTENT_TEXT_BODY = styled.h3<{ $align: 'left' | 'center' | 'right'
   height: fit-content;
   margin: 0;
 
-  max-height: 320px;
+  max-height: 420px;
   overflow: hidden;
-
-  color: #ffffff;
 
   ${({ $align }) => contentAlignCss($align)}
 
@@ -725,12 +723,24 @@ export const CONTENT_LINK = styled.a`
   display: block;
   color: inherit;
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: 6px;
 
   &:hover {
     opacity: 0.75;
   }
 `;
+
+export const CONTENT_INLINE_LINK = styled.a`
+  display: inline;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+
 
 export const CONTENT_MEDIA_BLOCK = styled.div<{ $padding: string; $aspectRatio: string }>`
   display: flex;

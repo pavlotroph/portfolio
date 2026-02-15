@@ -48,7 +48,7 @@ All pages include navigation via:
 
 #### Google Site Search Form
 - **Component**: `GoogleSearch` component available on all pages via `InPageNav`
-- **Site Search Domain**: Updated to `pavlo-protfolio.vercel.app`
+- **Site Search Domain**: Updated to `pavlotroph.com`
 - **Location**: Present in `InPageNav` component (used by all 5 pages)
 
 ### 3. UI/UX Alignment Fixes

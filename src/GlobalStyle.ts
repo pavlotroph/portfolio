@@ -88,7 +88,7 @@ export const GlobalStyle = css`
     font-weight: 600;
     font-size: 14px;
     font-family: 'Geist', sans-serif;
-    line-height: 161.8%;
+    line-height: 223.6%;
 
     @media (min-width: 1440px) {
       font-size: 16px;

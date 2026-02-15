@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://pavlo-protfolio.vercel.app/sitemap.xml
+Sitemap: https://pavlotroph.com/sitemap.xml

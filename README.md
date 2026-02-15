@@ -5,7 +5,7 @@ Modern, multi-section portfolio for showcasing projects, photography, and brand 
 ### Live & Reports
 
 - Production: `dist/` output deployable to Netlify (`netlify.toml`) or Vercel (`vercel.json`)
-- Lighthouse snapshot: `pavlo-protfolio.vercel.app_2025-11-09_23-24-43.report.html`
+- Lighthouse snapshot: `pavlotroph.com_2025-11-09_23-24-43.report.html`
 
 ---
 

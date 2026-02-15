@@ -50,7 +50,7 @@ const Home: React.FC = () => {
         <title>Pavlo Troph - Portfolio | Home</title>
         <meta property="og:title" content="Pavlo Troph - Portfolio" />
         <meta property="og:description" content="Pavlo Troph is a multidisciplinary artist: Graphic Design, CGI, Photography, Cinematography, Art Direction." />
-        <meta property="og:url" content="https://pavlo-protfolio.vercel.app/" />
+        <meta property="og:url" content="https://pavlotroph.com/" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Pavlo Troph - Portfolio" />
