@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import {
 useLocation } from 'react-router-dom';
 import Modal, {
@@ -63,9 +63,9 @@ import {
   CONTENT_MEDIA_INNER,
 } from './CollectionComponent.styled';
 
-/* ────────────────────────────────────────────── */
-/* ТИПЫ                                           */
-/* ────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ð¢Ð˜ÐŸÐ«                                           */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export type BlockType =
   | 'IMAGE_SINGLE'
@@ -85,7 +85,7 @@ export interface CollectionBlockDB {
   id: number;
   collection_id: number;
   type: BlockType;
-  content: any;             // см. README
+  content: any;             // ÑÐ¼. README
   description: string | null;
   position: number;
 }
@@ -95,14 +95,14 @@ export interface CollectionData {
   folder: string;
   blocks: CollectionBlockDB[];
 
-  // теперь main не обязателен
+  // Ñ‚ÐµÐ¿ÐµÑ€ÑŒ main Ð½Ðµ Ð¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÐµÐ½
   main?: {
     label: string;
     text: string;
     tag?: 'h1' | 'h2' | 'h3';
   }[];
 
-  // если вам больше не нужен work_title, можно убрать
+  // ÐµÑÐ»Ð¸ Ð²Ð°Ð¼ Ð±Ð¾Ð»ÑŒÑˆÐµ Ð½Ðµ Ð½ÑƒÐ¶ÐµÐ½ work_title, Ð¼Ð¾Ð¶Ð½Ð¾ ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ
   work_title?: string;
 }
 
@@ -133,8 +133,8 @@ interface ZoomableImageProps {
 
 /**
  * ZoomableImage:
- * - Mouse wheel → zoom in/out
- * - Touch pinch (two fingers) → zoom
+ * - Mouse wheel â†’ zoom in/out
+ * - Touch pinch (two fingers) â†’ zoom
  * - Drag/pan when zoomed in
  */
 const ZoomableImage: React.FC<ZoomableImageProps> = ({
@@ -224,10 +224,10 @@ useEffect(() => {
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.deltaY === 0) return;
 
-    // Don’t call preventDefault here – in some environments wheel listeners are passive,
-    // which causes “Unable to preventDefault inside passive event listener” spam.
+    // Donâ€™t call preventDefault here â€“ in some environments wheel listeners are passive,
+    // which causes â€œUnable to preventDefault inside passive event listenerâ€ spam.
     // Body is already scroll-locked by the Modal, and this wrapper has overflow: hidden,
-    // so there’s no visible scroll to block anyway.
+    // so thereâ€™s no visible scroll to block anyway.
 
     const prevScale = scaleRef.current;
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -405,8 +405,8 @@ useEffect(() => {
   const MAX_MS = 700;
 
   if (dt <= MAX_MS && absDx >= SWIPE_PX && absDx > absDy * 1.2) {
-    if (dx < 0) onSwipeLeft?.();  // swipe left → next
-    else onSwipeRight?.();        // swipe right → prev
+    if (dx < 0) onSwipeLeft?.();  // swipe left â†’ next
+    else onSwipeRight?.();        // swipe right â†’ prev
   }
 }
 
@@ -513,9 +513,9 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
 
 
 
-/* ────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* HELPER                                         */
-/* ────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 interface ImageItem {
   src: string;
@@ -531,6 +531,7 @@ interface ImageSliderProps {
   keyboardNav?: boolean; // default false
   resetKey?: number;
   zoomable?: boolean;
+  sequentialLoad?: boolean;
 
   // NEW:
   autoPlay?: boolean; // default true
@@ -546,6 +547,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   startIndex = 0,
   resetKey = 0,
   zoomable = false,
+  sequentialLoad = false,
   onActiveIndexChange,
 }) => {
   const slides = [images[images.length - 1], ...images, images[0]];
@@ -576,6 +578,37 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   const [isZoomed, setIsZoomed] = useState(false);
   const isZoomedRef = useRef(false);
+  const sequentialSettledRef = useRef<Set<number>>(new Set());
+  const [sequentialUnlockedCount, setSequentialUnlockedCount] = useState(
+    sequentialLoad ? Math.min(images.length, Math.max(1, startIndex + 1)) : images.length
+  );
+
+  const getRealImageIndexForSlide = (slideIndex: number) => {
+    if (images.length === 0) return 0;
+    if (slideIndex === 0) return images.length - 1;
+    if (slideIndex === slides.length - 1) return 0;
+    return slideIndex - 1;
+  };
+
+  const markSequentialImageSettled = (slideIndex: number) => {
+    if (!sequentialLoad || images.length <= 1) return;
+
+    const settledRealIndex = getRealImageIndexForSlide(slideIndex);
+    if (sequentialSettledRef.current.has(settledRealIndex)) return;
+    sequentialSettledRef.current.add(settledRealIndex);
+
+    setSequentialUnlockedCount((current) => {
+      if (settledRealIndex !== current - 1) return current;
+      return Math.min(images.length, current + 1);
+    });
+  };
+
+  useEffect(() => {
+    sequentialSettledRef.current.clear();
+    setSequentialUnlockedCount(
+      sequentialLoad ? Math.min(images.length, Math.max(1, startIndex + 1)) : images.length
+    );
+  }, [sequentialLoad, images.length, startIndex, resetKey]);
 
   useEffect(() => {
   setIsZoomed(false);
@@ -595,7 +628,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   const raf = requestAnimationFrame(() => setAnimate(true));
   return () => cancelAnimationFrame(raf);
-}, [resetKey]); // ✅ only reset when modal opens (or gallery changes), not on every slide
+}, [resetKey]); // âœ… only reset when modal opens (or gallery changes), not on every slide
 
   // NEW: inform parent which real slide is active
   const realIndex =
@@ -605,7 +638,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     onActiveIndexChange?.(realIndex);
   }, [realIndex, onActiveIndexChange]);
   
-  // Стрелки
+  // Ð¡Ñ‚Ñ€ÐµÐ»ÐºÐ¸
   const prevSlide = (fromUser: boolean = true) => {
   if (transitioningRef.current) return;
   setAnimate(true);
@@ -645,7 +678,7 @@ useEffect(() => {
   const onPointerDown = (e: React.PointerEvent) => {
     if (!hasMultiple) return; 
 
- // If image is zoomed in, user is panning/zooming — don't swipe slides.
+ // If image is zoomed in, user is panning/zooming â€” don't swipe slides.
 if (isZoomedRef.current) return;
 
 // Touch devices: disable slide swipe so pinch-zoom never fights the slider.
@@ -687,20 +720,20 @@ if (zoomable && e.pointerType === "touch") return;
     setIsDragging(false);
 
     const dx = offset;
-    const vel = lastVelocityRef.current; // 👉 signed velocity
+    const vel = lastVelocityRef.current; // ðŸ‘‰ signed velocity
     const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
 
     let newIdx = index;
 
-    const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
-    const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
+    const passedRight = dx > threshold || vel > 0.3;   // swipe right â†’ previous slide
+    const passedLeft = dx < -threshold || vel < -0.3; // swipe left  â†’ next slide
 
     if (passedRight && !passedLeft) {
       newIdx = index - 1;
     } else if (passedLeft && !passedRight) {
       newIdx = index + 1;
     }
-    // if both or neither → newIdx stays index (no slide change)
+    // if both or neither â†’ newIdx stays index (no slide change)
 
     setAnimate(true);
     setOffset(0);
@@ -727,12 +760,12 @@ if (zoomable && e.pointerType === "touch") return;
     }
   };
 
-  // восстановление animate после программного сброса
+  // Ð²Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ animate Ð¿Ð¾ÑÐ»Ðµ Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð½Ð¾Ð³Ð¾ ÑÐ±Ñ€Ð¾ÑÐ°
   useEffect(() => {
     if (!animate) requestAnimationFrame(() => setAnimate(true));
   }, [animate]);
 
-  // IntersectionObserver для видимости
+  // IntersectionObserver Ð´Ð»Ñ Ð²Ð¸Ð´Ð¸Ð¼Ð¾ÑÑ‚Ð¸
   useEffect(() => {
     const obs = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -742,7 +775,7 @@ if (zoomable && e.pointerType === "touch") return;
     return () => obs.disconnect();
   }, []);
 
-  // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
+  // ÐÐ²Ñ‚Ð¾Ð¿Ð»ÐµÐ¹ ÐºÐ°Ð¶Ð´Ñ‹Ðµ 2 ÑÐµÐº, ÐºÐ¾Ð³Ð´Ð° Ð²Ð¸Ð´Ð¸Ð¼ Ð¸ Ð½Ðµ Ð´Ñ€Ð°Ð³Ð°ÐµÐ¼ Ð¸ Ð½Ðµ Ð°Ð½Ð¸Ð¼Ð¸Ñ€ÑƒÐµÐ¼
   useEffect(() => {
     if (autoPlay && !autoplayDisabledByUser && isVisible && !isDragging && !transitioningRef.current) {
       autoPlayRef.current = window.setInterval(() => {
@@ -784,12 +817,24 @@ if (zoomable && e.pointerType === "touch") return;
       >
         {slides.map((img, i) => (
           <Slide key={i}>
+            {(() => {
+              const shouldLoadImage =
+                !sequentialLoad ||
+                images.length <= 1 ||
+                getRealImageIndexForSlide(i) < sequentialUnlockedCount;
+
+              return shouldLoadImage ? (
+                <>
             {zoomable ? (
      <ZoomableImage
        src={img.src}
        alt={img.title || `Slide ${i + 1} of ${slides.length}`}
+       onLoad={() => markSequentialImageSettled(i)}
        onZoomChange={setIsZoomed}
-       onError={() => console.error("❌ Image failed to load:", img.src)}
+       onError={() => {
+         markSequentialImageSettled(i);
+         console.error("Image failed to load:", img.src);
+       }}
        onSwipeLeft={nextSlide}
   onSwipeRight={prevSlide}
      />
@@ -798,8 +843,15 @@ if (zoomable && e.pointerType === "touch") return;
        src={img.src}
        alt={img.title || `Slide ${i + 1} of ${slides.length}`}
       draggable={false}
+      onLoad={() => markSequentialImageSettled(i)}
+      onError={() => markSequentialImageSettled(i)}
      />
    )}
+                </>
+              ) : (
+                <div aria-hidden="true" style={{ width: '100%', height: '100%' }} />
+              );
+            })()}
           </Slide>
         ))}
       </SliderContent>
@@ -874,14 +926,14 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
   );
 };
 
-/* ────────────────────────────────────────────── */
-/* КОМПОНЕНТ                                      */
-/* ────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ÐšÐžÐœÐŸÐžÐÐ•ÐÐ¢                                      */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const CollectionComponent: React.FC<CollectionComponentProps> = ({
   collection,
   source,
 }) => {
-  /* ────────── фильтр в URL (оставил как было) ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€ Ð² URL (Ð¾ÑÑ‚Ð°Ð²Ð¸Ð» ÐºÐ°Ðº Ð±Ñ‹Ð»Ð¾) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>(
@@ -897,11 +949,11 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     ? 'work-images'
     : 'photography-images';
 
-  /* ────────── стейт блоков ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ÑÑ‚ÐµÐ¹Ñ‚ Ð±Ð»Ð¾ÐºÐ¾Ð² â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const [blocks, setBlocks] = useState<CollectionBlockDB[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  /* ────────── модалка ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ð¼Ð¾Ð´Ð°Ð»ÐºÐ° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalItems, setModalItems] = useState<ModalMediaItem[]>([]);
   const [modalIndex, setModalIndex] = useState<number>(0);
@@ -927,7 +979,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   }, [hasModalMedia, modalLength]);
 
 
-  /* ────────── helpers ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const encodePath = (...parts: string[]) =>
   parts.map((p) => encodeURIComponent(p)).join('/');
 
@@ -1006,9 +1058,9 @@ const imageThumbLRUrl = (fileName: string) =>
   const [modalSession, setModalSession] = useState(0);
 
 const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
-  setModalIndex(startIndex);        // ✅ immediate (so slider knows where to start)
+  setModalIndex(startIndex);        // âœ… immediate (so slider knows where to start)
   setIsModalOpen(true);
-  setModalSession((s) => s + 1);    // ✅ increments each open
+  setModalSession((s) => s + 1);    // âœ… increments each open
 
   startTransition(() => {
     setModalItems(items);           // heavy update stays deferred
@@ -1020,7 +1072,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     setIsModalOpen(false);
 
     // Do NOT clear items/index on the click.
-    // If you really want cleanup, do it later (won’t affect INP):
+    // If you really want cleanup, do it later (wonâ€™t affect INP):
     const cleanup = () =>
       startTransition(() => {
         setModalItems([]);
@@ -1047,7 +1099,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     }
 
     const handlePopState = () => {
-      // User pressed Back while modal is open → act like Escape
+      // User pressed Back while modal is open â†’ act like Escape
       if (isModalOpen) {
         setIsModalOpen(false);
         setModalItems([]);
@@ -1068,7 +1120,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
 
   useEffect(() => {
     if (!isModalOpen || modalLength <= 1) return;
-    if (modalUsesSlider) return; // ✅ slider handles navigation
+    if (modalUsesSlider) return; // âœ… slider handles navigation
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
@@ -1084,12 +1136,12 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
 }, [isModalOpen, modalLength, modalUsesSlider, goToNextMedia, goToPrevMedia]);
 
-  /* ────────── загрузка блоков ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐ° Ð±Ð»Ð¾ÐºÐ¾Ð² â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   useEffect(() => {
     (async () => {
       setIsLoading(true);
 
-      // work → project_blocks, photo → collection_blocks
+      // work â†’ project_blocks, photo â†’ collection_blocks
       const blocksTable =
         source === 'work' ? 'project_blocks' : 'collection_blocks';
 
@@ -1108,7 +1160,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
 
 
 
-  /* ────────── рендер одного блока ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ñ€ÐµÐ½Ð´ÐµÑ€ Ð¾Ð´Ð½Ð¾Ð³Ð¾ Ð±Ð»Ð¾ÐºÐ° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
     const rawItems = (b.content?.items || []) as any[];
     if (!rawItems.length) return null;
@@ -1189,7 +1241,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
     const flatItems = rowOrder.flatMap((rk) => rows.get(rk)!);
     const modalItems = buildModalItems(flatItems);
 
-    // IMPORTANT: We don’t want IMAGE_GALLERY forcing a single grid layout here.
+    // IMPORTANT: We donâ€™t want IMAGE_GALLERY forcing a single grid layout here.
     // So we render rows inside it and each row controls its own columns.
     let globalIndex = 0;
 
@@ -1248,7 +1300,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
 
 
-  /* ────────── CONTENT helpers ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ CONTENT helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const aspectLockToCss = (raw: any): string | null => {
   if (typeof raw !== 'string') return null;
 
@@ -1312,7 +1364,7 @@ const paddingToCss = (pad: any, fallback: string): string => {
     b = safe(nums[2]);
     l = safe(nums[3]);
   } else {
-    // invalid → fallback
+    // invalid â†’ fallback
     return paddingToCss(fallback, fallback);
   }
 
@@ -1581,14 +1633,14 @@ case 'CONTENT': {
 
         if (images.length === 0) return null;
 
-        return <ImageSlider images={images} aspectRatio={aspectRatio} />;
+        return <ImageSlider images={images} aspectRatio={aspectRatio} sequentialLoad={true} />;
       }
 
       case 'IMAGE_GALLERY':
         return renderImageGalleryBlock(b);
 
-      /* ----- SQUARE: картинка + заголовок ----- */
-      // one block in DB, can render 1–2 rows
+      /* ----- SQUARE: ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ° + Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº ----- */
+      // one block in DB, can render 1â€“2 rows
 
       case 'SQUARE': {
         const items = (b.content?.items || []) as {
@@ -1613,7 +1665,7 @@ case 'CONTENT': {
 
         if (!items.length) return null;
 
-        // 👇 new flag from Supabase JSON
+        // ðŸ‘‡ new flag from Supabase JSON
         const startWithText = !!b.content?.startWithText;
         
 
@@ -1685,7 +1737,7 @@ case 'CONTENT': {
         );
       }
 
-        /* ----- текстовые секции ----- */
+        /* ----- Ñ‚ÐµÐºÑÑ‚Ð¾Ð²Ñ‹Ðµ ÑÐµÐºÑ†Ð¸Ð¸ ----- */
 
         interface Section {
           label: string;
@@ -1823,7 +1875,7 @@ case 'CONTENT': {
       }
 
       case 'TEXT_TITLE': {
-        // предполагаем, что content имеет именно такую форму:
+        // Ð¿Ñ€ÐµÐ´Ð¿Ð¾Ð»Ð°Ð³Ð°ÐµÐ¼, Ñ‡Ñ‚Ð¾ content Ð¸Ð¼ÐµÐµÑ‚ Ð¸Ð¼ÐµÐ½Ð½Ð¾ Ñ‚Ð°ÐºÑƒÑŽ Ñ„Ð¾Ñ€Ð¼Ñƒ:
         // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
         const { text, fontsize, align } = b.content as {
           style?: 'h1' | 'h2' | 'h3' | string;
@@ -1877,7 +1929,7 @@ case 'CONTENT': {
       }
 
 
-      /* ----- разделители ----- */
+      /* ----- Ñ€Ð°Ð·Ð´ÐµÐ»Ð¸Ñ‚ÐµÐ»Ð¸ ----- */
       case 'SPLITTER_DEFAULT':
         return <hr key={b.id} style={{ margin: '20px 0', borderColor: '#444' }} />;
       case 'SPLITTER':
@@ -1898,7 +1950,7 @@ case 'CONTENT': {
     [collection.folder, bucket, source, openModal] // deps
   );
 
-  /* ────────── LOADING ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ LOADING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   if (isLoading) {
     return (
       <div
@@ -1923,11 +1975,11 @@ case 'CONTENT': {
     );
   }
 
-  /* ────────── MAIN JSX ────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ MAIN JSX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const isPhoto = source === 'photo';
   return (
     <WRAPPER_GLOBAL $isPhoto={isPhoto}>
-      {/* ——— верхний титул и фильтр ——— */}
+      {/* â€”â€”â€” Ð²ÐµÑ€Ñ…Ð½Ð¸Ð¹ Ñ‚Ð¸Ñ‚ÑƒÐ» Ð¸ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€ â€”â€”â€” */}
       {showFilter && (
         <WorkTitelContainer>
           <WorkTitel>{source === 'photo' ? 'PHOTOGRAPHY' : 'WORK'}</WorkTitel>
@@ -1953,7 +2005,7 @@ case 'CONTENT': {
         </WorkTitelContainer>
       )}
 
-      {/* ——— хедер коллекции ——— */}
+      {/* â€”â€”â€” Ñ…ÐµÐ´ÐµÑ€ ÐºÐ¾Ð»Ð»ÐµÐºÑ†Ð¸Ð¸ â€”â€”â€” */}
       {collection.main && (
         <CollectionAdditionalWrapper $isPhoto={isPhoto}>
           <CollectionHeader $isPhoto={isPhoto}>
@@ -1993,7 +2045,7 @@ case 'CONTENT': {
       )}
 
 
-      {/* ——— контент из collection_blocks ——— */}
+      {/* â€”â€”â€” ÐºÐ¾Ð½Ñ‚ÐµÐ½Ñ‚ Ð¸Ð· collection_blocks â€”â€”â€” */}
       {blocks.map((b) => {
         const node = renderBlock(b);
         if (!node) return null;
@@ -2003,14 +2055,14 @@ case 'CONTENT': {
         return (
           <Reveal
             key={b.id}
-            amount={isGallery ? 0.08 : undefined}  // 👈 tall galleries trigger almost immediately
+            amount={isGallery ? 0.08 : undefined}  // ðŸ‘ˆ tall galleries trigger almost immediately
           >
             {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
           </Reveal>
         );
       })}
 
-      {/* ——— модалка ——— */}
+      {/* â€”â€”â€” Ð¼Ð¾Ð´Ð°Ð»ÐºÐ° â€”â€”â€” */}
 
         <>
           <Modal isOpen={isModalOpen} onClose={closeModal}>
@@ -2028,7 +2080,7 @@ case 'CONTENT': {
             <MediaContainer>
   {currentMedia ? (
     <>
-      {/* ✅ If modal items are ALL images — use the IMAGE_SINGLE slider */}
+      {/* âœ… If modal items are ALL images â€” use the IMAGE_SINGLE slider */}
       {modalItems.length > 0 && modalItems.every(m => m.type === "image") ? (
         <ImageSlider
   images={modalItems.map((m) => ({
@@ -2039,8 +2091,8 @@ case 'CONTENT': {
   autoPlay={false}
   keyboardNav={true}
   zoomable={true}
-  startIndex={modalIndex}       // ✅ open at clicked thumb
-  resetKey={modalSession}       // ✅ apply startIndex only per-open
+  startIndex={modalIndex}       // âœ… open at clicked thumb
+  resetKey={modalSession}       // âœ… apply startIndex only per-open
   onActiveIndexChange={(i) => setModalIndex(i)} // keep text synced
   aspectRatio={"auto"}
 />
@@ -2075,7 +2127,7 @@ case 'CONTENT': {
               alt={currentMedia.altText}
               onLoad={() => {}}
               onError={() => {
-                console.error("❌ Image failed to load:", currentMedia.url);
+                console.error("âŒ Image failed to load:", currentMedia.url);
                 failedMedia.current.add(currentMedia.url);
               }}
             />
