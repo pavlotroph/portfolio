@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../../supabaseClient';
 import WorkItemComponent from '../../components/WorkItemComponent/WorkItemComponent';
@@ -39,12 +39,17 @@ type LayoutCtx = {
   setPageReady: (v: boolean) => void;
 };
 
+const INITIAL_VISIBLE_ITEMS = 6;
+const VISIBLE_ITEMS_STEP = 4;
+
 const Photo: React.FC = () => {
   const [works, setWorks] = useState<WorkItemData[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>('ALL');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_ITEMS);
   const { setPageReady } = useOutletContext<LayoutCtx>();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [isWorksLoading, setIsWorksLoading] = useState(true);
   const [isQuotesLoading, setIsQuotesLoading] = useState(true);
   
@@ -54,6 +59,7 @@ const Photo: React.FC = () => {
     filter === 'ALL'
       ? works
       : works.filter(w => (w.category || '').toUpperCase() === filter);
+  const renderedWorks = filteredWorks.slice(0, visibleCount);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +99,36 @@ const Photo: React.FC = () => {
   useEffect(() => {
     setPageReady(isPageReady);
   }, [isPageReady, setPageReady]);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE_ITEMS);
+  }, [filter, filteredWorks.length]);
+
+  useEffect(() => {
+    if (visibleCount >= filteredWorks.length) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisibleCount(filteredWorks.length);
+      return;
+    }
+
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+
+        observer.disconnect();
+        setVisibleCount(prev => Math.min(prev + VISIBLE_ITEMS_STEP, filteredWorks.length));
+      },
+      { rootMargin: '600px 0px' }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [filteredWorks.length, visibleCount]);
 
   useEffect(() => {
     if (quotes.length > 0) {
@@ -142,7 +178,7 @@ const Photo: React.FC = () => {
 
         <WorkPhotoWrapp>
           <AnimatePresence>
-            {filteredWorks.map(work => {
+            {renderedWorks.map((work, index) => {
               const slugOrId = work.slug || work.id;  
 
               return (
@@ -159,12 +195,23 @@ const Photo: React.FC = () => {
                     style={{ width: '100%', height: '100%' }}
                     aria-label={`View ${work.title || 'photography item'}`}
                   >
-                    <WorkItemComponent work={work} source="photo" />
+                    <WorkItemComponent
+                      work={work}
+                      source="photo"
+                      priority={index < 4}
+                    />
                   </Link>
                 </motion.div>
               );
             })}
           </AnimatePresence>
+          {visibleCount < filteredWorks.length ? (
+            <div
+              ref={loadMoreRef}
+              aria-hidden
+              style={{ width: '100%', height: 1 }}
+            />
+          ) : null}
         </WorkPhotoWrapp>
 
         <div
