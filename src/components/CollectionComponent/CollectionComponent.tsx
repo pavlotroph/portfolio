@@ -601,6 +601,7 @@ interface ImageSliderProps {
   resetKey?: number;
   zoomable?: boolean;
   sequentialLoad?: boolean;
+  sequentialLoadStrategy?: 'linear' | 'around-active';
 
   // NEW:
   autoPlay?: boolean; // default true
@@ -617,6 +618,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   resetKey = 0,
   zoomable = false,
   sequentialLoad = false,
+  sequentialLoadStrategy = 'linear',
   onActiveIndexChange,
 }) => {
   const slides = [images[images.length - 1], ...images, images[0]];
@@ -651,12 +653,30 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   const [sequentialUnlockedCount, setSequentialUnlockedCount] = useState(
     sequentialLoad ? Math.min(images.length, Math.max(1, startIndex + 1)) : images.length
   );
+  const [sequentialUnlockedIndices, setSequentialUnlockedIndices] = useState<Set<number>>(
+    () => new Set<number>()
+  );
 
   const getRealImageIndexForSlide = (slideIndex: number) => {
     if (images.length === 0) return 0;
     if (slideIndex === 0) return images.length - 1;
     if (slideIndex === slides.length - 1) return 0;
     return slideIndex - 1;
+  };
+
+  const getAroundActiveIndices = (total: number, active: number) => {
+    const result = new Set<number>();
+    if (total <= 0) return result;
+
+    const normalizedActive = ((active % total) + total) % total;
+    result.add(normalizedActive);
+
+    if (total > 1) {
+      result.add((normalizedActive + 1) % total);
+      result.add((normalizedActive - 1 + total) % total);
+    }
+
+    return result;
   };
 
   const markSequentialImageSettled = (slideIndex: number) => {
@@ -666,6 +686,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     if (sequentialSettledRef.current.has(settledRealIndex)) return;
     sequentialSettledRef.current.add(settledRealIndex);
 
+    if (sequentialLoadStrategy === 'around-active') return;
+
     setSequentialUnlockedCount((current) => {
       if (settledRealIndex !== current - 1) return current;
       return Math.min(images.length, current + 1);
@@ -674,10 +696,22 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   useEffect(() => {
     sequentialSettledRef.current.clear();
-    setSequentialUnlockedCount(
-      sequentialLoad ? Math.min(images.length, Math.max(1, startIndex + 1)) : images.length
-    );
-  }, [sequentialLoad, images.length, startIndex, resetKey]);
+    if (!sequentialLoad || images.length <= 1) {
+      setSequentialUnlockedCount(images.length);
+      setSequentialUnlockedIndices(new Set());
+      return;
+    }
+
+    if (sequentialLoadStrategy === 'around-active') {
+      const normalizedStart = ((startIndex % images.length) + images.length) % images.length;
+      setSequentialUnlockedIndices(getAroundActiveIndices(images.length, normalizedStart));
+      setSequentialUnlockedCount(images.length);
+      return;
+    }
+
+    setSequentialUnlockedIndices(new Set());
+    setSequentialUnlockedCount(Math.min(images.length, Math.max(1, startIndex + 1)));
+  }, [sequentialLoad, sequentialLoadStrategy, images.length, startIndex, resetKey]);
 
   useEffect(() => {
   setIsZoomed(false);
@@ -706,6 +740,23 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   useEffect(() => {
     onActiveIndexChange?.(realIndex);
   }, [realIndex, onActiveIndexChange]);
+
+  useEffect(() => {
+    if (!sequentialLoad || sequentialLoadStrategy !== 'around-active' || images.length <= 1) return;
+    setSequentialUnlockedIndices((current) => {
+      const nextNeighborhood = getAroundActiveIndices(images.length, realIndex);
+      let changed = false;
+      const next = new Set(current);
+      nextNeighborhood.forEach((idx) => {
+        if (!next.has(idx)) {
+          next.add(idx);
+          changed = true;
+        }
+      });
+      if (!changed) return current;
+      return next;
+    });
+  }, [realIndex, sequentialLoad, sequentialLoadStrategy, images.length]);
   
   // Ð¡Ñ‚Ñ€ÐµÐ»ÐºÐ¸
   const prevSlide = (fromUser: boolean = true) => {
@@ -890,7 +941,9 @@ if (zoomable && e.pointerType === "touch") return;
               const shouldLoadImage =
                 !sequentialLoad ||
                 images.length <= 1 ||
-                getRealImageIndexForSlide(i) < sequentialUnlockedCount;
+                (sequentialLoadStrategy === 'around-active'
+                  ? sequentialUnlockedIndices.has(getRealImageIndexForSlide(i))
+                  : getRealImageIndexForSlide(i) < sequentialUnlockedCount);
 
               return shouldLoadImage ? (
                 <>
@@ -2174,6 +2227,8 @@ case 'CONTENT': {
   resetKey={modalSession}       // âœ… apply startIndex only per-open
   onActiveIndexChange={(i) => setModalIndex(i)} // keep text synced
   aspectRatio={"auto"}
+  sequentialLoad={true}
+  sequentialLoadStrategy="around-active"
 />
       ) : (
         <>

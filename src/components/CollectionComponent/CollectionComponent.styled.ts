@@ -430,6 +430,9 @@ export const SliderContent = styled.div<{
   $isDragging: boolean /* transient prop */;
 }>`
   display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 100%;
   transition: ${({ $animate, $isDragging }) =>
     !$animate || $isDragging
       ? 'none'
@@ -439,11 +442,14 @@ export const SliderContent = styled.div<{
 `;
 
 export const Slide = styled.div`
+  flex: 0 0 100%;
   min-width: 100%;
+  max-width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 
   img {
     height: 100%;
