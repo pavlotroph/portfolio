@@ -23,24 +23,6 @@ export const NavbarContainer = styled.header<{ $isScrolled: boolean }>`
   z-index: 99;
   will-change: transform;
 
-  @media (max-width: 768px) {
-    padding: 0;
-    max-width: 100%;
-    margin: 0;
-  }
-  
-  @media screen and (min-width: 768px) {
-    padding: 0;
-    width: 100%;
-    margin: 0;
-  }
-
-  @media screen and (min-width: 1440px) {
-    padding: 0;
-    width: 100%;
-    margin: 0;
-  }
-
   &:hover,
   &:focus,
   &.active {
@@ -54,18 +36,12 @@ export const HeaderWrapper = styled.div`
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
-  padding: 14px 12px;
+  padding: 14px 14px;
   justify-content: space-between;
   align-items: center;
   border: none;
   outline: none;
   position: relative;
-  @media screen and (min-width: 768px) {
-    padding: 14px 12px;
-  }
-  @media screen and (min-width: 1460px) {
-    padding: 14px 12px;
-  }
 `;
 export const Logo = styled(NavLink)`
   font-size: 1.5rem;

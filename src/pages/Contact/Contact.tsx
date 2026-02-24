@@ -2,11 +2,11 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import ContactForm from '../../components/ContactForm/ContactForm';
 import {
-  AdditionalWrapper,
   ContactContainer,
 } from './Contact.styled';
 
 import {
+  WRAPPER_GLOBAL,
   WRAPPER_COMPONENT,
   WRAPPER_BLOCKS,
   CONTENT_TEXT_BLOCK,
@@ -213,7 +213,7 @@ const Contact: React.FC = () => {
     items: [
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '14, 14, 14, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Contact', style: 'h6', object: 'heading', alignment: 'left' },
 
@@ -225,7 +225,7 @@ const Contact: React.FC = () => {
       },
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '14, 14, 14, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Location', style: 'h6', object: 'heading', alignment: 'left' },
           { link: 'https://maps.app.goo.gl/b7UCDY41c7FuzzFC6', size: 0, text: 'Toronto, ON, CA', style: 'h3', object: 'body', alignment: 'left' },
@@ -261,7 +261,7 @@ const Contact: React.FC = () => {
         <meta name="twitter:description" content="Contact Pavlo Troph — inquiries, collaborations, and freelance/studio opportunities." />
       </Helmet>
 
-      <AdditionalWrapper>
+      <WRAPPER_GLOBAL>
         <ContactContainer>
           <h1 style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap', border: 0 }}>
             Contact
@@ -272,7 +272,7 @@ const Contact: React.FC = () => {
 
           <ContactForm />
         </ContactContainer>
-      </AdditionalWrapper>
+      </WRAPPER_GLOBAL>
     </>
   );
 };

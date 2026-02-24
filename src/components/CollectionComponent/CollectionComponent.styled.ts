@@ -74,6 +74,38 @@ export const WRAPPER_BLOCKS = styled.div`
       grid-template-columns: repeat(1, minmax(240px, 1fr));
     }
   }
+
+  /*
+  Special mobile behavior for a 2-block CONTENT combo (text + media):
+  - Desktop: preserve JSON order (checkerboard pattern across components)
+  - Phones: always show Media first, then Text
+*/
+&[data-pair="yes"][data-count="2"] {
+  display: flex;
+  flex-wrap: wrap;
+
+  > * {
+    flex: 1 1 50%;
+    min-width: 240px;
+  }
+
+  @media (max-width: 744px) {
+    flex-direction: column;
+
+    > * {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    /* Force Media above Text on narrow screens */
+    > [data-kind="media"] {
+      order: 1;
+    }
+    > [data-kind="text"] {
+      order: 2;
+    }
+  }
+}
 `;
 
 export const ContentBlockWrapper = styled.div`
@@ -100,11 +132,11 @@ export const CollectionAdditionalWrapper = styled.div<{ $isPhoto?: boolean }>`
   justify-content: center;
   align-items: center;
   align-content: center;
-  padding: 0px 18px;
+  padding: 0px 14px;
   gap: 40px;
 
   @media (min-width: 744px) {
-    padding: 0px 24px;
+    padding: 0px 14px;
   }
 `;
 
@@ -617,16 +649,16 @@ export const CUSTOM_SPLITTER = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: 20px 18px; 
+  padding: 20px 14px; 
 
   background: #000;
 
   @media (min-width: 744px) {
-    padding: 40px 24px; 
+    padding: 40px 14px; 
   }
 
    @media (min-width: 1404px) {
-    padding: 60px 24px; 
+    padding: 60px 14px; 
   }
 
   &::after {

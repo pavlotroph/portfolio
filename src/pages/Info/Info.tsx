@@ -3,15 +3,13 @@ import { Helmet } from 'react-helmet-async';
 import QuoteBlock from '../../components/Quote/QuoteBlock';
 import {
   CollectionContainer,
-  CollectionAdditionalWrapper,
   CollectionHeader,
-  CollectionTextWrapper,
-  ContentBlockWrapper,
   CUSTOM_SPLITTER,
 
   // CONTENT system
   WRAPPER_COMPONENT,
   WRAPPER_BLOCKS,
+  WRAPPER_GLOBAL,
   CONTENT_TEXT_BLOCK,
   CONTENT_TEXT_HEADING,
   CONTENT_TEXT_BODY,
@@ -255,7 +253,7 @@ const Info: React.FC = () => {
     items: [
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '20, 14, 20, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Artist Name', style: 'h6', object: 'heading', alignment: 'left' },
           { link: 'none', size: 0, text: 'Pavlo Troph', style: 'h2', object: 'body', alignment: 'left' },
@@ -263,7 +261,7 @@ const Info: React.FC = () => {
       },
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '20, 14, 20, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Specialization', style: 'h6', object: 'heading', alignment: 'left' },
           { link: 'none', size: 0, text: 'Graphic Design\nCGI\nPhotography\nCinematography\nArt Direction', style: 'h3', object: 'body', alignment: 'left' },
@@ -271,7 +269,7 @@ const Info: React.FC = () => {
       },
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '14, 14, 14, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Location', style: 'h6', object: 'heading', alignment: 'left' },
           { link: 'https://www.google.com/maps/search/?api=1&query=Toronto,+ON,+CA', size: 0, text: 'Toronto, ON, CA', style: 'h3', object: 'body', alignment: 'left' },
@@ -279,7 +277,7 @@ const Info: React.FC = () => {
       },
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '14, 14, 14, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Contact', style: 'h6', object: 'heading', alignment: 'left' },
           { link: 'mailto:info@pavlotroph.com', size: 0, text: 'info@pavlotroph.com', style: 'h3', object: 'body', alignment: 'left' },
@@ -294,7 +292,7 @@ const Info: React.FC = () => {
     items: [
       {
         block: 'text',
-        padding: '12, 12, 12, 12',
+        padding: '32, 14, 32, 14',
         block_items: [
           { link: 'none', size: 0, text: 'Description', style: 'h6', object: 'heading', alignment: 'left' },
 
@@ -348,18 +346,13 @@ const Info: React.FC = () => {
       </Helmet>
 
       <CollectionContainer style={{ marginTop: '10px' }}>
-        <ContentBlockWrapper>
-          <CollectionAdditionalWrapper>
+        < WRAPPER_GLOBAL>
             <CollectionHeader>
               <StaticCONTENT content={headerContent} />
             </CollectionHeader>
-
-            <CollectionTextWrapper>
               <StaticCONTENT content={descriptionContent} />
               <StaticCONTENT content={companiesContent} />
-            </CollectionTextWrapper>
-          </CollectionAdditionalWrapper>
-        </ContentBlockWrapper>
+        </ WRAPPER_GLOBAL>
 
         <CUSTOM_SPLITTER />
 

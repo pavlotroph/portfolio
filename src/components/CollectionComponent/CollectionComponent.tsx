@@ -1400,13 +1400,27 @@ const renderBlock = useCallback((b: CollectionBlockDB) => {
     switch (b.type) {
 
 case 'CONTENT': {
-  const contentItems = Array.isArray(b.content?.items) ? b.content.items : [];
+        const contentItems = Array.isArray(b.content?.items) ? b.content.items : [];
+        // If CONTENT has exactly 2 blocks and it's a text+media combo,
+        // keep desktop order (checkerboard), but force Media above Text on phones.
+        const kinds = contentItems
+          .map((it: any) => (typeof it?.block === 'string' ? it.block.toLowerCase().trim() : ''))
+          .filter(Boolean);
+
+        const isTextMediaPair =
+          contentItems.length === 2 &&
+          kinds.includes('text') &&
+          kinds.includes('media');
+
 
   const componentPaddingCss = paddingToCss(b.content?.componentPadding, '0,0,0,0');
-
+  
   return (
     <WRAPPER_COMPONENT $padding={componentPaddingCss}>
-      <WRAPPER_BLOCKS data-count={contentItems.length}>
+      <WRAPPER_BLOCKS
+        data-count={contentItems.length}
+        data-pair={isTextMediaPair ? 'yes' : 'no'}
+      >
         {contentItems.map((it: any, idx: number) => {
           const blockKind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : 'empty';
 
@@ -1422,7 +1436,7 @@ case 'CONTENT': {
               it?.['aspect-ratio'] ?? it?.aspectRatio ?? it?.aspect_ratio
             );
             return (
-              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock}>
+              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock} data-kind="text">
                 {blockItems.map((t: any, j: number) => {
                   const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
                   const isHeading = obj === 'heading';
@@ -1520,6 +1534,7 @@ case 'CONTENT': {
                     handleContentMediaClick();
                   }
                 }}
+                data-kind="media"
               >
                 <CONTENT_MEDIA_INNER>
                   {isVideo ? (

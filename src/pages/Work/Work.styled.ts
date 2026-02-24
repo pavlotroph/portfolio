@@ -5,14 +5,14 @@ display: flex;
 flex-direction: column;
 margin: 0 auto;
 max-width: 1440px;
-padding: 0px 18px;
+padding: 0px 14px;
 
 @media screen and (min-width: 744px){
-  padding: 0px 24px;
+  padding: 0px 14px;
 }
 
 @media screen and (min-width: 1440px){
-  padding: 0px 24px;
+  padding: 0px 14px;
 }
 `;
 
