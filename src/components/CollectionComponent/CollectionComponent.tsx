@@ -480,6 +480,25 @@ type PreloadedGridImageProps = {
   style?: React.CSSProperties;
   draggable?: boolean;
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  sequentialGroupKey?: string;
+  sequentialIndex?: number;
+};
+
+type SequentialLoadGroupState = {
+  nextIndex: number;
+  listeners: Set<() => void>;
+  mounts: number;
+};
+
+const sequentialLoadGroups = new Map<string, SequentialLoadGroupState>();
+
+const getSequentialLoadGroup = (key: string): SequentialLoadGroupState => {
+  let group = sequentialLoadGroups.get(key);
+  if (!group) {
+    group = { nextIndex: 0, listeners: new Set(), mounts: 0 };
+    sequentialLoadGroups.set(key, group);
+  }
+  return group;
 };
 
 const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
@@ -489,19 +508,69 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
   style,
   draggable = false,
   onError,
+  sequentialGroupKey,
+  sequentialIndex,
 }) => {
   const [visible, setVisible] = useState(false);
+  const hasSequentialOrder =
+    typeof sequentialGroupKey === "string" && typeof sequentialIndex === "number";
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (!hasSequentialOrder) return true;
+    const group = getSequentialLoadGroup(sequentialGroupKey!);
+    return sequentialIndex! <= group.nextIndex;
+  });
+
+  useEffect(() => {
+    if (!hasSequentialOrder) {
+      setIsUnlocked(true);
+      return;
+    }
+
+    const group = getSequentialLoadGroup(sequentialGroupKey!);
+    group.mounts += 1;
+
+    const sync = () => {
+      setIsUnlocked(sequentialIndex! <= group.nextIndex);
+    };
+
+    group.listeners.add(sync);
+    sync();
+
+    return () => {
+      group.listeners.delete(sync);
+      group.mounts = Math.max(0, group.mounts - 1);
+      if (group.mounts === 0) {
+        sequentialLoadGroups.delete(sequentialGroupKey!);
+      }
+    };
+  }, [hasSequentialOrder, sequentialGroupKey, sequentialIndex]);
+
+  const advanceSequentialQueue = () => {
+    if (!hasSequentialOrder) return;
+    const group = getSequentialLoadGroup(sequentialGroupKey!);
+    if (sequentialIndex! > group.nextIndex) return;
+    if (sequentialIndex! === group.nextIndex) {
+      group.nextIndex += 1;
+      group.listeners.forEach((listener) => listener());
+    }
+  };
 
   return (
     <img
-      src={src}
+      src={isUnlocked ? src : undefined}
       alt={alt}
       onClick={onClick}
       draggable={draggable}
       loading="lazy"
       decoding="async"
-      onLoad={() => setVisible(true)}
-      onError={onError}
+      onLoad={() => {
+        setVisible(true);
+        advanceSequentialQueue();
+      }}
+      onError={(e) => {
+        advanceSequentialQueue();
+        onError?.(e);
+      }}
       style={{
         opacity: visible ? 1 : 0,
         transition: "opacity 0.35s ease",
@@ -1189,12 +1258,15 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     if (!hasRowInfo) {
       const modalItems = buildModalItems(rawItems);
       const itemsCountForGrid = (b.content?.columns as number | undefined) ?? rawItems.length;
+      const sequentialGroupKey = `gallery-${String(b.id)}`;
+      let sequentialImageIndex = 0;
 
       return (
         <IMAGE_GALLERY key={b.id} $itemsCount={itemsCountForGrid} $aspectRatio={globalAspectRatio}>
           {rawItems.map((item: any, i: number) => {
             const media = modalItems[i];
             const isVideo = media.type === "video";
+            const imageSequenceIndex = isVideo ? undefined : sequentialImageIndex++;
             const effectiveAspectRatio =
               (item.aspectRatio && String(item.aspectRatio).trim()) || globalAspectRatio;
 
@@ -1209,6 +1281,8 @@ const thumbSrc = imageThumbLRUrl(item.src);
                   <PreloadedGridImage
   src={thumbSrc}
   alt={item.title || `Image ${i + 1}`}
+  sequentialGroupKey={sequentialGroupKey}
+  sequentialIndex={imageSequenceIndex}
   onClick={() => openModal(modalItems, i)}
   onError={(e) => {
     const img = e.currentTarget;
@@ -1244,6 +1318,8 @@ const thumbSrc = imageThumbLRUrl(item.src);
     // IMPORTANT: We donâ€™t want IMAGE_GALLERY forcing a single grid layout here.
     // So we render rows inside it and each row controls its own columns.
     let globalIndex = 0;
+    const sequentialGroupKey = `gallery-${String(b.id)}`;
+    let sequentialImageIndex = 0;
 
     return (
       <IMAGE_GALLERY key={b.id} $itemsCount={1} $aspectRatio={globalAspectRatio}>
@@ -1260,6 +1336,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                   globalIndex++;
 
                   const isVideo = media.type === "video";
+                  const imageSequenceIndex = isVideo ? undefined : sequentialImageIndex++;
                   const effectiveAspectRatio =
                     (item.aspectRatio && String(item.aspectRatio).trim()) ||
                     (rowAspectRatios[rowKey] && String(rowAspectRatios[rowKey]).trim()) ||
@@ -1275,6 +1352,8 @@ const thumbSrc = imageThumbLRUrl(item.src);
                         <PreloadedGridImage
   src={thumbSrc}
   alt={item.title || `Image ${i + 1}`}
+  sequentialGroupKey={sequentialGroupKey}
+  sequentialIndex={imageSequenceIndex}
   onClick={() => openModal(modalItems, i)}
   onError={(e) => {
     const img = e.currentTarget;
