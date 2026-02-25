@@ -1,12 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ImageDescription,
   VideoPreview,
-  // WorkSpannImage,
   WorkItemContainer,
   PreviewLayer,
   OriginalLayer,
-  HoverGradient
+  HoverGradient,
 } from '../../pages/Work/Work.styled';
 import LoadingWebm from '../../assets/video/logo_animated_hq.webm';
 import LoadingMp4 from '../../assets/video/logo.mp4';
@@ -15,185 +14,241 @@ import { WorkItemData } from '../../pages/Work/Work';
 interface WorkItemComponentProps {
   work: WorkItemData;
   source: 'work' | 'photo';
+  loadEnabled?: boolean;
+  onPreviewSettled?: () => void;
 }
 
-const WorkItemComponent: React.FC<WorkItemComponentProps> = ({ work, source }) => {
-    const bucket = source === 'work' 
-    ? 'work-images' 
-    : 'photography-images';
-  
+const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
+  work,
+  source,
+  loadEnabled = true,
+  onPreviewSettled,
+}) => {
+  const bucket = source === 'work' ? 'work-images' : 'photography-images';
+
   const [isLoading, setIsLoading] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isOriginalLoaded, setIsOriginalLoaded] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [shouldLoadOriginal, setShouldLoadOriginal] = useState(false);
+  const [shouldActivateHoverMedia, setShouldActivateHoverMedia] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const loadingVideoRef = useRef<HTMLVideoElement>(null);
+  const previewSettledRef = useRef(false);
+  const onPreviewSettledRef = useRef<(() => void) | undefined>(onPreviewSettled);
 
   const { folder, image_name, title, preview_url, vimeo_id } = work;
   const isVimeo = Boolean(vimeo_id);
-
-  const src = `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${image_name}`;
   const isVideo = image_name.toLowerCase().endsWith('.mp4');
 
-  const getPreviewUrl = () => {
-    if (!preview_url) return src;
-    return preview_url.startsWith('http')
+  const src = `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${image_name}`;
+  const previewSrc = !preview_url
+    ? src
+    : preview_url.startsWith('http')
       ? preview_url
       : `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${preview_url}`;
-  };
-
-  const previewSrc = getPreviewUrl();
 
   const sameStaticImage = !isVideo && previewSrc === src;
 
   useEffect(() => {
-  const img = new Image();
-  img.src = previewSrc;
-  img.onload = () => {
-    setIsLoading(false);
-  };
-  img.onerror = () => {
-    console.error('Failed to load preview image:', previewSrc);
-    setIsLoading(false);
-  };
-}, [previewSrc]); // 👈 no src / isVideo deps
-
+    onPreviewSettledRef.current = onPreviewSettled;
+  }, [onPreviewSettled]);
 
   useEffect(() => {
-    if (isHovered && isVideo && !isVimeo && videoRef.current) {
+    previewSettledRef.current = false;
+    setIsLoading(true);
+    setIsHovered(false);
+    setIsOriginalLoaded(false);
+    setIsVideoReady(false);
+    setShouldLoadOriginal(false);
+    setShouldActivateHoverMedia(false);
+  }, [previewSrc, src]);
+
+  useEffect(() => {
+    if (!loadEnabled) return;
+
+    let cancelled = false;
+    const img = new Image();
+
+    const markPreviewSettled = () => {
+      if (cancelled) return;
+      setIsLoading(false);
+
+      if (!previewSettledRef.current) {
+        previewSettledRef.current = true;
+        onPreviewSettledRef.current?.();
+      }
+    };
+
+    img.onload = markPreviewSettled;
+    img.onerror = () => {
+      console.error('Failed to load preview image:', previewSrc);
+      markPreviewSettled();
+    };
+    img.src = previewSrc;
+
+    if (img.complete) markPreviewSettled();
+
+    return () => {
+      cancelled = true;
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [previewSrc, loadEnabled]);
+
+  useEffect(() => {
+    if (!loadEnabled) return;
+
+    if (isHovered && isVideo && !isVimeo && shouldActivateHoverMedia && videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(error => {
         if (error.name !== 'AbortError') {
           console.error('Video play interrupted:', error);
         }
       });
-    } else if ((!isHovered || isVimeo) && isVideo && videoRef.current) {
+    } else if (isVideo && videoRef.current) {
       videoRef.current.pause();
     }
-  }, [isHovered, isVideo, isVimeo]);
+  }, [isHovered, isVideo, isVimeo, loadEnabled, shouldActivateHoverMedia]);
 
   const showHoverVideoLoader =
-  isHovered && (isVideo || isVimeo) && !isVideoReady;
+    loadEnabled &&
+    isHovered &&
+    (isVideo || isVimeo) &&
+    shouldActivateHoverMedia &&
+    !isVideoReady;
 
-  const showLoaderOverlay = isLoading || showHoverVideoLoader;
+  const showLoaderOverlay = loadEnabled && (isLoading || showHoverVideoLoader);
+  const showLockedPlaceholder = !loadEnabled;
 
   useEffect(() => {
-    if (showLoaderOverlay && loadingVideoRef.current) {
-      loadingVideoRef.current.play().catch(e => {
-        if (e.name !== 'AbortError') console.error('Loading video play error:', e);
-      });
-    }
+    if (!showLoaderOverlay || !loadingVideoRef.current) return;
+
+    loadingVideoRef.current.play().catch(e => {
+      if (e.name !== 'AbortError') {
+        console.error('Loading video play error:', e);
+      }
+    });
   }, [showLoaderOverlay]);
 
   const handleMouseEnter = () => {
-  setIsHovered(true);
-};
+    if (!loadEnabled) return;
 
-const handleMouseLeave = () => {
-  setIsHovered(false);
-  setIsVideoReady(false); // 👈 reset for the next hover
-};
-  
+    setIsHovered(true);
+
+    if (!isVideo && !sameStaticImage) {
+      setShouldLoadOriginal(true);
+    }
+
+    if (isVideo || isVimeo) {
+      setShouldActivateHoverMedia(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setIsVideoReady(false);
+  };
+
   return (
     <WorkItemContainer
-     onMouseEnter={handleMouseEnter}
-    onMouseLeave={handleMouseLeave}
-    className="work-item"
-  >
-    {/* 🔹 Loader overlay while preview is loading */}
-    <div
-  style={{
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#000',
-    zIndex: 900,
-    opacity: showLoaderOverlay ? 1 : 0,
-    pointerEvents: showLoaderOverlay ? 'auto' : 'none',
-    transition: 'opacity 0.6s ease-in-out',
-  }}
->
-  <video
-    ref={loadingVideoRef}
-    loop
-    muted
-    playsInline
-    aria-label="Loading animation"
-    style={{ width: '100px', height: '100px' }}
-  >
-    <source src={LoadingWebm} type="video/webm" />
-    <source src={LoadingMp4} type="video/mp4" />
-  </video>
-</div>
-      {/* Base layer – preview stays visible once loaded */}
-<PreviewLayer
-  $isVisible={!isLoading}
-  $imageUrl={previewSrc}
->
-  <img
-    src={previewSrc}
-    alt={title || `Preview image for ${work.title || 'work item'}`}
-    loading="lazy"
-  />
-</PreviewLayer>
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="work-item"
+    >
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#000',
+          zIndex: 900,
+          opacity: showLoaderOverlay || showLockedPlaceholder ? 1 : 0,
+          pointerEvents: showLoaderOverlay ? 'auto' : 'none',
+          transition: 'opacity 0.6s ease-in-out',
+        }}
+      >
+        {showLoaderOverlay ? (
+          <video
+            ref={loadingVideoRef}
+            loop
+            muted
+            playsInline
+            aria-label="Loading animation"
+            style={{ width: '100px', height: '100px' }}
+          >
+            <source src={LoadingWebm} type="video/webm" />
+            <source src={LoadingMp4} type="video/mp4" />
+          </video>
+        ) : null}
+      </div>
 
-{/* Hover layer – original fades in/out on hover */}
-{!isVideo && !sameStaticImage && (
-  <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
-    <img
-      src={src}
-      alt={title || `Full image for ${work.title || 'work item'}`}
-      loading="eager"
-      onLoad={() => setIsOriginalLoaded(true)}
-    />
-  </OriginalLayer>
-)}
-      
-      {/* Шар для відео (завжди в DOM для відео) */}
-{(isVideo || isVimeo) && (
-  <VideoPreview $isVisible={isHovered}>
-    {isVimeo ? (
-      <iframe
-        src={`https://player.vimeo.com/video/${vimeo_id}?autoplay=1&muted=1&loop=1&background=1`}
-        frameBorder="0"
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowFullScreen
-        title={title || `Video player for ${work.title || 'work item'}`}
-        aria-label={title || `Video player for ${work.title || 'work item'}`}
-      />
-    ) : (
-      <video
-        ref={videoRef}
-        src={src}
-        muted
-        loop
-        preload="auto"
-        playsInline
-        disablePictureInPicture
-        aria-label={title || `Video preview for ${work.title || 'work item'}`}
-        onPlaying={() => setIsVideoReady(true)}
-      />
-    )}
-  </VideoPreview>
-)}
+      <PreviewLayer $isVisible={!isLoading} $imageUrl={previewSrc}>
+        <img
+          src={loadEnabled ? previewSrc : undefined}
+          alt={title || `Preview image for ${work.title || 'work item'}`}
+          loading="lazy"
+          decoding="async"
+        />
+      </PreviewLayer>
 
-{/* Прозорий градієнт поверх зображення при наведенні (тільки для статичних зображень) */}
+      {!isVideo && !sameStaticImage && (
+        <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
+          <img
+            src={shouldLoadOriginal ? src : undefined}
+            alt={title || `Full image for ${work.title || 'work item'}`}
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setIsOriginalLoaded(true)}
+          />
+        </OriginalLayer>
+      )}
+
+      {(isVideo || isVimeo) && (
+        <VideoPreview $isVisible={isHovered}>
+          {isVimeo ? (
+            shouldActivateHoverMedia ? (
+              <iframe
+                src={`https://player.vimeo.com/video/${vimeo_id}?autoplay=1&muted=1&loop=1&background=1`}
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+                title={title || `Video player for ${work.title || 'work item'}`}
+                aria-label={title || `Video player for ${work.title || 'work item'}`}
+                onLoad={() => setIsVideoReady(true)}
+              />
+            ) : null
+          ) : shouldActivateHoverMedia ? (
+            <video
+              ref={videoRef}
+              src={src}
+              muted
+              loop
+              preload="none"
+              playsInline
+              disablePictureInPicture
+              aria-label={title || `Video preview for ${work.title || 'work item'}`}
+              onCanPlay={() => setIsVideoReady(true)}
+              onPlaying={() => setIsVideoReady(true)}
+            />
+          ) : null}
+        </VideoPreview>
+      )}
+
       <HoverGradient $isVisible={isHovered} />
 
-      {/* Заголовок (завжди присутній, але з анімацією) */}
       <ImageDescription
-  $isVisible={
-    isHovered &&
-    (
-      (!isVideo && !isVimeo) || // images: show immediately
-      isVideoReady              // video: wait until ready
-    )
-  }
->
-  {title}
-</ImageDescription>
+        $isVisible={
+          isHovered &&
+          ((!isVideo && !isVimeo) || isVideoReady)
+        }
+      >
+        {title}
+      </ImageDescription>
     </WorkItemContainer>
   );
 };

@@ -45,6 +45,7 @@ const Work: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>('ALL');
+  const [sequentialUnlockedCount, setSequentialUnlockedCount] = useState(0);
   const { setPageReady } = useOutletContext<LayoutCtx>();
 const [isWorksLoading, setIsWorksLoading] = useState(true);
 const [isQuotesLoading, setIsQuotesLoading] = useState(true);
@@ -95,6 +96,9 @@ useEffect(() => {
   setPageReady(isPageReady);
 }, [isPageReady, setPageReady]);
 
+  useEffect(() => {
+    setSequentialUnlockedCount(filteredWorks.length > 0 ? 1 : 0);
+  }, [works, filter]);
 
   useEffect(() => {
     if (quotes.length > 0) {
@@ -126,6 +130,7 @@ useEffect(() => {
                 key={cat}
                 onClick={() => {
                   setFilter(cat as 'ALL' | 'COMMERCIAL' | 'PERSONAL');
+                  setSequentialUnlockedCount(1);
                   if (quotes.length > 0) {
                     const randomIndex = Math.floor(Math.random() * quotes.length);
                     setCurrentQuote(quotes[randomIndex]);
@@ -144,7 +149,7 @@ useEffect(() => {
 
         <WorkPhotoWrapp>
           <AnimatePresence>
-            {filteredWorks.map(work => {
+            {filteredWorks.map((work, index) => {
               const slugOrId = work.slug || work.id;  
 
               return (
@@ -161,7 +166,16 @@ useEffect(() => {
                     style={{ width: '100%', height: '100%' }}
                     aria-label={`View ${work.title || 'work item'}`}
                   >
-                    <WorkItemComponent work={work} source="work" />
+                    <WorkItemComponent
+                      work={work}
+                      source="work"
+                      loadEnabled={index < sequentialUnlockedCount}
+                      onPreviewSettled={() => {
+                        setSequentialUnlockedCount(prev =>
+                          Math.min(filteredWorks.length, Math.max(prev, index + 2))
+                        );
+                      }}
+                    />
                   </Link>
                 </motion.div>
               );
