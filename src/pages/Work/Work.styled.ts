@@ -113,6 +113,8 @@ export const WorkItemContainer = styled.div`
   cursor: pointer;
   width: 100%;
   position: relative;
+  z-index: 0;
+  isolation: isolate;
   overflow: hidden;
   margin-bottom: 1px;
   margin-top: 1px;

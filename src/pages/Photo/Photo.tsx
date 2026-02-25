@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../../supabaseClient';
 import WorkItemComponent from '../../components/WorkItemComponent/WorkItemComponent';
@@ -55,6 +55,8 @@ const Photo: React.FC = () => {
     filter === 'ALL'
       ? works
       : works.filter(w => (w.category || '').toUpperCase() === filter);
+  const sequentialFilterKey = `${filter}:${filteredWorks.length}`;
+  const activeSequentialFilterKeyRef = useRef(sequentialFilterKey);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,9 +97,10 @@ const Photo: React.FC = () => {
     setPageReady(isPageReady);
   }, [isPageReady, setPageReady]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    activeSequentialFilterKeyRef.current = sequentialFilterKey;
     setSequentialUnlockedCount(filteredWorks.length > 0 ? 1 : 0);
-  }, [works, filter]);
+  }, [sequentialFilterKey, filteredWorks.length]);
 
   useEffect(() => {
     if (quotes.length > 0) {
@@ -128,6 +131,7 @@ const Photo: React.FC = () => {
               <WorkTextFilter
                 key={cat}
                 onClick={() => {
+                  if (filter === cat) return;
                   setFilter(cat as 'ALL' | 'COMMERCIAL' | 'PERSONAL');
                   setSequentialUnlockedCount(1);
                   if (quotes.length) {
@@ -150,10 +154,11 @@ const Photo: React.FC = () => {
           <AnimatePresence>
             {filteredWorks.map((work, index) => {
               const slugOrId = work.slug || work.id;  
+              const itemSequentialFilterKey = sequentialFilterKey;
 
               return (
                 <motion.div
-                  key={slugOrId}                        // you can also use it as key
+                  key={`${filter}-${slugOrId}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -170,6 +175,7 @@ const Photo: React.FC = () => {
                       source="photo"
                       loadEnabled={index < sequentialUnlockedCount}
                       onPreviewSettled={() => {
+                        if (activeSequentialFilterKeyRef.current !== itemSequentialFilterKey) return;
                         setSequentialUnlockedCount(prev =>
                           Math.min(filteredWorks.length, Math.max(prev, index + 2))
                         );

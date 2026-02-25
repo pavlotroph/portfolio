@@ -35,6 +35,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const loadingVideoRef = useRef<HTMLVideoElement>(null);
+  const previewImgRef = useRef<HTMLImageElement>(null);
   const previewSettledRef = useRef(false);
   const onPreviewSettledRef = useRef<(() => void) | undefined>(onPreviewSettled);
 
@@ -48,8 +49,19 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     : preview_url.startsWith('http')
       ? preview_url
       : `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${preview_url}`;
+  const previewLooksLikeImage = /\.(avif|webp|png|jpe?g|gif|bmp|svg)([?#].*)?$/i.test(previewSrc);
+  const shouldUseImgPreview = !isVideo || previewLooksLikeImage || Boolean(preview_url);
 
   const sameStaticImage = !isVideo && previewSrc === src;
+
+  const markPreviewSettled = () => {
+    setIsLoading(false);
+
+    if (!previewSettledRef.current) {
+      previewSettledRef.current = true;
+      onPreviewSettledRef.current?.();
+    }
+  };
 
   useEffect(() => {
     onPreviewSettledRef.current = onPreviewSettled;
@@ -68,34 +80,30 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   useEffect(() => {
     if (!loadEnabled) return;
 
-    let cancelled = false;
-    const img = new Image();
-
-    const markPreviewSettled = () => {
-      if (cancelled) return;
-      setIsLoading(false);
-
-      if (!previewSettledRef.current) {
-        previewSettledRef.current = true;
-        onPreviewSettledRef.current?.();
-      }
-    };
-
-    img.onload = markPreviewSettled;
-    img.onerror = () => {
-      console.error('Failed to load preview image:', previewSrc);
+    if (!shouldUseImgPreview) {
       markPreviewSettled();
-    };
-    img.src = previewSrc;
+      return;
+    }
 
-    if (img.complete) markPreviewSettled();
+    const imgEl = previewImgRef.current;
+    if (!imgEl) return;
 
-    return () => {
-      cancelled = true;
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [previewSrc, loadEnabled]);
+    // Cached images may already be complete before React dispatches onLoad.
+    if (imgEl.getAttribute('src') && imgEl.complete) {
+      markPreviewSettled();
+    }
+  }, [previewSrc, loadEnabled, shouldUseImgPreview]);
+
+  useEffect(() => {
+    if (!loadEnabled || !isLoading || !shouldUseImgPreview || previewSettledRef.current) return;
+
+    const timeoutId = window.setTimeout(() => {
+      // Prevent a single missed image load/error event from blocking the whole list.
+      markPreviewSettled();
+    }, 4000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadEnabled, isLoading, previewSrc, shouldUseImgPreview]);
 
   useEffect(() => {
     if (!loadEnabled) return;
@@ -165,7 +173,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           background: '#000',
-          zIndex: 900,
+          zIndex: showLoaderOverlay ? 4 : 0,
           opacity: showLoaderOverlay || showLockedPlaceholder ? 1 : 0,
           pointerEvents: showLoaderOverlay ? 'auto' : 'none',
           transition: 'opacity 0.6s ease-in-out',
@@ -188,10 +196,18 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
       <PreviewLayer $isVisible={!isLoading} $imageUrl={previewSrc}>
         <img
-          src={loadEnabled ? previewSrc : undefined}
+          ref={previewImgRef}
+          src={loadEnabled && shouldUseImgPreview ? previewSrc : undefined}
           alt={title || `Preview image for ${work.title || 'work item'}`}
           loading="lazy"
           decoding="async"
+          onLoad={() => {
+            markPreviewSettled();
+          }}
+          onError={() => {
+            console.error('Failed to load preview image:', previewSrc);
+            markPreviewSettled();
+          }}
         />
       </PreviewLayer>
 
