@@ -663,14 +663,14 @@ export const CUSTOM_SPLITTER = styled.div`
     padding: 40px 14px; 
   }
 
-   @media (min-width: 1404px) {
+   @media (min-width: 1440px) {
     padding: 60px 14px; 
   }
 
   &::after {
     content: '';
     width: 100%;
-    max-width: 1440px;
+    max-width: 1412px;
     height: 1px;
     background: #d9d9d9;
   }

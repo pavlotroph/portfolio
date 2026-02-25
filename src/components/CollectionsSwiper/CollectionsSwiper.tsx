@@ -65,38 +65,43 @@ const CollectionName = styled.h1`
 interface CollectionSliderProps {
   source: 'work' | 'photo';
   currentId: number;
-  collectionIds: number[];
+  collections: Array<{
+    id: number;
+    slug?: string | null;
+  }>;
   collectionName: string;
 }
 
 const CollectionSlider: React.FC<CollectionSliderProps> = ({
   source,
   currentId,
-  collectionIds,
+  collections,
   collectionName,
 }) => {
   const navigate = useNavigate();
-  const currentIndex = collectionIds.findIndex(id => id === currentId);
+  const currentIndex = collections.findIndex(item => item.id === currentId);
+  const safeCurrentIndex = currentIndex >= 0 ? currentIndex : 0;
 
   const navigateTo = (newIndex: number) => {
-    if (collectionIds.length === 0) return;
-    const idx = (newIndex + collectionIds.length) % collectionIds.length;
+    if (collections.length === 0) return;
+    const idx = (newIndex + collections.length) % collections.length;
     const base = source === 'work' ? '/work' : '/photography';
-    navigate(`${base}/${collectionIds[idx]}`);
+    const target = collections[idx];
+    navigate(`${base}/${target.slug || target.id}`);
   };
 
-  if (collectionIds.length <= 1) return null;
+  if (collections.length <= 1) return null;
 
   return (
     <CollectionAdditionalWrapper>
       <NavigationWrapper>
-        <ArrowButton $side="left" onClick={() => navigateTo(currentIndex - 1)}>
+        <ArrowButton $side="left" onClick={() => navigateTo(safeCurrentIndex - 1)}>
           <ArrowImage src={Left} alt="Previous" />
         </ArrowButton>
 
         <CollectionName>{collectionName}</CollectionName>
 
-        <ArrowButton $side="right" onClick={() => navigateTo(currentIndex + 1)}>
+        <ArrowButton $side="right" onClick={() => navigateTo(safeCurrentIndex + 1)}>
           <ArrowImage src={Right} alt="Next" />
         </ArrowButton>
       </NavigationWrapper>

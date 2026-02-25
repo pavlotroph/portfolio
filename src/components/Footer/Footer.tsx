@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   CollectionHeader,
-  CollectionAdditionalWrapper,
   CUSTOM_SPLITTER,
 } from '../CollectionComponent/CollectionComponent.styled';
 import styled from 'styled-components';
@@ -272,7 +271,7 @@ const Footer: React.FC = () => {
     componentPadding: '0,0,0,0',
     items: Object.entries(grouped).map(([label, items]) => ({
       block: 'text',
-      padding: '0, 0, 0, 0',
+      padding: '20, 14, 20, 14',
       block_items: [
         {
           link: 'none',
@@ -298,11 +297,9 @@ const Footer: React.FC = () => {
   return (
     <FooterContainer role="contentinfo" data-loaded={isLoaded} aria-busy={!isLoaded}>
       <CUSTOM_SPLITTER />
-      <CollectionAdditionalWrapper>
         <CollectionHeader>
           {isLoaded ? <StaticCONTENT content={footerContent} /> : <div style={{ height: 220 }} />}
         </CollectionHeader>
-      </CollectionAdditionalWrapper>
     </FooterContainer>
   );
 };

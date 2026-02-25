@@ -16,6 +16,11 @@ interface WorkRecord {
   slug?: string | null;
 }
 
+interface CollectionNavRecord {
+  id: number;
+  slug?: string | null;
+}
+
 interface CollectionPageProps {
   source: 'work' | 'photo';
 }
@@ -27,7 +32,7 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
   const parentTable = source === 'work' ? 'work' : 'photography';
 
   const [project, setProject] = useState<WorkRecord & { blocks: any[] } | null>(null);
-  const [allIds, setAllIds] = useState<number[]>([]);
+  const [allCollections, setAllCollections] = useState<CollectionNavRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
@@ -62,9 +67,9 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
       // 2) Получаем все ID для слайдера
       const { data: workList, error: listErr } = await supabase
         .from(parentTable)
-        .select('id');
+        .select('id, slug');
       if (listErr) throw listErr;
-      setAllIds(workList?.map(w => w.id) || []);
+      setAllCollections((workList as CollectionNavRecord[]) || []);
 
       // 3) Загружаем блоки (project_blocks или collection_blocks)
       const { data: blocks, error: blocksErr } = await supabase
@@ -192,7 +197,7 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
       <CollectionSlider
         source={source} 
         currentId={project.id}
-        collectionIds={allIds}
+        collections={allCollections}
         collectionName={project.title}
       />
     </>
