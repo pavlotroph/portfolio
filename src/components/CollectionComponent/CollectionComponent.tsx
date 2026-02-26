@@ -1514,6 +1514,9 @@ const renderMultiline = (text: any) => {
   ));
 };
 
+const isInlineFlag = (v: any) =>
+  v === true || v === 'true' || v === 'yes' || v === 1 || v === '1';
+
 
 const renderTextWithInlineLinks = (input: any) => {
   const text = typeof input === 'string' ? input : '';
@@ -1619,46 +1622,96 @@ case 'CONTENT': {
             const aspectRatioLock = aspectLockToCss(
               it?.['aspect-ratio'] ?? it?.aspectRatio ?? it?.aspect_ratio
             );
+
+            const renderTextItem = (t: any, keyId: string, forceInline: boolean) => {
+              const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
+              const isHeading = obj === 'heading';
+
+              const tagRaw = typeof t?.style === 'string' ? t.style.toLowerCase().trim() : '';
+              const fallbackTag = isHeading ? 'h4' : 'h3';
+              const tag = (
+                ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em'].includes(tagRaw)
+                  ? tagRaw
+                  : fallbackTag
+              ) as any;
+
+              const align = normalizeAlign(t?.alignment);
+              const size = Number(t?.size ?? 0);
+              const sizeStyle =
+                Number.isFinite(size) && size > 0 ? { fontSize: Math.min(128, size) } : undefined;
+
+              const lineStyle: React.CSSProperties | undefined = forceInline
+                ? {
+                    ...(sizeStyle ?? {}),
+                    display: 'inline',
+                    width: 'auto',
+                    maxHeight: 'none',
+                    overflow: 'visible',
+                  }
+                : sizeStyle;
+
+              const href =
+                typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
+                  ? t.link.trim()
+                  : null;
+
+              const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
+
+              const lineNode = (
+                <Line as={tag} $align={align} style={lineStyle}>
+                  {href ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
+                </Line>
+              );
+
+              if (!href) return <React.Fragment key={keyId}>{lineNode}</React.Fragment>;
+
+              const LinkTag = forceInline ? CONTENT_INLINE_LINK : CONTENT_LINK;
+
+              return (
+                <LinkTag
+                  key={keyId}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
+                >
+                  {lineNode}
+                </LinkTag>
+              );
+            };
+
+            const nodes: React.ReactNode[] = [];
+            let inlineGroup: Array<{ item: any; itemIndex: number }> = [];
+
+            const flushInline = () => {
+              if (!inlineGroup.length) return;
+              const group = inlineGroup;
+              inlineGroup = [];
+
+              nodes.push(
+                <div key={`content-inline-group-${idx}-${nodes.length}`} style={{ width: '100%' }}>
+                  {group.map(({ item, itemIndex }) =>
+                    renderTextItem(item, `content-inline-${idx}-${itemIndex}`, true)
+                  )}
+                </div>
+              );
+            };
+
+            blockItems.forEach((t: any, j: number) => {
+              if (isInlineFlag(t?.inline)) {
+                inlineGroup.push({ item: t, itemIndex: j });
+                return;
+              }
+
+              flushInline();
+              nodes.push(renderTextItem(t, `content-textline-${idx}-${j}`, false));
+            });
+
+            flushInline();
+
             return (
               <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock} data-kind="text">
-                {blockItems.map((t: any, j: number) => {
-                  const obj = typeof t?.object === 'string' ? t.object.toLowerCase().trim() : 'body';
-                  const isHeading = obj === 'heading';
-
-                  const tagRaw = typeof t?.style === 'string' ? t.style.toLowerCase().trim() : '';
-                  const fallbackTag = isHeading ? 'h4' : 'h3';
-                  const tag = (['h1','h2','h3','h4','h5','h6','p','span','strong','em'].includes(tagRaw) ? tagRaw : fallbackTag) as any;
-
-                  const align = normalizeAlign(t?.alignment);
-                  const size = Number(t?.size ?? 0);
-                  const sizeStyle = Number.isFinite(size) && size > 0 ? { fontSize: Math.min(128, size) } : undefined;
-
-                  const href = typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
-                    ? t.link.trim()
-                    : null;
-
-                  const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
-
-                  const lineNode = (
-                    <Line as={tag} $align={align} style={sizeStyle}>
-                      {href ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
-                    </Line>
-                  );
-
-                  if (!href) return <React.Fragment key={`content-textline-${idx}-${j}`}>{lineNode}</React.Fragment>;
-
-                  return (
-                    <CONTENT_LINK
-                      key={`content-textline-${idx}-${j}`}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
-                    >
-                      {lineNode}
-                    </CONTENT_LINK>
-                  );
-                })}
+                {nodes}
               </CONTENT_TEXT_BLOCK>
             );
           }

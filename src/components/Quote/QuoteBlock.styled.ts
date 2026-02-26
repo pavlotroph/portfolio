@@ -13,13 +13,13 @@ export const Wrapper = styled.div`
   margin: 0 auto;
 
   @media screen and (min-width: 744px){
-    padding: 24px 24px;
+    padding: 14px 14px;
   }
 
     transition: padding 0.4s ease-in-out, gap 0.4s ease-in-out;
 
   @media screen and (min-width: 1440px){
-    padding: 33px 24px;
+    padding: 20px 14px;
   }
 `;
 
@@ -30,7 +30,7 @@ export const TextBlock = styled.div`
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 1440px;
+  max-width: 1412px;
   /* let the content decide the height */
   height: auto;
 
