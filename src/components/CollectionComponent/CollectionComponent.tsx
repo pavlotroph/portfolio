@@ -2238,10 +2238,7 @@ case 'CONTENT': {
         const isGallery = b.type === 'IMAGE_GALLERY';
 
         return (
-          <Reveal
-            key={b.id}
-            amount={isGallery ? 0.08 : undefined}  // ðŸ‘ˆ tall galleries trigger almost immediately
-          >
+          <Reveal key={b.id} amount={isGallery ? 0 : undefined}>
             {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
           </Reveal>
         );

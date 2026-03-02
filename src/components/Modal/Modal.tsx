@@ -14,14 +14,13 @@ const fadeOut = keyframes`
 const ModalOverlay = styled.div<{ $closing: boolean }>`
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.85);
   z-index: 100;
   display: flex;
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
   overflow: hidden;
-  backdrop-filter: blur(4px);
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
