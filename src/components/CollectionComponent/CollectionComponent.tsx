@@ -513,6 +513,7 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
   sequentialGroupKey,
   sequentialIndex,
 }) => {
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const [visible, setVisible] = useState(false);
   const hasSequentialOrder =
     typeof sequentialGroupKey === "string" && typeof sequentialIndex === "number";
@@ -547,7 +548,7 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
     };
   }, [hasSequentialOrder, sequentialGroupKey, sequentialIndex]);
 
-  const advanceSequentialQueue = () => {
+  const advanceSequentialQueue = useCallback(() => {
     if (!hasSequentialOrder) return;
     const group = getSequentialLoadGroup(sequentialGroupKey!);
     if (sequentialIndex! > group.nextIndex) return;
@@ -555,32 +556,65 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
       group.nextIndex += 1;
       group.listeners.forEach((listener) => listener());
     }
-  };
+  }, [hasSequentialOrder, sequentialGroupKey, sequentialIndex]);
+
+  useEffect(() => {
+    if (!isUnlocked) {
+      setVisible(false);
+      return;
+    }
+
+    const img = imgRef.current;
+    if (!img) {
+      setVisible(false);
+      return;
+    }
+
+    if (img.complete) {
+      setVisible(img.naturalWidth > 0);
+      advanceSequentialQueue();
+      onSettled?.();
+      return;
+    }
+
+    setVisible(false);
+  }, [src, isUnlocked, advanceSequentialQueue, onSettled]);
 
   return (
-    <img
-      src={isUnlocked ? src : undefined}
-      alt={alt}
-      onClick={onClick}
-      draggable={draggable}
-      loading="lazy"
-      decoding="async"
-      onLoad={() => {
-        setVisible(true);
-        advanceSequentialQueue();
-        onSettled?.();
-      }}
-      onError={(e) => {
-        advanceSequentialQueue();
-        onSettled?.();
-        onError?.(e);
-      }}
+    <div
       style={{
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.35s ease",
-        ...style,
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'var(--collection-deferred-media-bg, #111)',
       }}
-    />
+    >
+      <img
+        ref={imgRef}
+        src={isUnlocked ? src : undefined}
+        alt={alt}
+        onClick={onClick}
+        draggable={draggable}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => {
+          setVisible(true);
+          advanceSequentialQueue();
+          onSettled?.();
+        }}
+        onError={(e) => {
+          advanceSequentialQueue();
+          onSettled?.();
+          onError?.(e);
+        }}
+        style={{
+          opacity: visible ? 1 : 0,
+          transition: "opacity 0.35s ease",
+          ...style,
+        }}
+      />
+    </div>
   );
 };
 
@@ -656,6 +690,9 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const isZoomedRef = useRef(false);
   const sequentialSettledRef = useRef<Set<number>>(new Set());
+  const [visuallySettledRealIndices, setVisuallySettledRealIndices] = useState<Set<number>>(
+    () => new Set<number>()
+  );
   const [sequentialUnlockedCount, setSequentialUnlockedCount] = useState(
     sequentialLoad ? Math.min(images.length, Math.max(1, startIndex + 1)) : images.length
   );
@@ -701,8 +738,24 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     });
   };
 
+  const markSlideVisuallySettled = (slideIndex: number) => {
+    const settledRealIndex = getRealImageIndexForSlide(slideIndex);
+    setVisuallySettledRealIndices((current) => {
+      if (current.has(settledRealIndex)) return current;
+      const next = new Set(current);
+      next.add(settledRealIndex);
+      return next;
+    });
+  };
+
+  const imageSignature = useMemo(
+    () => images.map((image) => image.src).join('|'),
+    [images]
+  );
+
   useEffect(() => {
     sequentialSettledRef.current.clear();
+    setVisuallySettledRealIndices(new Set<number>());
     if (!sequentialLoad || images.length <= 1) {
       setSequentialUnlockedCount(images.length);
       setSequentialUnlockedIndices(new Set());
@@ -718,7 +771,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
     setSequentialUnlockedIndices(new Set());
     setSequentialUnlockedCount(Math.min(images.length, Math.max(1, startIndex + 1)));
-  }, [sequentialLoad, sequentialLoadStrategy, images.length, startIndex, resetKey]);
+  }, [sequentialLoad, sequentialLoadStrategy, images.length, startIndex, resetKey, imageSignature]);
 
   useEffect(() => {
   setIsZoomed(false);
@@ -945,12 +998,14 @@ if (zoomable && e.pointerType === "touch") return;
         {slides.map((img, i) => (
           <Slide key={i}>
             {(() => {
+              const realSlideIndex = getRealImageIndexForSlide(i);
+              const isVisualSettled = visuallySettledRealIndices.has(realSlideIndex);
               const shouldLoadImage =
                 !sequentialLoad ||
                 images.length <= 1 ||
                 (sequentialLoadStrategy === 'around-active'
-                  ? sequentialUnlockedIndices.has(getRealImageIndexForSlide(i))
-                  : getRealImageIndexForSlide(i) < sequentialUnlockedCount);
+                  ? sequentialUnlockedIndices.has(realSlideIndex)
+                  : realSlideIndex < sequentialUnlockedCount);
 
               return shouldLoadImage ? (
                 <>
@@ -968,17 +1023,50 @@ if (zoomable && e.pointerType === "touch") return;
   onSwipeRight={prevSlide}
      />
    ) : (
-     <img
-       src={img.src}
-       alt={img.title || `Slide ${i + 1} of ${slides.length}`}
-      draggable={false}
-      onLoad={() => markSequentialImageSettled(i)}
-      onError={() => markSequentialImageSettled(i)}
-     />
+     <div
+       style={{
+         width: '100%',
+         height: '100%',
+         background: 'var(--collection-deferred-media-bg, #111)',
+       }}
+     >
+       <img
+         ref={(el) => {
+           if (!el || !el.complete) return;
+           markSlideVisuallySettled(i);
+           markSequentialImageSettled(i);
+         }}
+         src={img.src}
+         alt={img.title || `Slide ${i + 1} of ${slides.length}`}
+         draggable={false}
+         onLoad={() => {
+           markSlideVisuallySettled(i);
+           markSequentialImageSettled(i);
+         }}
+         onError={() => {
+           markSlideVisuallySettled(i);
+           markSequentialImageSettled(i);
+         }}
+         style={{
+           width: '100%',
+           height: '100%',
+           objectFit: 'cover',
+           opacity: isVisualSettled ? 1 : 0,
+           transition: 'opacity 0.35s ease',
+         }}
+       />
+     </div>
    )}
                 </>
               ) : (
-                <div aria-hidden="true" style={{ width: '100%', height: '100%' }} />
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'var(--collection-deferred-media-bg, #111)',
+                  }}
+                />
               );
             })()}
           </Slide>
@@ -1006,6 +1094,11 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({
   onSettled,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(false);
+  }, [src]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -1044,25 +1137,42 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({
     };
   }, []);
 
+  const handleVideoSettled = useCallback(() => {
+    setIsReady(true);
+    onSettled?.();
+  }, [onSettled]);
+
   return (
-    <video
-      ref={videoRef}
-      src={src}
-      loop
-      muted
-      playsInline
-      preload={preload}
-      onLoadedData={onSettled}
-      onCanPlay={onSettled}
-      onError={onSettled}
+    <div
       style={{
         width: '100%',
         height: '100%',
-        display: 'block',
-        objectFit: 'cover',
+        position: 'relative',
+        overflow: 'hidden',
+        background: 'var(--collection-deferred-media-bg, #111)',
       }}
-      aria-label={alt}
-    />
+    >
+      <video
+        ref={videoRef}
+        src={src}
+        loop
+        muted
+        playsInline
+        preload={preload}
+        onLoadedData={handleVideoSettled}
+        onCanPlay={handleVideoSettled}
+        onError={handleVideoSettled}
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block',
+          objectFit: 'cover',
+          opacity: isReady ? 1 : 0,
+          transition: 'opacity 0.35s ease',
+        }}
+        aria-label={alt}
+      />
+    </div>
   );
 };
 
@@ -1259,6 +1369,7 @@ const imageThumbLRUrl = (fileName: string) =>
   const settledMediaBlocksRef = useRef<Set<number>>(new Set());
   const settledMediaItemsRef = useRef<Map<number, Set<string>>>(new Map());
   const mediaBlockElementsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const MEDIA_VIEWPORT_UNLOCK_THRESHOLD = 0.35;
   const [viewportRequestedMediaBlockIds, setViewportRequestedMediaBlockIds] = useState<Set<number>>(
     () => new Set<number>()
   );
@@ -1309,7 +1420,7 @@ const imageThumbLRUrl = (fileName: string) =>
           observer.unobserve(target);
         });
       },
-      { threshold: 0.01 }
+      { threshold: MEDIA_VIEWPORT_UNLOCK_THRESHOLD }
     );
 
     mediaBlockIdsInOrder.forEach((blockId) => {
@@ -1319,7 +1430,7 @@ const imageThumbLRUrl = (fileName: string) =>
     });
 
     return () => observer.disconnect();
-  }, [mediaBlockIdsInOrder, viewportRequestedMediaBlockIds, markMediaBlockRequestedByViewport]);
+  }, [mediaBlockIdsInOrder, viewportRequestedMediaBlockIds, markMediaBlockRequestedByViewport, MEDIA_VIEWPORT_UNLOCK_THRESHOLD]);
 
   const isMediaBlockUnlocked = useCallback((blockId: number) => {
     if (viewportRequestedMediaBlockIds.has(blockId)) return true;
@@ -1512,7 +1623,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
             return (
               <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
                 {!isBlockMediaUnlocked ? (
-                  <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                  <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
                 ) : isVideo ? (
                   <AutoPlayVideo
                     src={media.url}
@@ -1590,7 +1701,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                   return (
                     <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
                       {!isBlockMediaUnlocked ? (
-                        <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                        <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
                       ) : isVideo ? (
                         <AutoPlayVideo
                           src={media.url}
@@ -1985,7 +2096,7 @@ case 'CONTENT': {
               >
                 <CONTENT_MEDIA_INNER>
                   {!isBlockMediaUnlocked ? (
-                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
                   ) : isVideo ? (
                     <AutoPlayVideo
                       src={url}
@@ -1995,16 +2106,13 @@ case 'CONTENT': {
                       }
                     />
                   ) : (
-                    <img
+                    <PreloadedGridImage
                       src={url}
                       alt={first?.title ? String(first.title) : ''}
-                      loading="lazy"
-                      onLoad={() =>
+                      onSettled={() =>
                         markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
                       }
-                      onError={() =>
-                        markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
-                      }
+                      style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
                     />
                   )}
                 </CONTENT_MEDIA_INNER>
@@ -2038,7 +2146,7 @@ case 'CONTENT': {
         if (!isBlockMediaUnlocked) {
           return (
             <SliderWrapper $aspectRatio={aspectRatio}>
-              <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+              <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
             </SliderWrapper>
           );
         }
@@ -2104,7 +2212,7 @@ case 'CONTENT': {
               const Pic = (
                 <ImageBlock className="square-media" key={`pic-${index}`}>
                   {!isBlockMediaUnlocked ? (
-                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
                   ) : isVideo ? (
                     <AutoPlayVideo
                       src={media.url}
@@ -2349,7 +2457,7 @@ case 'CONTENT': {
           <YouTubePlayerWrapper key={b.id}>
             <YouTubeIframeContainer>
               {!isBlockMediaUnlocked ? (
-                <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
               ) : (
                 <iframe
                   src={embedUrl}
@@ -2631,4 +2739,5 @@ case 'CONTENT': {
 export default CollectionComponent;
 
 //STARTED
+
 
