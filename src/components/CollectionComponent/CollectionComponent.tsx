@@ -1258,18 +1258,76 @@ const imageThumbLRUrl = (fileName: string) =>
   const [nextMediaBlockOrderToUnlock, setNextMediaBlockOrderToUnlock] = useState(0);
   const settledMediaBlocksRef = useRef<Set<number>>(new Set());
   const settledMediaItemsRef = useRef<Map<number, Set<string>>>(new Map());
+  const mediaBlockElementsRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const [viewportRequestedMediaBlockIds, setViewportRequestedMediaBlockIds] = useState<Set<number>>(
+    () => new Set<number>()
+  );
+
+  const registerMediaBlockElement = useCallback((blockId: number, element: HTMLDivElement | null) => {
+    if (element) {
+      mediaBlockElementsRef.current.set(blockId, element);
+      return;
+    }
+    mediaBlockElementsRef.current.delete(blockId);
+  }, []);
+
+  const markMediaBlockRequestedByViewport = useCallback((blockId: number) => {
+    setViewportRequestedMediaBlockIds((current) => {
+      if (current.has(blockId)) return current;
+      const next = new Set(current);
+      next.add(blockId);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     settledMediaBlocksRef.current.clear();
     settledMediaItemsRef.current.clear();
     setNextMediaBlockOrderToUnlock(0);
+    setViewportRequestedMediaBlockIds(new Set<number>());
   }, [mediaQueueSignature]);
 
+  useEffect(() => {
+    if (!mediaBlockIdsInOrder.length) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      mediaBlockIdsInOrder.forEach((blockId) => markMediaBlockRequestedByViewport(blockId));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const target = entry.target as HTMLElement;
+          const rawId = target.dataset.mediaBlockId;
+          const blockId = Number(rawId);
+          if (!Number.isFinite(blockId)) return;
+
+          markMediaBlockRequestedByViewport(blockId);
+          observer.unobserve(target);
+        });
+      },
+      { threshold: 0.01 }
+    );
+
+    mediaBlockIdsInOrder.forEach((blockId) => {
+      if (viewportRequestedMediaBlockIds.has(blockId)) return;
+      const el = mediaBlockElementsRef.current.get(blockId);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [mediaBlockIdsInOrder, viewportRequestedMediaBlockIds, markMediaBlockRequestedByViewport]);
+
   const isMediaBlockUnlocked = useCallback((blockId: number) => {
+    if (viewportRequestedMediaBlockIds.has(blockId)) return true;
+
     const mediaOrder = mediaOrderIndexByBlockId.get(blockId);
     if (mediaOrder === undefined) return true;
     return mediaOrder <= nextMediaBlockOrderToUnlock;
-  }, [mediaOrderIndexByBlockId, nextMediaBlockOrderToUnlock]);
+  }, [mediaOrderIndexByBlockId, nextMediaBlockOrderToUnlock, viewportRequestedMediaBlockIds]);
 
   const markBlockMediaItemSettled = useCallback((blockId: number, itemKey: string, totalItems: number) => {
     if (!totalItems || totalItems <= 0) return;
@@ -2428,11 +2486,18 @@ case 'CONTENT': {
         if (!node) return null;
 
         const isGallery = b.type === 'IMAGE_GALLERY';
+        const hasMedia = mediaOrderIndexByBlockId.has(b.id);
 
         return (
-          <Reveal key={b.id} amount={isGallery ? 0 : undefined}>
-            {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
-          </Reveal>
+          <div
+            key={b.id}
+            ref={hasMedia ? (el) => registerMediaBlockElement(b.id, el) : undefined}
+            data-media-block-id={hasMedia ? String(b.id) : undefined}
+          >
+            <Reveal amount={isGallery ? 0 : undefined}>
+              {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
+            </Reveal>
+          </div>
         );
       })}
 
