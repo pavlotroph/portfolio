@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react';
 import {
 useLocation } from 'react-router-dom';
 import Modal, {
@@ -63,9 +63,9 @@ import {
   CONTENT_MEDIA_INNER,
 } from './CollectionComponent.styled';
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* Ð¢Ð˜ÐŸÐ«                                           */
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────────────────────────────── */
+/* ТИПЫ                                           */
+/* ────────────────────────────────────────────── */
 
 export type BlockType =
   | 'IMAGE_SINGLE'
@@ -85,7 +85,7 @@ export interface CollectionBlockDB {
   id: number;
   collection_id: number;
   type: BlockType;
-  content: any;             // ÑÐ¼. README
+  content: any;             // см. README
   description: string | null;
   position: number;
 }
@@ -95,14 +95,14 @@ export interface CollectionData {
   folder: string;
   blocks: CollectionBlockDB[];
 
-  // Ñ‚ÐµÐ¿ÐµÑ€ÑŒ main Ð½Ðµ Ð¾Ð±ÑÐ·Ð°Ñ‚ÐµÐ»ÐµÐ½
+  // теперь main не обязателен
   main?: {
     label: string;
     text: string;
     tag?: 'h1' | 'h2' | 'h3';
   }[];
 
-  // ÐµÑÐ»Ð¸ Ð²Ð°Ð¼ Ð±Ð¾Ð»ÑŒÑˆÐµ Ð½Ðµ Ð½ÑƒÐ¶ÐµÐ½ work_title, Ð¼Ð¾Ð¶Ð½Ð¾ ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ
+  // если вам больше не нужен work_title, можно убрать
   work_title?: string;
 }
 
@@ -133,8 +133,8 @@ interface ZoomableImageProps {
 
 /**
  * ZoomableImage:
- * - Mouse wheel â†’ zoom in/out
- * - Touch pinch (two fingers) â†’ zoom
+ * - Mouse wheel → zoom in/out
+ * - Touch pinch (two fingers) → zoom
  * - Drag/pan when zoomed in
  */
 const ZoomableImage: React.FC<ZoomableImageProps> = ({
@@ -224,10 +224,10 @@ useEffect(() => {
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.deltaY === 0) return;
 
-    // Donâ€™t call preventDefault here â€“ in some environments wheel listeners are passive,
-    // which causes â€œUnable to preventDefault inside passive event listenerâ€ spam.
+    // Don’t call preventDefault here – in some environments wheel listeners are passive,
+    // which causes “Unable to preventDefault inside passive event listener” spam.
     // Body is already scroll-locked by the Modal, and this wrapper has overflow: hidden,
-    // so thereâ€™s no visible scroll to block anyway.
+    // so there’s no visible scroll to block anyway.
 
     const prevScale = scaleRef.current;
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -405,8 +405,8 @@ useEffect(() => {
   const MAX_MS = 700;
 
   if (dt <= MAX_MS && absDx >= SWIPE_PX && absDx > absDy * 1.2) {
-    if (dx < 0) onSwipeLeft?.();  // swipe left â†’ next
-    else onSwipeRight?.();        // swipe right â†’ prev
+    if (dx < 0) onSwipeLeft?.();  // swipe left → next
+    else onSwipeRight?.();        // swipe right → prev
   }
 }
 
@@ -480,6 +480,7 @@ type PreloadedGridImageProps = {
   style?: React.CSSProperties;
   draggable?: boolean;
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  onSettled?: () => void;
   sequentialGroupKey?: string;
   sequentialIndex?: number;
 };
@@ -508,6 +509,7 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
   style,
   draggable = false,
   onError,
+  onSettled,
   sequentialGroupKey,
   sequentialIndex,
 }) => {
@@ -566,9 +568,11 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
       onLoad={() => {
         setVisible(true);
         advanceSequentialQueue();
+        onSettled?.();
       }}
       onError={(e) => {
         advanceSequentialQueue();
+        onSettled?.();
         onError?.(e);
       }}
       style={{
@@ -582,9 +586,9 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
 
 
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────────────────────────────── */
 /* HELPER                                         */
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────────────────────────────── */
 
 interface ImageItem {
   src: string;
@@ -607,6 +611,7 @@ interface ImageSliderProps {
   autoPlay?: boolean; // default true
   startIndex?: number; // 0-based (real image index)
   onActiveIndexChange?: (realIndex: number) => void; // 0..images.length-1
+  onImageSettled?: (realIndex: number, total: number) => void;
 }
 
 const ImageSlider: React.FC<ImageSliderProps> = ({
@@ -620,6 +625,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   sequentialLoad = false,
   sequentialLoadStrategy = 'linear',
   onActiveIndexChange,
+  onImageSettled,
 }) => {
   const slides = [images[images.length - 1], ...images, images[0]];
 
@@ -680,12 +686,13 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   };
 
   const markSequentialImageSettled = (slideIndex: number) => {
-    if (!sequentialLoad || images.length <= 1) return;
-
     const settledRealIndex = getRealImageIndexForSlide(slideIndex);
     if (sequentialSettledRef.current.has(settledRealIndex)) return;
     sequentialSettledRef.current.add(settledRealIndex);
 
+    onImageSettled?.(settledRealIndex, images.length);
+
+    if (!sequentialLoad || images.length <= 1) return;
     if (sequentialLoadStrategy === 'around-active') return;
 
     setSequentialUnlockedCount((current) => {
@@ -731,7 +738,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   const raf = requestAnimationFrame(() => setAnimate(true));
   return () => cancelAnimationFrame(raf);
-}, [resetKey]); // âœ… only reset when modal opens (or gallery changes), not on every slide
+}, [resetKey]); // ✅ only reset when modal opens (or gallery changes), not on every slide
 
   // NEW: inform parent which real slide is active
   const realIndex =
@@ -758,7 +765,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     });
   }, [realIndex, sequentialLoad, sequentialLoadStrategy, images.length]);
   
-  // Ð¡Ñ‚Ñ€ÐµÐ»ÐºÐ¸
+  // Стрелки
   const prevSlide = (fromUser: boolean = true) => {
   if (transitioningRef.current) return;
   setAnimate(true);
@@ -798,7 +805,7 @@ useEffect(() => {
   const onPointerDown = (e: React.PointerEvent) => {
     if (!hasMultiple) return; 
 
- // If image is zoomed in, user is panning/zooming â€” don't swipe slides.
+ // If image is zoomed in, user is panning/zooming — don't swipe slides.
 if (isZoomedRef.current) return;
 
 // Touch devices: disable slide swipe so pinch-zoom never fights the slider.
@@ -840,20 +847,20 @@ if (zoomable && e.pointerType === "touch") return;
     setIsDragging(false);
 
     const dx = offset;
-    const vel = lastVelocityRef.current; // ðŸ‘‰ signed velocity
+    const vel = lastVelocityRef.current; // 👉 signed velocity
     const threshold = slideWidthRef.current * 0.3; // a bit softer than 0.5 feels nicer
 
     let newIdx = index;
 
-    const passedRight = dx > threshold || vel > 0.3;   // swipe right â†’ previous slide
-    const passedLeft = dx < -threshold || vel < -0.3; // swipe left  â†’ next slide
+    const passedRight = dx > threshold || vel > 0.3;   // swipe right → previous slide
+    const passedLeft = dx < -threshold || vel < -0.3; // swipe left  → next slide
 
     if (passedRight && !passedLeft) {
       newIdx = index - 1;
     } else if (passedLeft && !passedRight) {
       newIdx = index + 1;
     }
-    // if both or neither â†’ newIdx stays index (no slide change)
+    // if both or neither → newIdx stays index (no slide change)
 
     setAnimate(true);
     setOffset(0);
@@ -880,12 +887,12 @@ if (zoomable && e.pointerType === "touch") return;
     }
   };
 
-  // Ð²Ð¾ÑÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ animate Ð¿Ð¾ÑÐ»Ðµ Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð½Ð¾Ð³Ð¾ ÑÐ±Ñ€Ð¾ÑÐ°
+  // восстановление animate после программного сброса
   useEffect(() => {
     if (!animate) requestAnimationFrame(() => setAnimate(true));
   }, [animate]);
 
-  // IntersectionObserver Ð´Ð»Ñ Ð²Ð¸Ð´Ð¸Ð¼Ð¾ÑÑ‚Ð¸
+  // IntersectionObserver для видимости
   useEffect(() => {
     const obs = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
@@ -895,7 +902,7 @@ if (zoomable && e.pointerType === "touch") return;
     return () => obs.disconnect();
   }, []);
 
-  // ÐÐ²Ñ‚Ð¾Ð¿Ð»ÐµÐ¹ ÐºÐ°Ð¶Ð´Ñ‹Ðµ 2 ÑÐµÐº, ÐºÐ¾Ð³Ð´Ð° Ð²Ð¸Ð´Ð¸Ð¼ Ð¸ Ð½Ðµ Ð´Ñ€Ð°Ð³Ð°ÐµÐ¼ Ð¸ Ð½Ðµ Ð°Ð½Ð¸Ð¼Ð¸Ñ€ÑƒÐµÐ¼
+  // Автоплей каждые 2 сек, когда видим и не драгаем и не анимируем
   useEffect(() => {
     if (autoPlay && !autoplayDisabledByUser && isVisible && !isDragging && !transitioningRef.current) {
       autoPlayRef.current = window.setInterval(() => {
@@ -988,9 +995,16 @@ const ENABLE_SQUARE_MODAL = false; // flip to true if you want it back
 interface AutoPlayVideoProps {
   src: string;
   alt?: string;
+  preload?: 'none' | 'metadata' | 'auto';
+  onSettled?: () => void;
 }
 
-const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
+const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({
+  src,
+  alt,
+  preload = 'none',
+  onSettled,
+}) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -1037,6 +1051,10 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
       loop
       muted
       playsInline
+      preload={preload}
+      onLoadedData={onSettled}
+      onCanPlay={onSettled}
+      onError={onSettled}
       style={{
         width: '100%',
         height: '100%',
@@ -1048,14 +1066,14 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({ src, alt }) => {
   );
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-/* ÐšÐžÐœÐŸÐžÐÐ•ÐÐ¢                                      */
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ────────────────────────────────────────────── */
+/* КОМПОНЕНТ                                      */
+/* ────────────────────────────────────────────── */
 const CollectionComponent: React.FC<CollectionComponentProps> = ({
   collection,
   source,
 }) => {
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€ Ð² URL (Ð¾ÑÑ‚Ð°Ð²Ð¸Ð» ÐºÐ°Ðº Ð±Ñ‹Ð»Ð¾) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── фильтр в URL (оставил как было) ────────── */
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const [filter, setFilter] = useState<'ALL' | 'COMMERCIAL' | 'PERSONAL'>(
@@ -1071,11 +1089,11 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     ? 'work-images'
     : 'photography-images';
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ÑÑ‚ÐµÐ¹Ñ‚ Ð±Ð»Ð¾ÐºÐ¾Ð² â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── стейт блоков ────────── */
   const [blocks, setBlocks] = useState<CollectionBlockDB[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ð¼Ð¾Ð´Ð°Ð»ÐºÐ° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── модалка ────────── */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalItems, setModalItems] = useState<ModalMediaItem[]>([]);
   const [modalIndex, setModalIndex] = useState<number>(0);
@@ -1101,7 +1119,7 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
   }, [hasModalMedia, modalLength]);
 
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── helpers ────────── */
   const encodePath = (...parts: string[]) =>
   parts.map((p) => encodeURIComponent(p)).join('/');
 
@@ -1176,13 +1194,118 @@ const imageThumbLRUrl = (fileName: string) =>
     return null;
   };
 
+  const getMediaItemCountForBlock = (block: CollectionBlockDB): number => {
+    switch (block.type) {
+      case 'IMAGE_SINGLE': {
+        const items = Array.isArray(block.content?.items) ? block.content.items : [];
+        return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
+      }
+
+      case 'IMAGE_GALLERY': {
+        const items = Array.isArray(block.content?.items) ? block.content.items : [];
+        return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
+      }
+
+      case 'SQUARE': {
+        const items = Array.isArray(block.content?.items) ? block.content.items : [];
+        return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
+      }
+
+      case 'CONTENT': {
+        const contentItems = Array.isArray(block.content?.items) ? block.content.items : [];
+        return contentItems.reduce((count: number, it: any) => {
+          const kind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : '';
+          if (kind !== 'media') return count;
+
+          const items = Array.isArray(it?.items)
+            ? it.items
+            : (Array.isArray(it?.content?.items) ? it.content.items : []);
+          const first = items?.[0];
+          const mediaName = typeof first?.media === 'string' ? first.media.trim() : '';
+          return mediaName ? count + 1 : count;
+        }, 0);
+      }
+
+      case 'YOUTUBE_PLAYER': {
+        const content = block.content || {};
+        const rawIdOrUrl = (content.youtubeId || content.youtubeUrl || '') as string;
+        return getYouTubeId(rawIdOrUrl) ? 1 : 0;
+      }
+
+      default:
+        return 0;
+    }
+  };
+
+  const mediaBlockIdsInOrder = useMemo(
+    () => blocks
+      .filter((block) => getMediaItemCountForBlock(block) > 0)
+      .map((block) => block.id),
+    [blocks]
+  );
+
+  const mediaOrderIndexByBlockId = useMemo(() => {
+    const map = new Map<number, number>();
+    mediaBlockIdsInOrder.forEach((id, index) => map.set(id, index));
+    return map;
+  }, [mediaBlockIdsInOrder]);
+
+  const mediaQueueSignature = useMemo(
+    () => mediaBlockIdsInOrder.join('|'),
+    [mediaBlockIdsInOrder]
+  );
+
+  const [nextMediaBlockOrderToUnlock, setNextMediaBlockOrderToUnlock] = useState(0);
+  const settledMediaBlocksRef = useRef<Set<number>>(new Set());
+  const settledMediaItemsRef = useRef<Map<number, Set<string>>>(new Map());
+
+  useEffect(() => {
+    settledMediaBlocksRef.current.clear();
+    settledMediaItemsRef.current.clear();
+    setNextMediaBlockOrderToUnlock(0);
+  }, [mediaQueueSignature]);
+
+  const isMediaBlockUnlocked = useCallback((blockId: number) => {
+    const mediaOrder = mediaOrderIndexByBlockId.get(blockId);
+    if (mediaOrder === undefined) return true;
+    return mediaOrder <= nextMediaBlockOrderToUnlock;
+  }, [mediaOrderIndexByBlockId, nextMediaBlockOrderToUnlock]);
+
+  const markBlockMediaItemSettled = useCallback((blockId: number, itemKey: string, totalItems: number) => {
+    if (!totalItems || totalItems <= 0) return;
+
+    let settledItems = settledMediaItemsRef.current.get(blockId);
+    if (!settledItems) {
+      settledItems = new Set<string>();
+      settledMediaItemsRef.current.set(blockId, settledItems);
+    }
+
+    if (settledItems.has(itemKey)) return;
+    settledItems.add(itemKey);
+
+    if (settledItems.size < totalItems) return;
+    if (settledMediaBlocksRef.current.has(blockId)) return;
+
+    settledMediaBlocksRef.current.add(blockId);
+
+    setNextMediaBlockOrderToUnlock((currentOrder) => {
+      let nextOrder = currentOrder;
+      while (nextOrder < mediaBlockIdsInOrder.length) {
+        const blockAtOrder = mediaBlockIdsInOrder[nextOrder];
+        if (!settledMediaBlocksRef.current.has(blockAtOrder)) break;
+        nextOrder += 1;
+      }
+      return nextOrder;
+    });
+  }, [mediaBlockIdsInOrder]);
+
 
   const [modalSession, setModalSession] = useState(0);
 
 const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
-  setModalIndex(startIndex);        // âœ… immediate (so slider knows where to start)
+  setModalIndex(startIndex);        // ✅ immediate (so slider knows where to start)
   setIsModalOpen(true);
-  setModalSession((s) => s + 1);    // âœ… increments each open
+  setModalSession((s) => s + 1);    // ✅ increments each open
 
   startTransition(() => {
     setModalItems(items);           // heavy update stays deferred
@@ -1194,7 +1317,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     setIsModalOpen(false);
 
     // Do NOT clear items/index on the click.
-    // If you really want cleanup, do it later (wonâ€™t affect INP):
+    // If you really want cleanup, do it later (won’t affect INP):
     const cleanup = () =>
       startTransition(() => {
         setModalItems([]);
@@ -1221,7 +1344,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     }
 
     const handlePopState = () => {
-      // User pressed Back while modal is open â†’ act like Escape
+      // User pressed Back while modal is open → act like Escape
       if (isModalOpen) {
         setIsModalOpen(false);
         setModalItems([]);
@@ -1242,7 +1365,7 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
 
   useEffect(() => {
     if (!isModalOpen || modalLength <= 1) return;
-    if (modalUsesSlider) return; // âœ… slider handles navigation
+    if (modalUsesSlider) return; // ✅ slider handles navigation
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
@@ -1258,12 +1381,12 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
 }, [isModalOpen, modalLength, modalUsesSlider, goToNextMedia, goToPrevMedia]);
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐ° Ð±Ð»Ð¾ÐºÐ¾Ð² â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── загрузка блоков ────────── */
   useEffect(() => {
     (async () => {
       setIsLoading(true);
 
-      // work â†’ project_blocks, photo â†’ collection_blocks
+      // work → project_blocks, photo → collection_blocks
       const blocksTable =
         source === 'work' ? 'project_blocks' : 'collection_blocks';
 
@@ -1282,10 +1405,12 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
 
 
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Ñ€ÐµÐ½Ð´ÐµÑ€ Ð¾Ð´Ð½Ð¾Ð³Ð¾ Ð±Ð»Ð¾ÐºÐ° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
     const rawItems = (b.content?.items || []) as any[];
     if (!rawItems.length) return null;
+    const isBlockMediaUnlocked = isMediaBlockUnlocked(b.id);
+    const totalMediaItems = rawItems.length;
 
     const globalAspectRatio = (b.content?.aspectRatio || "16 / 9") as string;
     const rowAspectRatios = (b.content?.rowAspectRatios || {}) as Record<string, string>;
@@ -1328,21 +1453,28 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
             return (
               <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
-                {isVideo ? (
-                  <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
+                {!isBlockMediaUnlocked ? (
+                  <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                ) : isVideo ? (
+                  <AutoPlayVideo
+                    src={media.url}
+                    alt={item.title || `Video ${i + 1}`}
+                    onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
+                  />
                 ) : (
                   <PreloadedGridImage
-  src={thumbSrc}
-  alt={item.title || `Image ${i + 1}`}
-  sequentialGroupKey={sequentialGroupKey}
-  sequentialIndex={imageSequenceIndex}
-  onClick={() => openModal(modalItems, i)}
-  onError={(e) => {
-    const img = e.currentTarget;
-    if (img.src !== fullSrc) img.src = fullSrc; // fallback
-  }}
-  style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
-/>
+                    src={thumbSrc}
+                    alt={item.title || `Image ${i + 1}`}
+                    sequentialGroupKey={sequentialGroupKey}
+                    sequentialIndex={imageSequenceIndex}
+                    onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
+                    onClick={() => openModal(modalItems, i)}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      if (img.src !== fullSrc) img.src = fullSrc; // fallback
+                    }}
+                    style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
+                  />
                 )}
               </div>
             );
@@ -1368,7 +1500,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
     const flatItems = rowOrder.flatMap((rk) => rows.get(rk)!);
     const modalItems = buildModalItems(flatItems);
 
-    // IMPORTANT: We donâ€™t want IMAGE_GALLERY forcing a single grid layout here.
+    // IMPORTANT: We don’t want IMAGE_GALLERY forcing a single grid layout here.
     // So we render rows inside it and each row controls its own columns.
     let globalIndex = 0;
     const sequentialGroupKey = `gallery-${String(b.id)}`;
@@ -1399,23 +1531,29 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
                   return (
                     <div key={i} style={{ aspectRatio: effectiveAspectRatio }}>
-                      {isVideo ? (
-                        <AutoPlayVideo src={media.url} alt={item.title || `Video ${i + 1}`} />
+                      {!isBlockMediaUnlocked ? (
+                        <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                      ) : isVideo ? (
+                        <AutoPlayVideo
+                          src={media.url}
+                          alt={item.title || `Video ${i + 1}`}
+                          onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
+                        />
                       ) : (
                         <PreloadedGridImage
-  src={thumbSrc}
-  alt={item.title || `Image ${i + 1}`}
-  sequentialGroupKey={sequentialGroupKey}
-  sequentialIndex={imageSequenceIndex}
-  onClick={() => openModal(modalItems, i)}
-  onError={(e) => {
-    const img = e.currentTarget;
-    if (img.src !== fullSrc) img.src = fullSrc;
-  }}
-  draggable={false}
-  style={{ height: "100%", display: "block", objectFit: "cover" }}
-/>
-
+                          src={thumbSrc}
+                          alt={item.title || `Image ${i + 1}`}
+                          sequentialGroupKey={sequentialGroupKey}
+                          sequentialIndex={imageSequenceIndex}
+                          onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
+                          onClick={() => openModal(modalItems, i)}
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            if (img.src !== fullSrc) img.src = fullSrc;
+                          }}
+                          draggable={false}
+                          style={{ height: '100%', display: 'block', objectFit: 'cover' }}
+                        />
                       )}
                     </div>
                   );
@@ -1432,7 +1570,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
 
 
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ CONTENT helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── CONTENT helpers ────────── */
 const aspectLockToCss = (raw: any): string | null => {
   if (typeof raw !== 'string') return null;
 
@@ -1496,7 +1634,7 @@ const paddingToCss = (pad: any, fallback: string): string => {
     b = safe(nums[2]);
     l = safe(nums[3]);
   } else {
-    // invalid â†’ fallback
+    // invalid → fallback
     return paddingToCss(fallback, fallback);
   }
 
@@ -1583,7 +1721,8 @@ const renderTextWithInlineLinks = (input: any) => {
   ));
 };
 
-const renderBlock = useCallback((b: CollectionBlockDB) => {
+const renderBlock = (b: CollectionBlockDB) => {
+    const isBlockMediaUnlocked = isMediaBlockUnlocked(b.id);
     switch (b.type) {
 
 case 'CONTENT': {
@@ -1598,6 +1737,19 @@ case 'CONTENT': {
           contentItems.length === 2 &&
           kinds.includes('text') &&
           kinds.includes('media');
+
+        const totalContentMediaItems = contentItems.reduce((count: number, item: any) => {
+          const kind = typeof item?.block === 'string' ? item.block.toLowerCase().trim() : '';
+          if (kind !== 'media') return count;
+
+          const mediaItems = Array.isArray(item?.items)
+            ? item.items
+            : (Array.isArray(item?.content?.items) ? item.content.items : []);
+          const firstMedia = mediaItems?.[0];
+          return typeof firstMedia?.media === 'string' && firstMedia.media.trim()
+            ? count + 1
+            : count;
+        }, 0);
 
 
   const componentPaddingCss = paddingToCss(b.content?.componentPadding, '0,0,0,0');
@@ -1762,10 +1914,10 @@ case 'CONTENT': {
                 role="group"
                 aria-label={first?.title ? String(first.title) : 'Media'}
                 data-modal={wantsModal ? 'yes' : 'no'}
-                onClick={wantsModal && !isVideo ? handleContentMediaClick : undefined}
-                tabIndex={wantsModal && !isVideo ? 0 : -1}
+                onClick={isBlockMediaUnlocked && wantsModal && !isVideo ? handleContentMediaClick : undefined}
+                tabIndex={isBlockMediaUnlocked && wantsModal && !isVideo ? 0 : -1}
                 onKeyDown={(e) => {
-                  if (!(wantsModal && !isVideo)) return;
+                  if (!(isBlockMediaUnlocked && wantsModal && !isVideo)) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleContentMediaClick();
@@ -1774,20 +1926,27 @@ case 'CONTENT': {
                 data-kind="media"
               >
                 <CONTENT_MEDIA_INNER>
-                  {isVideo ? (
-                    <video
+                  {!isBlockMediaUnlocked ? (
+                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                  ) : isVideo ? (
+                    <AutoPlayVideo
                       src={url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="metadata"
+                      alt={first?.title ? String(first.title) : 'Collection video'}
+                      onSettled={() =>
+                        markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
+                      }
                     />
                   ) : (
                     <img
                       src={url}
                       alt={first?.title ? String(first.title) : ''}
                       loading="lazy"
+                      onLoad={() =>
+                        markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
+                      }
+                      onError={() =>
+                        markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
+                      }
                     />
                   )}
                 </CONTENT_MEDIA_INNER>
@@ -1818,14 +1977,31 @@ case 'CONTENT': {
 
         if (images.length === 0) return null;
 
-        return <ImageSlider images={images} aspectRatio={aspectRatio} sequentialLoad={true} />;
+        if (!isBlockMediaUnlocked) {
+          return (
+            <SliderWrapper $aspectRatio={aspectRatio}>
+              <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+            </SliderWrapper>
+          );
+        }
+
+        return (
+          <ImageSlider
+            images={images}
+            aspectRatio={aspectRatio}
+            sequentialLoad={true}
+            onImageSettled={(realIndex, total) =>
+              markBlockMediaItemSettled(b.id, `image-single-${realIndex}`, total)
+            }
+          />
+        );
       }
 
       case 'IMAGE_GALLERY':
         return renderImageGalleryBlock(b);
 
-      /* ----- SQUARE: ÐºÐ°Ñ€Ñ‚Ð¸Ð½ÐºÐ° + Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²Ð¾Ðº ----- */
-      // one block in DB, can render 1â€“2 rows
+      /* ----- SQUARE: картинка + заголовок ----- */
+      // one block in DB, can render 1–2 rows
 
       case 'SQUARE': {
         const items = (b.content?.items || []) as {
@@ -1834,6 +2010,7 @@ case 'CONTENT': {
           title?: string;
           description?: string;
         }[];
+        const totalSquareMediaItems = items.length;
         
         const modalItems: ModalMediaItem[] = items.map((item) => {
           const url = imageUrl(item.src);
@@ -1850,7 +2027,7 @@ case 'CONTENT': {
 
         if (!items.length) return null;
 
-        // ðŸ‘‡ new flag from Supabase JSON
+        // 👇 new flag from Supabase JSON
         const startWithText = !!b.content?.startWithText;
         
 
@@ -1868,29 +2045,41 @@ case 'CONTENT': {
 
               const Pic = (
                 <ImageBlock className="square-media" key={`pic-${index}`}>
-                  {isVideo ? (
+                  {!isBlockMediaUnlocked ? (
+                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+                  ) : isVideo ? (
                     <AutoPlayVideo
                       src={media.url}
                       alt={item.title || 'Collection video'}
+                      onSettled={() =>
+                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
+                      }
                     />
                   ) : (
                     <img
-  src={media.url}
-  alt={item.title || "Collection image"}
-  onClick={ENABLE_SQUARE_MODAL ? () => openModal(modalItems, index) : undefined}
-  onKeyDown={
-    ENABLE_SQUARE_MODAL
-      ? (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            openModal(modalItems, index);
-          }
-        }
-      : undefined
-  }
-  role={ENABLE_SQUARE_MODAL ? "button" : undefined}
-  tabIndex={ENABLE_SQUARE_MODAL ? 0 : undefined}
-/>
+                      src={media.url}
+                      alt={item.title || 'Collection image'}
+                      loading="lazy"
+                      onClick={ENABLE_SQUARE_MODAL ? () => openModal(modalItems, index) : undefined}
+                      onKeyDown={
+                        ENABLE_SQUARE_MODAL
+                          ? (e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openModal(modalItems, index);
+                              }
+                            }
+                          : undefined
+                      }
+                      onLoad={() =>
+                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
+                      }
+                      onError={() =>
+                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
+                      }
+                      role={ENABLE_SQUARE_MODAL ? 'button' : undefined}
+                      tabIndex={ENABLE_SQUARE_MODAL ? 0 : undefined}
+                    />
                   )}
                 </ImageBlock>
               );
@@ -1922,7 +2111,7 @@ case 'CONTENT': {
         );
       }
 
-        /* ----- Ñ‚ÐµÐºÑÑ‚Ð¾Ð²Ñ‹Ðµ ÑÐµÐºÑ†Ð¸Ð¸ ----- */
+        /* ----- текстовые секции ----- */
 
         interface Section {
           label: string;
@@ -2060,7 +2249,7 @@ case 'CONTENT': {
       }
 
       case 'TEXT_TITLE': {
-        // Ð¿Ñ€ÐµÐ´Ð¿Ð¾Ð»Ð°Ð³Ð°ÐµÐ¼, Ñ‡Ñ‚Ð¾ content Ð¸Ð¼ÐµÐµÑ‚ Ð¸Ð¼ÐµÐ½Ð½Ð¾ Ñ‚Ð°ÐºÑƒÑŽ Ñ„Ð¾Ñ€Ð¼Ñƒ:
+        // предполагаем, что content имеет именно такую форму:
         // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
         const { text, fontsize, align } = b.content as {
           style?: 'h1' | 'h2' | 'h3' | string;
@@ -2101,20 +2290,25 @@ case 'CONTENT': {
         return (
           <YouTubePlayerWrapper key={b.id}>
             <YouTubeIframeContainer>
-              <iframe
-                src={embedUrl}
-                title={title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                loading="lazy"
-              />
+              {!isBlockMediaUnlocked ? (
+                <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg)' }} />
+              ) : (
+                <iframe
+                  src={embedUrl}
+                  title={title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  loading="lazy"
+                  onLoad={() => markBlockMediaItemSettled(b.id, 'youtube', 1)}
+                />
+              )}
             </YouTubeIframeContainer>
           </YouTubePlayerWrapper>
         );
       }
 
 
-      /* ----- Ñ€Ð°Ð·Ð´ÐµÐ»Ð¸Ñ‚ÐµÐ»Ð¸ ----- */
+      /* ----- разделители ----- */
       case 'SPLITTER_DEFAULT':
         return <hr key={b.id} style={{ margin: '20px 0', borderColor: '#444' }} />;
       case 'SPLITTER':
@@ -2131,11 +2325,9 @@ case 'CONTENT': {
       default:
         return null;
     }
-  },
-    [collection.folder, bucket, source, openModal] // deps
-  );
+  };
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ LOADING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── LOADING ────────── */
   if (isLoading) {
     return (
       <div
@@ -2160,11 +2352,11 @@ case 'CONTENT': {
     );
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ MAIN JSX â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ────────── MAIN JSX ────────── */
   const isPhoto = source === 'photo';
   return (
     <WRAPPER_GLOBAL $isPhoto={isPhoto}>
-      {/* â€”â€”â€” Ð²ÐµÑ€Ñ…Ð½Ð¸Ð¹ Ñ‚Ð¸Ñ‚ÑƒÐ» Ð¸ Ñ„Ð¸Ð»ÑŒÑ‚Ñ€ â€”â€”â€” */}
+      {/* ——— верхний титул и фильтр ——— */}
       {showFilter && (
         <WorkTitelContainer>
           <WorkTitel>{source === 'photo' ? 'PHOTOGRAPHY' : 'WORK'}</WorkTitel>
@@ -2190,7 +2382,7 @@ case 'CONTENT': {
         </WorkTitelContainer>
       )}
 
-      {/* â€”â€”â€” Ñ…ÐµÐ´ÐµÑ€ ÐºÐ¾Ð»Ð»ÐµÐºÑ†Ð¸Ð¸ â€”â€”â€” */}
+      {/* ——— хедер коллекции ——— */}
       {collection.main && (
         <CollectionAdditionalWrapper $isPhoto={isPhoto}>
           <CollectionHeader $isPhoto={isPhoto}>
@@ -2230,7 +2422,7 @@ case 'CONTENT': {
       )}
 
 
-      {/* â€”â€”â€” ÐºÐ¾Ð½Ñ‚ÐµÐ½Ñ‚ Ð¸Ð· collection_blocks â€”â€”â€” */}
+      {/* ——— контент из collection_blocks ——— */}
       {blocks.map((b) => {
         const node = renderBlock(b);
         if (!node) return null;
@@ -2244,7 +2436,7 @@ case 'CONTENT': {
         );
       })}
 
-      {/* â€”â€”â€” Ð¼Ð¾Ð´Ð°Ð»ÐºÐ° â€”â€”â€” */}
+      {/* ——— модалка ——— */}
 
         <>
           <Modal isOpen={isModalOpen} onClose={closeModal}>
@@ -2262,7 +2454,7 @@ case 'CONTENT': {
             <MediaContainer>
   {currentMedia ? (
     <>
-      {/* âœ… If modal items are ALL images â€” use the IMAGE_SINGLE slider */}
+      {/* ✅ If modal items are ALL images — use the IMAGE_SINGLE slider */}
       {modalItems.length > 0 && modalItems.every(m => m.type === "image") ? (
         <ImageSlider
   images={modalItems.map((m) => ({
@@ -2273,8 +2465,8 @@ case 'CONTENT': {
   autoPlay={false}
   keyboardNav={true}
   zoomable={true}
-  startIndex={modalIndex}       // âœ… open at clicked thumb
-  resetKey={modalSession}       // âœ… apply startIndex only per-open
+  startIndex={modalIndex}       // ✅ open at clicked thumb
+  resetKey={modalSession}       // ✅ apply startIndex only per-open
   onActiveIndexChange={(i) => setModalIndex(i)} // keep text synced
   aspectRatio={"auto"}
   sequentialLoad={true}
@@ -2311,7 +2503,7 @@ case 'CONTENT': {
               alt={currentMedia.altText}
               onLoad={() => {}}
               onError={() => {
-                console.error("âŒ Image failed to load:", currentMedia.url);
+                console.error("❌ Image failed to load:", currentMedia.url);
                 failedMedia.current.add(currentMedia.url);
               }}
             />
@@ -2374,3 +2566,4 @@ case 'CONTENT': {
 export default CollectionComponent;
 
 //STARTED
+
