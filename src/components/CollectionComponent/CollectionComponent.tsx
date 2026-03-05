@@ -479,6 +479,7 @@ type PreloadedGridImageProps = {
   onClick?: () => void;
   style?: React.CSSProperties;
   draggable?: boolean;
+  loading?: 'lazy' | 'eager';
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   onSettled?: () => void;
   sequentialGroupKey?: string;
@@ -508,6 +509,7 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
   onClick,
   style,
   draggable = false,
+  loading = 'lazy',
   onError,
   onSettled,
   sequentialGroupKey,
@@ -596,7 +598,7 @@ const PreloadedGridImage: React.FC<PreloadedGridImageProps> = ({
         alt={alt}
         onClick={onClick}
         draggable={draggable}
-        loading="lazy"
+        loading={loading}
         decoding="async"
         onLoad={() => {
           setVisible(true);
@@ -690,6 +692,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const isZoomedRef = useRef(false);
   const sequentialSettledRef = useRef<Set<number>>(new Set());
+  const visuallySettledRef = useRef<Set<number>>(new Set());
   const [visuallySettledRealIndices, setVisuallySettledRealIndices] = useState<Set<number>>(
     () => new Set<number>()
   );
@@ -700,12 +703,12 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     () => new Set<number>()
   );
 
-  const getRealImageIndexForSlide = (slideIndex: number) => {
+  const getRealImageIndexForSlide = useCallback((slideIndex: number) => {
     if (images.length === 0) return 0;
     if (slideIndex === 0) return images.length - 1;
     if (slideIndex === slides.length - 1) return 0;
     return slideIndex - 1;
-  };
+  }, [images.length, slides.length]);
 
   const getAroundActiveIndices = (total: number, active: number) => {
     const result = new Set<number>();
@@ -722,7 +725,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
     return result;
   };
 
-  const markSequentialImageSettled = (slideIndex: number) => {
+  const markSequentialImageSettled = useCallback((slideIndex: number) => {
     const settledRealIndex = getRealImageIndexForSlide(slideIndex);
     if (sequentialSettledRef.current.has(settledRealIndex)) return;
     sequentialSettledRef.current.add(settledRealIndex);
@@ -736,17 +739,25 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
       if (settledRealIndex !== current - 1) return current;
       return Math.min(images.length, current + 1);
     });
-  };
+  }, [
+    getRealImageIndexForSlide,
+    images.length,
+    onImageSettled,
+    sequentialLoad,
+    sequentialLoadStrategy,
+  ]);
 
-  const markSlideVisuallySettled = (slideIndex: number) => {
+  const markSlideVisuallySettled = useCallback((slideIndex: number) => {
     const settledRealIndex = getRealImageIndexForSlide(slideIndex);
+    if (visuallySettledRef.current.has(settledRealIndex)) return;
+    visuallySettledRef.current.add(settledRealIndex);
     setVisuallySettledRealIndices((current) => {
       if (current.has(settledRealIndex)) return current;
       const next = new Set(current);
       next.add(settledRealIndex);
       return next;
     });
-  };
+  }, [getRealImageIndexForSlide]);
 
   const imageSignature = useMemo(
     () => images.map((image) => image.src).join('|'),
@@ -755,6 +766,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
 
   useEffect(() => {
     sequentialSettledRef.current.clear();
+    visuallySettledRef.current.clear();
     setVisuallySettledRealIndices(new Set<number>());
     if (!sequentialLoad || images.length <= 1) {
       setSequentialUnlockedCount(images.length);
@@ -817,6 +829,33 @@ const ImageSlider: React.FC<ImageSliderProps> = ({
       return next;
     });
   }, [realIndex, sequentialLoad, sequentialLoadStrategy, images.length]);
+
+  useEffect(() => {
+    if (zoomable) return;
+    const sliderElement = sliderRef.current;
+    if (!sliderElement) return;
+
+    const imagesInDom = sliderElement.querySelectorAll<HTMLImageElement>('img[data-slide-index]');
+    imagesInDom.forEach((imgElement) => {
+      if (!imgElement.complete || imgElement.naturalWidth <= 0) return;
+      const slideIndexAttr = imgElement.dataset.slideIndex;
+      if (!slideIndexAttr) return;
+
+      const slideIndex = Number(slideIndexAttr);
+      if (Number.isNaN(slideIndex)) return;
+
+      markSlideVisuallySettled(slideIndex);
+      markSequentialImageSettled(slideIndex);
+    });
+  }, [
+    zoomable,
+    index,
+    imageSignature,
+    sequentialUnlockedCount,
+    sequentialUnlockedIndices,
+    markSlideVisuallySettled,
+    markSequentialImageSettled,
+  ]);
   
   // Стрелки
   const prevSlide = (fromUser: boolean = true) => {
@@ -1031,11 +1070,7 @@ if (zoomable && e.pointerType === "touch") return;
        }}
      >
        <img
-         ref={(el) => {
-           if (!el || !el.complete) return;
-           markSlideVisuallySettled(i);
-           markSequentialImageSettled(i);
-         }}
+         data-slide-index={i}
          src={img.src}
          alt={img.title || `Slide ${i + 1} of ${slides.length}`}
          draggable={false}
@@ -1628,12 +1663,14 @@ const thumbSrc = imageThumbLRUrl(item.src);
                   <AutoPlayVideo
                     src={media.url}
                     alt={item.title || `Video ${i + 1}`}
+                    preload="auto"
                     onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
                   />
                 ) : (
                   <PreloadedGridImage
                     src={thumbSrc}
                     alt={item.title || `Image ${i + 1}`}
+                    loading="eager"
                     sequentialGroupKey={sequentialGroupKey}
                     sequentialIndex={imageSequenceIndex}
                     onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
@@ -1706,12 +1743,14 @@ const thumbSrc = imageThumbLRUrl(item.src);
                         <AutoPlayVideo
                           src={media.url}
                           alt={item.title || `Video ${i + 1}`}
+                          preload="auto"
                           onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
                         />
                       ) : (
                         <PreloadedGridImage
                           src={thumbSrc}
                           alt={item.title || `Image ${i + 1}`}
+                          loading="eager"
                           sequentialGroupKey={sequentialGroupKey}
                           sequentialIndex={imageSequenceIndex}
                           onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
@@ -2101,6 +2140,7 @@ case 'CONTENT': {
                     <AutoPlayVideo
                       src={url}
                       alt={first?.title ? String(first.title) : 'Collection video'}
+                      preload="auto"
                       onSettled={() =>
                         markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
                       }
@@ -2109,6 +2149,7 @@ case 'CONTENT': {
                     <PreloadedGridImage
                       src={url}
                       alt={first?.title ? String(first.title) : ''}
+                      loading="eager"
                       onSettled={() =>
                         markBlockMediaItemSettled(b.id, `content-media-${idx}`, totalContentMediaItems)
                       }
@@ -2217,6 +2258,7 @@ case 'CONTENT': {
                     <AutoPlayVideo
                       src={media.url}
                       alt={item.title || 'Collection video'}
+                      preload="auto"
                       onSettled={() =>
                         markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
                       }
@@ -2225,7 +2267,7 @@ case 'CONTENT': {
                     <img
                       src={media.url}
                       alt={item.title || 'Collection image'}
-                      loading="lazy"
+                      loading="eager"
                       onClick={ENABLE_SQUARE_MODAL ? () => openModal(modalItems, index) : undefined}
                       onKeyDown={
                         ENABLE_SQUARE_MODAL
