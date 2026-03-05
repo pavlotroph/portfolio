@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ImageDescription,
   VideoPreview,
@@ -35,7 +35,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const loadingVideoRef = useRef<HTMLVideoElement>(null);
-  const previewImgRef = useRef<HTMLImageElement>(null);
+  const previewImgRef = useRef<HTMLImageElement | null>(null);
   const previewSettledRef = useRef(false);
   const onPreviewSettledRef = useRef<(() => void) | undefined>(onPreviewSettled);
 
@@ -54,14 +54,26 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
   const sameStaticImage = !isVideo && previewSrc === src;
 
-  const markPreviewSettled = () => {
+  const markPreviewSettled = useCallback(() => {
     setIsLoading(false);
 
     if (!previewSettledRef.current) {
       previewSettledRef.current = true;
       onPreviewSettledRef.current?.();
     }
-  };
+  }, []);
+
+  const settlePreviewIfComplete = useCallback((imgEl: HTMLImageElement | null) => {
+    if (!loadEnabled || !shouldUseImgPreview) return;
+    if (!imgEl) return;
+    if (!imgEl.getAttribute('src')) return;
+    if (!imgEl.complete) return;
+
+    // Cached previews can be complete before React dispatches onLoad.
+    if (imgEl.naturalWidth > 0) {
+      markPreviewSettled();
+    }
+  }, [loadEnabled, shouldUseImgPreview, markPreviewSettled]);
 
   useEffect(() => {
     onPreviewSettledRef.current = onPreviewSettled;
@@ -89,10 +101,8 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     if (!imgEl) return;
 
     // Cached images may already be complete before React dispatches onLoad.
-    if (imgEl.getAttribute('src') && imgEl.complete) {
-      markPreviewSettled();
-    }
-  }, [previewSrc, loadEnabled, shouldUseImgPreview]);
+    settlePreviewIfComplete(imgEl);
+  }, [previewSrc, loadEnabled, shouldUseImgPreview, settlePreviewIfComplete]);
 
   useEffect(() => {
     if (!loadEnabled || !isLoading || !shouldUseImgPreview || previewSettledRef.current) return;
@@ -129,6 +139,10 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
   const showLoaderOverlay = loadEnabled && (isLoading || showHoverVideoLoader);
   const showLockedPlaceholder = !loadEnabled;
+  const showInitialPlaceholder = isLoading || showLockedPlaceholder;
+  const loaderOverlayBackground = showInitialPlaceholder
+    ? 'var(--collection-deferred-media-bg, rgb(10, 10, 10))'
+    : '#000';
 
   useEffect(() => {
     if (!showLoaderOverlay || !loadingVideoRef.current) return;
@@ -172,7 +186,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#000',
+          background: loaderOverlayBackground,
           zIndex: showLoaderOverlay ? 4 : 0,
           opacity: showLoaderOverlay || showLockedPlaceholder ? 1 : 0,
           pointerEvents: showLoaderOverlay ? 'auto' : 'none',
@@ -196,10 +210,13 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
       <PreviewLayer $isVisible={!isLoading} $imageUrl={previewSrc}>
         <img
-          ref={previewImgRef}
+          ref={(el) => {
+            previewImgRef.current = el;
+            settlePreviewIfComplete(el);
+          }}
           src={loadEnabled && shouldUseImgPreview ? previewSrc : undefined}
           alt={title || `Preview image for ${work.title || 'work item'}`}
-          loading="lazy"
+          loading={loadEnabled ? 'eager' : 'lazy'}
           decoding="async"
           onLoad={() => {
             markPreviewSettled();

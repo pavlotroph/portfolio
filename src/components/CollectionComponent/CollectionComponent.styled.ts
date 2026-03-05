@@ -6,7 +6,6 @@ type Align = 'left' | 'center' | 'right';
 /* ОБЩАЯ ОБЁРТКА                                  */
 /* ────────────────────────────────────────────── */
 export const WRAPPER_GLOBAL = styled.div<{ $isPhoto?: boolean }>`
-  --collection-deferred-media-bg: rgb(10, 10, 10);
   width: 100%;
   margin: 0 auto;
   margin-bottom: 0px;

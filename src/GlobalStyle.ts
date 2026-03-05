@@ -4,6 +4,7 @@ export const GlobalStyle = css`
   :root {
     --font-family: 'Geist', sans-serif;
     --second-family: 'JetBrains Mono', sans-serif;
+    --collection-deferred-media-bg: rgb(10, 10, 10);
   }
 
   html { scrollbar-gutter: stable; }

@@ -119,6 +119,7 @@ export const WorkItemContainer = styled.div`
   margin-bottom: 1px;
   margin-top: 1px;
   aspect-ratio: 21/9;
+  background: var(--collection-deferred-media-bg, rgb(10, 10, 10));
   
   @media screen and (min-width: 744px) {
     aspect-ratio: 20/7;
