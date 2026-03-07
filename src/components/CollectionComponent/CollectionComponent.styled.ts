@@ -238,40 +238,6 @@ export const WorkTextFilter = styled.button`
 /* ────────────────────────────────────────────── */
 /* МЕТАДАННЫЕ КОЛЛЕКЦИИ                           */
 /* ────────────────────────────────────────────── */
-export const COLLECTION_1SEC_TITLE = styled.h4`
-  padding-bottom: 20px;
-
-  @media (min-width: 1440px) {
-    padding-bottom: 30px;
-  }
-`;
-
-export const COLLECTION_1SEC_DESCRIPTION = styled.div`
-  font-family: var(--font-family);
-  line-height: 162%;
-  color: #fff;
-
-  /* Only normal text uses this size */
-  :where(p, span, strong, em, a) {
-    font-size: 14px;
-
-    @media (min-width: 1440px) {
-      font-size: 16px;
-    }
-  }
-
-  /* Don’t override headings here — GlobalStyle owns them */
-
-  /* Make everything behave like inline segments (so you can build sentences) */
-  :where(h1, h2, h3, h4, h5, h6, p, span, strong, em) {
-    display: inline;
-  }
-
-  a {
-    text-decoration: underline;
-  }
-`;
-
 export const TEXT_MBLOCK_WRAPPER = styled.div<{ $isPhoto?: boolean }>`
   display: flex;
   flex-direction: column;
@@ -285,18 +251,6 @@ export const TEXT_MBLOCK_WRAPPER = styled.div<{ $isPhoto?: boolean }>`
 
   @media (min-width: 1440px) {
     width: 300px;
-  }
-`;
-
-export const TEXT_MBLOCK_WRAPPER_LIGHT = styled.div<{ $isPhoto?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: auto;
-  padding-bottom: ${props => props.$isPhoto ? '16px' : '32px'};
-
-  @media (min-width: 744px) {
-    width: 50%;
   }
 `;
 
@@ -371,33 +325,6 @@ export const CollectionHeader = styled.div<{ $isPhoto?: boolean }>`
     align-items: flex-start;
   }
 `;
-
-export const CollectionHeader2Sec = styled(CollectionHeader)`
-  /* only change behavior on desktop wide layout */
-  @media (min-width: 1440px) {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-  }
-`;
-
-
-export const CollectionTextWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-  width: 100%;
-
-  @media (min-width: 744px) {
-  }
-
-  @media (min-width: 1440px) {
-    max-width: 1440px;
-  }
-`;
-
-/* ────────────────────────────────────────────── */
-/* ГАЛЕРЕИ                                        */
-/* ────────────────────────────────────────────── */
 
 type IMAGE_PROPS = {
   $itemsCount?: number;
@@ -815,11 +742,13 @@ export const CONTENT_MEDIA_INNER = styled.div`
   position: relative;
 
   img,
-  video {
+  video,
+  iframe {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    border: 0;
   }
 `;
 

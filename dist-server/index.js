@@ -1388,7 +1388,7 @@ const CollectionComponent = ({
   const renderBlock = (b) => {
     var _a, _b, _c, _d;
     switch (b.type) {
-      case "IMAGE_SINGLE": {
+      case "IMAGE_SLIDER": {
         const aspectRatio = ((_a = b.content) == null ? void 0 : _a.aspectRatio) || "2 / 1";
         const images = ((_b = b.content.items) == null ? void 0 : _b.map((image) => ({
           src: imageUrl(image.src),
@@ -1433,59 +1433,6 @@ const CollectionComponent = ({
           b.type === "SQUARES_1_2" ? Pic : Txt
         ] }, b.id);
       }
-      case "TEXT_4SEC":
-        return /* @__PURE__ */ jsx(CollectionAdditionalWrapper, { children: /* @__PURE__ */ jsx(
-          CollectionHeader,
-          {
-            style: b.type.endsWith("_LP") ? { padding: "10px 0" } : {},
-            children: b.content.sections.map((s, i) => /* @__PURE__ */ jsxs(CollectionWrapper, { children: [
-              /* @__PURE__ */ jsx(COLLECTION_4SEC_TITLE, { children: s.label }),
-              /* @__PURE__ */ jsx(COLLECTION_4SEC_DESCRIPTION, { as: s.tag || "h1", children: s.text.split("\n").map((line, index) => /* @__PURE__ */ jsxs(React.Fragment, { children: [
-                line,
-                /* @__PURE__ */ jsx("br", {})
-              ] }, index)) })
-            ] }, i))
-          },
-          b.id
-        ) });
-      case "TEXT_2SEC":
-        return /* @__PURE__ */ jsx(CollectionAdditionalWrapper, { children: /* @__PURE__ */ jsx(
-          CollectionHeader,
-          {
-            style: b.type.endsWith("_LP") ? { padding: "10px 0" } : {},
-            children: b.content.sections.map((s, i) => /* @__PURE__ */ jsxs(CollectionWrapper, { children: [
-              /* @__PURE__ */ jsx(COLLECTION_4SEC_TITLE, { children: s.label }),
-              /* @__PURE__ */ jsx(COLLECTION_4SEC_DESCRIPTION, { as: s.tag || "h1", children: s.text.split("\n").map((line, index) => /* @__PURE__ */ jsxs(React.Fragment, { children: [
-                line,
-                /* @__PURE__ */ jsx("br", {})
-              ] }, index)) })
-            ] }, i))
-          },
-          b.id
-        ) });
-      case "TEXT_1SEC":
-      case "TEXT_1SEC_LP":
-        return /* @__PURE__ */ jsx(CollectionAdditionalWrapper, { children: /* @__PURE__ */ jsx(CollectionTextWrapper, { children: b.content.sections.map((section, i) => /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx(COLLECTION_1SEC_TITLE, { children: section.label }),
-          /* @__PURE__ */ jsx(COLLECTION_1SEC_DESCRIPTION, { children: section.segments.map((seg, idx) => {
-            const Tag = seg.tag || "span";
-            const renderTextWithBreaks = (text) => text.split("\n").map((line, lineIdx) => /* @__PURE__ */ jsxs(React.Fragment, { children: [
-              line,
-              lineIdx < text.split("\n").length - 1 && /* @__PURE__ */ jsx("br", {})
-            ] }, lineIdx));
-            const element = /* @__PURE__ */ jsx(Tag, { style: { display: "inline" }, children: renderTextWithBreaks(seg.text) }, idx);
-            return seg.link ? /* @__PURE__ */ jsx(
-              "a",
-              {
-                href: seg.link,
-                target: "_blank",
-                rel: "noopener noreferrer",
-                children: element
-              },
-              idx
-            ) : element;
-          }) })
-        ] }, i)) }, b.id) });
       case "TEXT_TITLE": {
         const { style, text, fontsize, align } = b.content;
         return /* @__PURE__ */ jsx(COLLECTION_TEXT_TITLE_WRAPPER, { align, children: /* @__PURE__ */ jsx(

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react';
 import {
 useLocation } from 'react-router-dom';
 import Modal, {
@@ -28,19 +28,14 @@ import {
   Arrow,
   COLLECTION_TEXT_TITLE_WRAPPER,
   COLLECTION_TEXT_TITLE,
-  COLLECTION_1SEC_TITLE,
-  COLLECTION_1SEC_DESCRIPTION,
   WRAPPER_GLOBAL,
   CollectionHeader,
-  CollectionHeader2Sec,
   CollectionBlock,
   TextBlock,
   TEXT_MBLOCK_WRAPPER,
-  TEXT_MBLOCK_WRAPPER_LIGHT,
   CollectionAdditionalWrapper,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
-  CollectionTextWrapper,
   ImageBlock,
   WorkTextFilter,
   WorkFilterWrapp,
@@ -68,15 +63,14 @@ import {
 /* ────────────────────────────────────────────── */
 
 export type BlockType =
-  | 'IMAGE_SINGLE'
+  | 'IMAGE_SLIDER'
   | 'IMAGE_DOUBLE'
   | 'IMAGE_GALLERY'
   | 'IMAGE_TRIPLE'
   | 'IMAGE_QUADRUPLE'
   | 'IMAGE_QUINTUPLE'
   | 'SQUARE'
-  | 'TEXT_4SEC' | 'TEXT_2SEC'
-  | 'TEXT_1SEC' | 'TEXT_1SEC_LP' | 'TEXT_TITLE'
+  | 'TEXT_TITLE'
   | 'YOUTUBE_PLAYER'
   | 'SPLITTER' | 'SPLITTER_SPACE' | 'SPLITTER_DEFAULT'
   | 'CONTENT';
@@ -1295,13 +1289,6 @@ const imageThumbLRUrl = (fileName: string) =>
     return ['mp4', 'webm', 'mov', 'm4v', 'ogg', 'ogv'].includes(ext);
   };
 
-  /* Validate tag to ensure it's a valid HTML tag and not a data URI */
-  const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
-    if (typeof tag !== 'string') return false;
-    // Prevent data URIs and other invalid tag names
-    return /^[a-z][a-z0-9]*$/.test(tag) && !tag.includes(':') && !tag.includes('/');
-  };
-
   const getYouTubeId = (value: string): string | null => {
     if (!value) return null;
 
@@ -1339,9 +1326,47 @@ const imageThumbLRUrl = (fileName: string) =>
     return null;
   };
 
+  const isContentYouTubeKind = (kind: string): boolean =>
+    kind === 'youtube' || kind === 'youtube_player';
+
+  const getContentYoutubeId = (item: any): string | null => {
+    const nestedItems = Array.isArray(item?.items)
+      ? item.items
+      : (Array.isArray(item?.content?.items) ? item.content.items : []);
+    const firstNestedItem = nestedItems?.[0];
+
+    const candidates = [
+      item?.youtubeId,
+      item?.youtubeUrl,
+      item?.youtube,
+      item?.videoId,
+      item?.videoUrl,
+      item?.url,
+      item?.content?.youtubeId,
+      item?.content?.youtubeUrl,
+      item?.content?.youtube,
+      item?.content?.videoId,
+      item?.content?.videoUrl,
+      item?.content?.url,
+      firstNestedItem?.youtubeId,
+      firstNestedItem?.youtubeUrl,
+      firstNestedItem?.youtube,
+      firstNestedItem?.videoId,
+      firstNestedItem?.videoUrl,
+      firstNestedItem?.url,
+      firstNestedItem?.media,
+    ];
+
+    const rawIdOrUrl = candidates.find(
+      (value) => typeof value === 'string' && value.trim()
+    ) as string | undefined;
+
+    return rawIdOrUrl ? getYouTubeId(rawIdOrUrl) : null;
+  };
+
   const getMediaItemCountForBlock = (block: CollectionBlockDB): number => {
     switch (block.type) {
-      case 'IMAGE_SINGLE': {
+      case 'IMAGE_SLIDER': {
         const items = Array.isArray(block.content?.items) ? block.content.items : [];
         return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
       }
@@ -1360,14 +1385,20 @@ const imageThumbLRUrl = (fileName: string) =>
         const contentItems = Array.isArray(block.content?.items) ? block.content.items : [];
         return contentItems.reduce((count: number, it: any) => {
           const kind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : '';
-          if (kind !== 'media') return count;
+          if (kind === 'media') {
+            const items = Array.isArray(it?.items)
+              ? it.items
+              : (Array.isArray(it?.content?.items) ? it.content.items : []);
+            const first = items?.[0];
+            const mediaName = typeof first?.media === 'string' ? first.media.trim() : '';
+            return mediaName ? count + 1 : count;
+          }
 
-          const items = Array.isArray(it?.items)
-            ? it.items
-            : (Array.isArray(it?.content?.items) ? it.content.items : []);
-          const first = items?.[0];
-          const mediaName = typeof first?.media === 'string' ? first.media.trim() : '';
-          return mediaName ? count + 1 : count;
+          if (isContentYouTubeKind(kind)) {
+            return getContentYoutubeId(it) ? count + 1 : count;
+          }
+
+          return count;
         }, 0);
       }
 
@@ -1944,19 +1975,25 @@ case 'CONTENT': {
         const isTextMediaPair =
           contentItems.length === 2 &&
           kinds.includes('text') &&
-          kinds.includes('media');
+          kinds.some((kind: string) => kind === 'media' || isContentYouTubeKind(kind));
 
         const totalContentMediaItems = contentItems.reduce((count: number, item: any) => {
           const kind = typeof item?.block === 'string' ? item.block.toLowerCase().trim() : '';
-          if (kind !== 'media') return count;
+          if (kind === 'media') {
+            const mediaItems = Array.isArray(item?.items)
+              ? item.items
+              : (Array.isArray(item?.content?.items) ? item.content.items : []);
+            const firstMedia = mediaItems?.[0];
+            return typeof firstMedia?.media === 'string' && firstMedia.media.trim()
+              ? count + 1
+              : count;
+          }
 
-          const mediaItems = Array.isArray(item?.items)
-            ? item.items
-            : (Array.isArray(item?.content?.items) ? item.content.items : []);
-          const firstMedia = mediaItems?.[0];
-          return typeof firstMedia?.media === 'string' && firstMedia.media.trim()
-            ? count + 1
-            : count;
+          if (isContentYouTubeKind(kind)) {
+            return getContentYoutubeId(item) ? count + 1 : count;
+          }
+
+          return count;
         }, 0);
 
 
@@ -2161,6 +2198,53 @@ case 'CONTENT': {
             );
           }
 
+          if (isContentYouTubeKind(blockKind)) {
+            const aspectRatio =
+              typeof it?.aspectRatio === 'string' && it.aspectRatio.trim()
+                ? it.aspectRatio
+                : (typeof it?.content?.aspectRatio === 'string' ? it.content.aspectRatio : '16 / 9');
+
+            const videoId = getContentYoutubeId(it);
+            if (!videoId) {
+              return <CONTENT_EMPTY_BLOCK key={`content-youtube-empty-${idx}`} $padding={paddingCss} />;
+            }
+
+            const title =
+              typeof it?.title === 'string' && it.title.trim()
+                ? it.title.trim()
+                : (typeof it?.content?.title === 'string' && it.content.title.trim()
+                    ? it.content.title.trim()
+                    : 'YouTube video');
+
+            const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0&controls=1&rel=0&playsinline=1`;
+
+            return (
+              <CONTENT_MEDIA_BLOCK
+                key={`content-youtube-${idx}`}
+                $padding={paddingCss}
+                $aspectRatio={aspectRatio}
+                role="group"
+                aria-label={title}
+                data-kind="media"
+              >
+                <CONTENT_MEDIA_INNER>
+                  {!isBlockMediaUnlocked ? (
+                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
+                  ) : (
+                    <iframe
+                      src={embedUrl}
+                      title={title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      onLoad={() => markBlockMediaItemSettled(b.id, `content-youtube-${idx}`, totalContentMediaItems)}
+                    />
+                  )}
+                </CONTENT_MEDIA_INNER>
+              </CONTENT_MEDIA_BLOCK>
+            );
+          }
+
           // empty block (default)
           return (
             <CONTENT_EMPTY_BLOCK
@@ -2174,7 +2258,7 @@ case 'CONTENT': {
   );
 }
 
-      case 'IMAGE_SINGLE': {
+      case 'IMAGE_SLIDER': {
         const aspectRatio = b.content?.aspectRatio || '2 / 1';
         const images: ImageItem[] = b.content.items?.map((image: any) => ({
           src: imageUrl(image.src),
@@ -2316,143 +2400,6 @@ case 'CONTENT': {
               );
             })}
           </>
-        );
-      }
-
-        /* ----- текстовые секции ----- */
-
-        interface Section {
-          label: string;
-          text: string;
-          tag?: 'h1' | 'h2' | 'h3';
-        }
-
-
-      case 'TEXT_4SEC':
-        return (
-          <CollectionAdditionalWrapper>
-            <CollectionHeader
-              key={b.id}
-              style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
-            >
-              {b.content.sections.map((s: Section, i: number) => (
-                <TEXT_MBLOCK_WRAPPER key={i}>
-                  <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
-                  <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
-                    {s.text.split('\n').map((line, index) => (
-                      <React.Fragment key={index}>
-                        {line}
-                        <br />
-                      </React.Fragment>
-                    ))}
-                  </COLLECTION_4SEC_DESCRIPTION>
-                </TEXT_MBLOCK_WRAPPER>
-              ))}
-            </CollectionHeader>
-          </CollectionAdditionalWrapper>
-        );
-
-      case 'TEXT_2SEC':
-  return (
-    <CollectionAdditionalWrapper>
-      <CollectionHeader2Sec
-        key={b.id}
-        style={b.type.endsWith('_LP') ? { padding: '10px 0' } : {}}
-      >
-        {b.content.sections.map((s: Section, i: number) => (
-          <TEXT_MBLOCK_WRAPPER_LIGHT key={i}>
-            <COLLECTION_4SEC_TITLE>{s.label}</COLLECTION_4SEC_TITLE>
-            <COLLECTION_4SEC_DESCRIPTION as={isValidTag(s.tag) ? (s.tag as any) : 'h2'}>
-              {s.text.split('\n').map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </COLLECTION_4SEC_DESCRIPTION>
-          </TEXT_MBLOCK_WRAPPER_LIGHT>
-        ))}
-      </CollectionHeader2Sec>
-    </CollectionAdditionalWrapper>
-  );
-
-        interface TextSegmentB {
-          text: string;
-          tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
-          link?: string;
-        }
-        interface SectionB {
-          label?: string;
-          segments: TextSegmentB[];
-        }
-      case 'TEXT_1SEC':
-      case 'TEXT_1SEC_LP': {
-        const normalizeSegmentTag = (tag?: string): keyof JSX.IntrinsicElements => {
-  if (typeof tag !== 'string') return 'span';
-  const lower = tag.toLowerCase().trim();
-
-  // security / sanity (same idea as your other validator)
-  if (lower.startsWith('data:') || lower.includes(':') || lower.includes('/')) return 'span';
-
-  const allowed: Array<keyof JSX.IntrinsicElements> = [
-    'h1','h2','h3','h4','h5','h6',
-    'p','span','strong','em',
-  ];
-
-  return allowed.includes(lower as any) ? (lower as any) : 'span';
-};
-
-        const renderTextWithBreaks = (text: string) =>
-          text.split('\n').map((line, lineIdx, arr) => (
-            <React.Fragment key={lineIdx}>
-              {line}
-              {lineIdx < arr.length - 1 && <br />}
-            </React.Fragment>
-          ));
-
-        return (
-          <CollectionAdditionalWrapper>
-            <CollectionTextWrapper key={b.id}>
-              {b.content.sections.map((section: SectionB, i: number) => {
-                const hasLabel =
-                  typeof section.label === 'string' && section.label.trim().length > 0;
-
-                return (
-                  <div key={i}>
-                    {hasLabel && (
-                      <COLLECTION_1SEC_TITLE>{section.label}</COLLECTION_1SEC_TITLE>
-                    )}
-
-                    <COLLECTION_1SEC_DESCRIPTION>
-                      {section.segments.map((seg, idx) => {
-                        const Tag = normalizeSegmentTag(seg.tag);
-
-                        const element = (
-                          <Tag key={idx} style={{ display: 'inline' }}>
-                            {renderTextWithBreaks(seg.text)}
-                          </Tag>
-                        );
-
-                        return seg.link ? (
-                          <a
-                            key={idx}
-                            href={seg.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${seg.text} (opens in new tab)`}
-                          >
-                            {element}
-                          </a>
-                        ) : (
-                          element
-                        );
-                      })}
-                    </COLLECTION_1SEC_DESCRIPTION>
-                  </div>
-                );
-              })}
-            </CollectionTextWrapper>
-          </CollectionAdditionalWrapper>
         );
       }
 
@@ -2669,7 +2616,7 @@ case 'CONTENT': {
             <MediaContainer>
   {currentMedia ? (
     <>
-      {/* ✅ If modal items are ALL images — use the IMAGE_SINGLE slider */}
+      {/* ✅ If modal items are ALL images — use the IMAGE_SLIDER slider */}
       {modalItems.length > 0 && modalItems.every(m => m.type === "image") ? (
         <ImageSlider
   images={modalItems.map((m) => ({
@@ -2781,5 +2728,3 @@ case 'CONTENT': {
 export default CollectionComponent;
 
 //STARTED
-
-
