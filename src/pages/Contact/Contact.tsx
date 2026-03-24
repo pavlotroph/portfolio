@@ -15,6 +15,12 @@ import {
   CONTENT_LINK,
   CONTENT_INLINE_LINK,
 } from '../../components/CollectionComponent/CollectionComponent.styled';
+import {
+  getContentLinkProps,
+  isInlineFlag,
+  renderMultiline,
+  renderTextWithInlineLinks,
+} from '../../components/CollectionComponent/contentTextUtils';
 
 /* ────────── CONTENT helpers (mirrors CollectionComponent.tsx) ────────── */
 const aspectLockToCss = (raw: any): string | null => {
@@ -83,23 +89,10 @@ const paddingToCss = (pad: any, fallback: string): string => {
   return `${t}px ${r}px ${b}px ${l}px`;
 };
 
-const renderMultiline = (text: any) => {
-  const s = typeof text === 'string' ? text : '';
-  const lines = s.split('\n');
-  return lines.map((line, i) => (
-    <React.Fragment key={i}>
-      {line}
-      {i < lines.length - 1 ? <br /> : null}
-    </React.Fragment>
-  ));
-};
-
 type ContentJson = {
   items: any[];
   componentPadding?: string;
 };
-
-const isInlineFlag = (v: any) => v === true || v === 'true' || v === 'yes' || v === 1 || v === '1';
 
 const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
   const contentItems = Array.isArray(content?.items) ? content.items : [];
@@ -115,10 +108,7 @@ const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
 
     const align = normalizeAlign(t?.alignment);
 
-    const href =
-      typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
-        ? t.link.trim()
-        : null;
+    const linkProps = getContentLinkProps(t?.link);
 
     const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
 
@@ -128,21 +118,18 @@ const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
         $align={align}
         style={forceInline ? { display: 'inline', width: 'auto', maxHeight: 'none', overflow: 'visible' } : undefined}
       >
-        {renderMultiline(t?.text)}
+        {linkProps ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
       </Line>
     );
 
-    if (!href) return <React.Fragment key={key}>{lineNode}</React.Fragment>;
+    if (!linkProps) return <React.Fragment key={key}>{lineNode}</React.Fragment>;
 
-    const isHttp = /^https?:\/\//i.test(href);
     const LinkTag = forceInline ? CONTENT_INLINE_LINK : CONTENT_LINK;
 
     return (
       <LinkTag
         key={key}
-        href={href}
-        target={isHttp ? '_blank' : undefined}
-        rel={isHttp ? 'noopener noreferrer' : undefined}
+        {...linkProps}
         aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
       >
         {lineNode}

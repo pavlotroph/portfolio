@@ -11,7 +11,7 @@ import Modal, {
 
 } from '../Modal/Modal';
 import Loading from '../../assets/video/logo_animated_hq.webm';
-import { supabase, supabaseUrl } from '../../supabaseClient';
+import { supabaseUrl } from '../../supabaseClient';
 
 import CloseIcon from '../../assets/icons/c_cross.svg?react';
 import Left from '../../assets/icons/icon_left.svg';
@@ -26,17 +26,12 @@ import {
   SliderContent,
   Slide,
   Arrow,
-  COLLECTION_TEXT_TITLE_WRAPPER,
-  COLLECTION_TEXT_TITLE,
   WRAPPER_GLOBAL,
   CollectionHeader,
-  CollectionBlock,
-  TextBlock,
   TEXT_MBLOCK_WRAPPER,
   CollectionAdditionalWrapper,
   COLLECTION_4SEC_TITLE,
   COLLECTION_4SEC_DESCRIPTION,
-  ImageBlock,
   WorkTextFilter,
   WorkFilterWrapp,
   WorkTitelContainer,
@@ -57,53 +52,26 @@ import {
   CONTENT_INLINE_LINK,
   CONTENT_MEDIA_INNER,
 } from './CollectionComponent.styled';
+import {
+  getContentLinkProps,
+  isInlineFlag,
+  renderMultiline,
+  renderTextWithInlineLinks,
+} from './contentTextUtils';
+import type { CollectionBlockDB, CollectionData } from './collectionBlocks';
 
-/* ────────────────────────────────────────────── */
-/* ТИПЫ                                           */
-/* ────────────────────────────────────────────── */
-
-export type BlockType =
-  | 'IMAGE_SLIDER'
-  | 'IMAGE_DOUBLE'
-  | 'IMAGE_GALLERY'
-  | 'IMAGE_TRIPLE'
-  | 'IMAGE_QUADRUPLE'
-  | 'IMAGE_QUINTUPLE'
-  | 'SQUARE'
-  | 'TEXT_TITLE'
-  | 'YOUTUBE_PLAYER'
-  | 'SPLITTER' | 'SPLITTER_SPACE' | 'SPLITTER_DEFAULT'
-  | 'CONTENT';
-
-export interface CollectionBlockDB {
-  id: number;
-  collection_id: number;
-  type: BlockType;
-  content: any;             // см. README
-  description: string | null;
-  position: number;
+interface CollectionComponentEditorState {
+  enabled: boolean;
+  preview: boolean;
+  selectedBlockId: number | null;
+  onSelectBlock?: (blockId: number) => void;
+  placeholder?: React.ReactNode;
 }
-
-export interface CollectionData {
-  id: number;
-  folder: string;
-  blocks: CollectionBlockDB[];
-
-  // теперь main не обязателен
-  main?: {
-    label: string;
-    text: string;
-    tag?: 'h1' | 'h2' | 'h3';
-  }[];
-
-  // если вам больше не нужен work_title, можно убрать
-  work_title?: string;
-}
-
 
 interface CollectionComponentProps {
   collection: CollectionData;
   source?: 'work' | 'photo';
+  editor?: CollectionComponentEditorState;
 }
 
 interface ModalMediaItem {
@@ -1104,10 +1072,6 @@ if (zoomable && e.pointerType === "touch") return;
     </SliderWrapper>
   );
 };
-
-
-const ENABLE_SQUARE_MODAL = false; // flip to true if you want it back
-
 //VIDEO
 interface AutoPlayVideoProps {
   src: string;
@@ -1211,6 +1175,7 @@ const AutoPlayVideo: React.FC<AutoPlayVideoProps> = ({
 const CollectionComponent: React.FC<CollectionComponentProps> = ({
   collection,
   source,
+  editor,
 }) => {
   /* ────────── фильтр в URL (оставил как было) ────────── */
   const location = useLocation();
@@ -1228,9 +1193,10 @@ const CollectionComponent: React.FC<CollectionComponentProps> = ({
     ? 'work-images'
     : 'photography-images';
 
-  /* ────────── стейт блоков ────────── */
-  const [blocks, setBlocks] = useState<CollectionBlockDB[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const blocks = collection.blocks ?? [];
+  const editorEnabled = !!editor?.enabled;
+  const showEditorChrome = editorEnabled && !editor.preview;
+  const canOpenPageInteractions = !showEditorChrome;
 
   /* ────────── модалка ────────── */
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1372,11 +1338,6 @@ const imageThumbLRUrl = (fileName: string) =>
       }
 
       case 'IMAGE_GALLERY': {
-        const items = Array.isArray(block.content?.items) ? block.content.items : [];
-        return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
-      }
-
-      case 'SQUARE': {
         const items = Array.isArray(block.content?.items) ? block.content.items : [];
         return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
       }
@@ -1567,6 +1528,15 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
   const modalUsesSlider = modalItems.length > 0 && modalItems.every(m => m.type === "image");
 
   useEffect(() => {
+    if (canOpenPageInteractions) return;
+
+    setIsModalOpen(false);
+    setModalItems([]);
+    setModalIndex(0);
+    modalHistoryRef.current = false;
+  }, [canOpenPageInteractions]);
+
+  useEffect(() => {
     if (!isModalOpen) return;
 
     // Push a fake history entry once when modal opens
@@ -1615,30 +1585,6 @@ const openModal = useCallback((items: ModalMediaItem[], startIndex: number) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
 }, [isModalOpen, modalLength, modalUsesSlider, goToNextMedia, goToPrevMedia]);
-
-  /* ────────── загрузка блоков ────────── */
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-
-      // work → project_blocks, photo → collection_blocks
-      const blocksTable =
-        source === 'work' ? 'project_blocks' : 'collection_blocks';
-
-      const { data, error } = await supabase
-        .from(blocksTable)
-        .select('*')
-        .eq('collection_id', collection.id)
-        .order('position');
-
-      if (error) console.error(error);
-      setBlocks(data || []);
-      setIsLoading(false);
-    })();
-  }, [collection.id, source]);
-
-
-
 
   /* ────────── рендер одного блока ────────── */
   const renderImageGalleryBlock = (b: CollectionBlockDB) => {
@@ -1705,7 +1651,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                     sequentialGroupKey={sequentialGroupKey}
                     sequentialIndex={imageSequenceIndex}
                     onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
-                    onClick={() => openModal(modalItems, i)}
+                    onClick={canOpenPageInteractions ? () => openModal(modalItems, i) : undefined}
                     onError={(e) => {
                       const img = e.currentTarget;
                       if (img.src !== fullSrc) img.src = fullSrc; // fallback
@@ -1785,7 +1731,7 @@ const thumbSrc = imageThumbLRUrl(item.src);
                           sequentialGroupKey={sequentialGroupKey}
                           sequentialIndex={imageSequenceIndex}
                           onSettled={() => markBlockMediaItemSettled(b.id, `gallery-${i}`, totalMediaItems)}
-                          onClick={() => openModal(modalItems, i)}
+                          onClick={canOpenPageInteractions ? () => openModal(modalItems, i) : undefined}
                           onError={(e) => {
                             const img = e.currentTarget;
                             if (img.src !== fullSrc) img.src = fullSrc;
@@ -1880,103 +1826,12 @@ const paddingToCss = (pad: any, fallback: string): string => {
   return `${t}px ${r}px ${b}px ${l}px`;
 };
 
-const renderMultiline = (text: any) => {
-  const s = typeof text === 'string' ? text : '';
-  const lines = s.split('\n');
-  return lines.map((line, i) => (
-    <React.Fragment key={i}>
-      {line}
-      {i < lines.length - 1 ? <br /> : null}
-    </React.Fragment>
-  ));
-};
-
-const isInlineFlag = (v: any) =>
-  v === true || v === 'true' || v === 'yes' || v === 1 || v === '1';
-
-
-const renderTextWithInlineLinks = (input: any) => {
-  const text = typeof input === 'string' ? input : '';
-  if (!text) return null;
-
-  const renderLine = (line: string, lineKey: string) => {
-    // Create regex per-line to avoid shared state from global RegExp
-    const urlTag = /\[url=(.+?)\]([\s\S]*?)\[\/url\]/gi;
-
-    const nodes: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = urlTag.exec(line)) !== null) {
-      const full = match[0];
-      const hrefRaw = match[1] ?? '';
-      const labelRaw = match[2] ?? '';
-
-      const start = match.index;
-      const end = start + full.length;
-
-      if (start > lastIndex) {
-        nodes.push(line.slice(lastIndex, start));
-      }
-
-      const href = String(hrefRaw).trim();
-      const label = String(labelRaw);
-
-      // Basic safety: allow only http(s) URLs
-      const safeHref = /^https?:\/\//i.test(href) ? href : null;
-
-      if (safeHref) {
-        nodes.push(
-          <CONTENT_INLINE_LINK
-            key={`${lineKey}-url-${start}`}
-            href={safeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {label}
-          </CONTENT_INLINE_LINK>
-        );
-      } else {
-        // If malformed, render as plain text
-        nodes.push(label);
-      }
-
-      lastIndex = end;
-    }
-
-    if (lastIndex < line.length) {
-      nodes.push(line.slice(lastIndex));
-    }
-
-    return nodes;
-  };
-
-  const lines = text.split('\n');
-  return lines.map((line, i) => (
-    <React.Fragment key={`inline-${i}`}>
-      {renderLine(line, `inline-${i}`)}
-      {i < lines.length - 1 ? <br /> : null}
-    </React.Fragment>
-  ));
-};
-
 const renderBlock = (b: CollectionBlockDB) => {
     const isBlockMediaUnlocked = isMediaBlockUnlocked(b.id);
     switch (b.type) {
 
 case 'CONTENT': {
         const contentItems = Array.isArray(b.content?.items) ? b.content.items : [];
-        // If CONTENT has exactly 2 blocks and it's a text+media combo,
-        // keep desktop order (checkerboard), but force Media above Text on phones.
-        const kinds = contentItems
-          .map((it: any) => (typeof it?.block === 'string' ? it.block.toLowerCase().trim() : ''))
-          .filter(Boolean);
-
-        const isTextMediaPair =
-          contentItems.length === 2 &&
-          kinds.includes('text') &&
-          kinds.some((kind: string) => kind === 'media' || isContentYouTubeKind(kind));
-
         const totalContentMediaItems = contentItems.reduce((count: number, item: any) => {
           const kind = typeof item?.block === 'string' ? item.block.toLowerCase().trim() : '';
           if (kind === 'media') {
@@ -1998,17 +1853,30 @@ case 'CONTENT': {
 
 
   const componentPaddingCss = paddingToCss(b.content?.componentPadding, '0,0,0,0');
-  
-  return (
-    <WRAPPER_COMPONENT $padding={componentPaddingCss}>
-      <WRAPPER_BLOCKS
-        data-count={contentItems.length}
-        data-pair={isTextMediaPair ? 'yes' : 'no'}
-      >
-        {contentItems.map((it: any, idx: number) => {
+        const removeWidthRestriction = !!b.content?.removeWidthRestriction;
+        const contentMaxWidth = removeWidthRestriction ? 'none' : '1440px';
+
+        const contentEntries = contentItems.map((item: any, index: number) => ({ item, index }));
+        const rowOrder: string[] = [];
+        const rows = new Map<string, Array<{ item: any; index: number }>>();
+
+        contentEntries.forEach((entry) => {
+          const rowKey =
+            typeof entry.item?.row === 'string' && entry.item.row.trim()
+              ? entry.item.row.trim()
+              : '1';
+
+          if (!rows.has(rowKey)) {
+            rows.set(rowKey, []);
+            rowOrder.push(rowKey);
+          }
+
+          rows.get(rowKey)!.push(entry);
+        });
+
+        const renderContentEntry = (it: any, idx: number) => {
           const blockKind = typeof it?.block === 'string' ? it.block.toLowerCase().trim() : 'empty';
 
-          // Defaults: text=24px padding, media/empty=0px padding
           const paddingCss =
             blockKind === 'text'
               ? paddingToCss(it?.padding, '24,24,24,24')
@@ -2047,29 +1915,24 @@ case 'CONTENT': {
                   }
                 : sizeStyle;
 
-              const href =
-                typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
-                  ? t.link.trim()
-                  : null;
+              const linkProps = getContentLinkProps(t?.link);
 
               const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
 
               const lineNode = (
                 <Line as={tag} $align={align} style={lineStyle}>
-                  {href ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
+                  {linkProps ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
                 </Line>
               );
 
-              if (!href) return <React.Fragment key={keyId}>{lineNode}</React.Fragment>;
+              if (!linkProps) return <React.Fragment key={keyId}>{lineNode}</React.Fragment>;
 
               const LinkTag = forceInline ? CONTENT_INLINE_LINK : CONTENT_LINK;
 
               return (
                 <LinkTag
                   key={keyId}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {...linkProps}
                   aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
                 >
                   {lineNode}
@@ -2107,7 +1970,12 @@ case 'CONTENT': {
             flushInline();
 
             return (
-              <CONTENT_TEXT_BLOCK key={`content-text-${idx}`} $padding={paddingCss} $aspectRatio={aspectRatioLock} data-kind="text">
+              <CONTENT_TEXT_BLOCK
+                key={`content-text-${idx}`}
+                $padding={paddingCss}
+                $aspectRatio={aspectRatioLock}
+                data-kind="text"
+              >
                 {nodes}
               </CONTENT_TEXT_BLOCK>
             );
@@ -2119,7 +1987,9 @@ case 'CONTENT': {
                 ? it.aspectRatio
                 : (typeof it?.content?.aspectRatio === 'string' ? it.content.aspectRatio : '16 / 9');
 
-            const items = Array.isArray(it?.items) ? it.items : (Array.isArray(it?.content?.items) ? it.content.items : []);
+            const items = Array.isArray(it?.items)
+              ? it.items
+              : (Array.isArray(it?.content?.items) ? it.content.items : []);
             const first = items?.[0];
             const mediaName = typeof first?.media === 'string' ? first.media : '';
 
@@ -2144,10 +2014,7 @@ case 'CONTENT': {
               }));
 
             const handleContentMediaClick = () => {
-              // Only images open modal in this system (per spec)
-              if (!wantsModal) return;
-              if (isVideo) return;
-              if (!modalImageItems.length) return;
+              if (!wantsModal || isVideo || !modalImageItems.length) return;
               openModal(modalImageItems, 0);
             };
 
@@ -2159,10 +2026,16 @@ case 'CONTENT': {
                 role="group"
                 aria-label={first?.title ? String(first.title) : 'Media'}
                 data-modal={wantsModal ? 'yes' : 'no'}
-                onClick={isBlockMediaUnlocked && wantsModal && !isVideo ? handleContentMediaClick : undefined}
-                tabIndex={isBlockMediaUnlocked && wantsModal && !isVideo ? 0 : -1}
+                onClick={
+                  isBlockMediaUnlocked && wantsModal && !isVideo && canOpenPageInteractions
+                    ? handleContentMediaClick
+                    : undefined
+                }
+                tabIndex={
+                  isBlockMediaUnlocked && wantsModal && !isVideo && canOpenPageInteractions ? 0 : -1
+                }
                 onKeyDown={(e) => {
-                  if (!(isBlockMediaUnlocked && wantsModal && !isVideo)) return;
+                  if (!(isBlockMediaUnlocked && wantsModal && !isVideo && canOpenPageInteractions)) return;
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleContentMediaClick();
@@ -2172,7 +2045,10 @@ case 'CONTENT': {
               >
                 <CONTENT_MEDIA_INNER>
                   {!isBlockMediaUnlocked ? (
-                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
+                    <div
+                      aria-hidden="true"
+                      style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }}
+                    />
                   ) : isVideo ? (
                     <AutoPlayVideo
                       src={url}
@@ -2229,7 +2105,10 @@ case 'CONTENT': {
               >
                 <CONTENT_MEDIA_INNER>
                   {!isBlockMediaUnlocked ? (
-                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
+                    <div
+                      aria-hidden="true"
+                      style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }}
+                    />
                   ) : (
                     <iframe
                       src={embedUrl}
@@ -2237,7 +2116,9 @@ case 'CONTENT': {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                       loading="lazy"
-                      onLoad={() => markBlockMediaItemSettled(b.id, `content-youtube-${idx}`, totalContentMediaItems)}
+                      onLoad={() =>
+                        markBlockMediaItemSettled(b.id, `content-youtube-${idx}`, totalContentMediaItems)
+                      }
                     />
                   )}
                 </CONTENT_MEDIA_INNER>
@@ -2245,17 +2126,40 @@ case 'CONTENT': {
             );
           }
 
-          // empty block (default)
+          return <CONTENT_EMPTY_BLOCK key={`content-empty-${idx}`} $padding={paddingCss} />;
+        };
+
+        const renderContentRow = (rowEntries: Array<{ item: any; index: number }>, rowKey: string) => {
+          const kinds = rowEntries
+            .map(({ item }) => (typeof item?.block === 'string' ? item.block.toLowerCase().trim() : ''))
+            .filter(Boolean);
+
+          const isTextMediaPair =
+            rowEntries.length === 2 &&
+            kinds.includes('text') &&
+            kinds.some((kind: string) => kind === 'media' || isContentYouTubeKind(kind));
+
           return (
-            <CONTENT_EMPTY_BLOCK
-              key={`content-empty-${idx}`}
-              $padding={paddingCss}
-            />
+            <WRAPPER_BLOCKS
+              key={`content-row-${b.id}-${rowKey}`}
+              $maxWidth={contentMaxWidth}
+              data-count={rowEntries.length}
+              data-pair={isTextMediaPair ? 'yes' : 'no'}
+            >
+              {rowEntries.map(({ item, index }) => renderContentEntry(item, index))}
+            </WRAPPER_BLOCKS>
           );
-        })}
-      </WRAPPER_BLOCKS>
-    </WRAPPER_COMPONENT>
-  );
+        };
+
+        return (
+          <WRAPPER_COMPONENT $padding={componentPaddingCss}>
+            <ImageGalleryRows style={{ width: '100%', maxWidth: contentMaxWidth }}>
+              {(rowOrder.length ? rowOrder : ['1']).map((rowKey) =>
+                renderContentRow(rows.get(rowKey) ?? [], rowKey)
+              )}
+            </ImageGalleryRows>
+          </WRAPPER_COMPONENT>
+        );
 }
 
       case 'IMAGE_SLIDER': {
@@ -2290,141 +2194,6 @@ case 'CONTENT': {
 
       case 'IMAGE_GALLERY':
         return renderImageGalleryBlock(b);
-
-      /* ----- SQUARE: картинка + заголовок ----- */
-      // one block in DB, can render 1–2 rows
-
-      case 'SQUARE': {
-        const items = (b.content?.items || []) as {
-          src: string;
-          label?: string;
-          title?: string;
-          description?: string;
-        }[];
-        const totalSquareMediaItems = items.length;
-        
-        const modalItems: ModalMediaItem[] = items.map((item) => {
-          const url = imageUrl(item.src);
-          const isVideo = isVideoFile(item.src);
-
-          return {
-            url,
-            type: isVideo ? 'video' : 'image',
-            altText: item.title || '',
-            title: item.title || '',
-            description: item.description || '',
-          };
-        });
-
-        if (!items.length) return null;
-
-        // 👇 new flag from Supabase JSON
-        const startWithText = !!b.content?.startWithText;
-        
-
-        return (
-          <>
-            {items.map((item, index) => {
-              const isEven = index % 2 === 0;
-
-              // default: image|text on first row
-              // startWithText: text|image on first row
-              const textFirst = startWithText ? isEven : !isEven;
-
-              const media = modalItems[index];
-              const isVideo = media.type === 'video';
-
-              const Pic = (
-                <ImageBlock className="square-media" key={`pic-${index}`}>
-                  {!isBlockMediaUnlocked ? (
-                    <div aria-hidden="true" style={{ width: '100%', height: '100%', background: 'var(--collection-deferred-media-bg, #111)' }} />
-                  ) : isVideo ? (
-                    <AutoPlayVideo
-                      src={media.url}
-                      alt={item.title || 'Collection video'}
-                      preload="auto"
-                      onSettled={() =>
-                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
-                      }
-                    />
-                  ) : (
-                    <img
-                      src={media.url}
-                      alt={item.title || 'Collection image'}
-                      loading="eager"
-                      onClick={ENABLE_SQUARE_MODAL ? () => openModal(modalItems, index) : undefined}
-                      onKeyDown={
-                        ENABLE_SQUARE_MODAL
-                          ? (e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                openModal(modalItems, index);
-                              }
-                            }
-                          : undefined
-                      }
-                      onLoad={() =>
-                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
-                      }
-                      onError={() =>
-                        markBlockMediaItemSettled(b.id, `square-media-${index}`, totalSquareMediaItems)
-                      }
-                      role={ENABLE_SQUARE_MODAL ? 'button' : undefined}
-                      tabIndex={ENABLE_SQUARE_MODAL ? 0 : undefined}
-                    />
-                  )}
-                </ImageBlock>
-              );
-
-
-              const Txt = (
-                <TextBlock className="square-text" key={`txt-${index}`}>
-                  {item.label && (
-                    <h1>
-                      {item.label.split('\n').map((line, i) => (
-                        <React.Fragment key={i}>
-                          {line}
-                          <br />
-                        </React.Fragment>
-                      ))}
-                    </h1>
-                  )}
-                </TextBlock>
-              );
-
-              return (
-                <CollectionBlock key={`${b.id}-${index}`}>
-                  {textFirst ? Txt : Pic}
-                  {textFirst ? Pic : Txt}
-                </CollectionBlock>
-              );
-            })}
-          </>
-        );
-      }
-
-      case 'TEXT_TITLE': {
-        // предполагаем, что content имеет именно такую форму:
-        // { style: 'h1'|'h2'|'h3', text: string, fontsize: string, align: 'left'|'center'|'right' }
-        const { text, fontsize, align } = b.content as {
-          style?: 'h1' | 'h2' | 'h3' | string;
-          text: string;
-          fontsize: string;
-          align: 'left' | 'center' | 'right';
-        };
-
-        // Always render as h1 for SEO/semantics, regardless of stored style
-        const headingTag: 'h1' = 'h1';
-
-        return (
-          <COLLECTION_TEXT_TITLE_WRAPPER key={b.id} align={align}>
-            <COLLECTION_TEXT_TITLE as={headingTag} fontSize={fontsize} align={align}>
-              {text}
-            </COLLECTION_TEXT_TITLE>
-          </COLLECTION_TEXT_TITLE_WRAPPER>
-        );
-      }
-
 
       /* ----- YouTube ----- */
       case 'YOUTUBE_PLAYER': {
@@ -2481,31 +2250,6 @@ case 'CONTENT': {
         return null;
     }
   };
-
-  /* ────────── LOADING ────────── */
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#000',
-        }}
-      >
-        <video
-          src={Loading}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{ width: 150, height: 150 }}
-        />
-      </div>
-    );
-  }
 
   /* ────────── MAIN JSX ────────── */
   const isPhoto = source === 'photo';
@@ -2584,10 +2328,8 @@ case 'CONTENT': {
 
         const isGallery = b.type === 'IMAGE_GALLERY';
         const hasMedia = mediaOrderIndexByBlockId.has(b.id);
-
-        return (
+        const renderedNode = (
           <div
-            key={b.id}
             ref={hasMedia ? (el) => registerMediaBlockElement(b.id, el) : undefined}
             data-media-block-id={hasMedia ? String(b.id) : undefined}
           >
@@ -2596,12 +2338,66 @@ case 'CONTENT': {
             </Reveal>
           </div>
         );
+
+        if (!showEditorChrome) {
+          return (
+            <div key={b.id}>
+              {renderedNode}
+            </div>
+          );
+        }
+
+        const isSelected = editor?.selectedBlockId === b.id;
+
+        return (
+          <div
+            key={b.id}
+            onClickCapture={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              editor?.onSelectBlock?.(b.id);
+            }}
+            style={{
+              position: 'relative',
+              outline: isSelected ? '1px solid rgba(255,255,255,0.72)' : '1px dashed rgba(255,255,255,0.28)',
+              outlineOffset: '10px',
+              marginBottom: '20px',
+              cursor: 'pointer',
+            }}
+          >
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                editor?.onSelectBlock?.(b.id);
+              }}
+              style={{
+                position: 'absolute',
+                top: '-14px',
+                left: '14px',
+                zIndex: 4,
+                border: '1px solid rgba(255,255,255,0.28)',
+                background: isSelected ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.82)',
+                color: '#fff',
+                padding: '6px 10px',
+                fontSize: '12px',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {b.position}. {b.type}
+            </button>
+            {renderedNode}
+          </div>
+        );
       })}
+      {showEditorChrome ? editor?.placeholder ?? null : null}
 
       {/* ——— модалка ——— */}
 
         <>
-          <Modal isOpen={isModalOpen} onClose={closeModal}>
+          <Modal isOpen={canOpenPageInteractions && isModalOpen} onClose={closeModal}>
             <CloseButton
               onClick={closeModal}
               aria-label="Close modal"

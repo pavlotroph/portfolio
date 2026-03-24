@@ -1,7 +1,5 @@
 import styled, { css } from 'styled-components';
 
-type Align = 'left' | 'center' | 'right';
-
 /* ────────────────────────────────────────────── */
 /* ОБЩАЯ ОБЁРТКА                                  */
 /* ────────────────────────────────────────────── */
@@ -37,7 +35,7 @@ export const WRAPPER_COMPONENT = styled.div<{ $padding?: string }>`
   background: #000000;
 `;
 
-export const WRAPPER_BLOCKS = styled.div`
+export const WRAPPER_BLOCKS = styled.div<{ $maxWidth?: string }>`
   /* WRAPPER_BLOCKS */
 
   display: grid;
@@ -51,10 +49,14 @@ export const WRAPPER_BLOCKS = styled.div`
   column-gap: 0px;
 
   width: 100%;
-  max-width: 1440px;
+  max-width: ${({ $maxWidth }) => $maxWidth ?? '1440px'};
   height: fit-content;
 
   background: #000000;
+
+  &[data-count="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 
   /* Special rule:
      If there are exactly 4 blocks, we want 4-per-row when there's room,
@@ -72,6 +74,12 @@ export const WRAPPER_BLOCKS = styled.div`
   @media (max-width: 520px) {
     &[data-count="4"] {
       grid-template-columns: repeat(1, minmax(240px, 1fr));
+    }
+  }
+
+  @media (max-width: 744px) {
+    &[data-count="3"] {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
     }
   }
 
@@ -262,46 +270,6 @@ export const COLLECTION_4SEC_TITLE = styled.h4`
   }
 `;
 
-export const COLLECTION_TEXT_TITLE_WRAPPER = styled.div<{ align?: Align }>`
-  display: flex;
-  flex-direction: row;
-  justify-content: ${({ align }) =>
-    align === 'left'
-      ? 'flex-start'
-      : align === 'right'
-      ? 'flex-end'
-      : 'center'};
-  align-items: center;
-  padding: 20px 0;
-  gap: 10px;
-
-  position: relative;
-  width: 100%;
-  max-width: 1440px;
-  height: 100px;
-
-  background: #000;
-  margin: 0 auto;
-`;
-
-export const COLLECTION_TEXT_TITLE = styled.h2<{
-  fontSize?: string;
-  align?: Align;
-}>`
-  margin: 0;
-  flex: none;
-  order: 0;
-  flex-grow: 0;
-
-  width: auto;
-  height: auto;
-
-  font-size: ${({ fontSize }) => (fontSize ? `${fontSize}px` : '32px')};
-  line-height: 1;
-  text-align: ${({ align }) => align || 'left'};
-  color: #fff;
-`;
-
 export const COLLECTION_4SEC_DESCRIPTION = styled.div`
   padding-bottom: 8px;
 `;
@@ -486,28 +454,6 @@ export const IMAGE_GALLERY = styled(IMAGE_BASEGRID)<{
 /* ────────────────────────────────────────────── */
 /* КАРТИНКА + ТЕКСТ                               */
 /* ────────────────────────────────────────────── */
-export const CollectionBlock = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  .square-media { order: 1; }
-  .square-text  { order: 2; }
-
-  @media (min-width: 744px) {
-    flex-direction: row;
-    align-items: center;
-     .square-media, .square-text { order: initial; }
-    .image-container {
-      max-width: 744px;
-    }
-  }
-
-  @media (min-width: 1440px) {
-    max-width: 1440px;
-    margin: 0 auto;
-  }
-`;
-
 export const TextBlock = styled.div`
   width: 100%;
   aspect-ratio: 1 / 1;

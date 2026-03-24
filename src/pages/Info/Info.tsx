@@ -16,6 +16,12 @@ import {
   CONTENT_LINK,
   CONTENT_INLINE_LINK,
 } from '../../components/CollectionComponent/CollectionComponent.styled';
+import {
+  getContentLinkProps,
+  isInlineFlag,
+  renderMultiline,
+  renderTextWithInlineLinks,
+} from '../../components/CollectionComponent/contentTextUtils';
 import { Quote } from '../Work/Work';
 import { supabase } from '../../supabaseClient';
 
@@ -86,17 +92,6 @@ const paddingToCss = (pad: any, fallback: string): string => {
   return `${t}px ${r}px ${b}px ${l}px`;
 };
 
-const renderMultiline = (text: any) => {
-  const s = typeof text === 'string' ? text : '';
-  const lines = s.split('\n');
-  return lines.map((line, i) => (
-    <React.Fragment key={i}>
-      {line}
-      {i < lines.length - 1 ? <br /> : null}
-    </React.Fragment>
-  ));
-};
-
 type ContentJson = {
   items: any[];
   componentPadding?: string;
@@ -107,8 +102,6 @@ const isValidTag = (tag: any): tag is keyof JSX.IntrinsicElements => {
   const t = tag.toLowerCase().trim();
   return /^[a-z][a-z0-9]*$/.test(t) && !t.includes(':') && !t.includes('/');
 };
-
-const isInlineFlag = (v: any) => v === true || v === 'true' || v === 'yes' || v === 1 || v === '1';
 
 const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
   const contentItems = Array.isArray(content?.items) ? content.items : [];
@@ -126,10 +119,7 @@ const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
     const size = Number(t?.size ?? 0);
     const sizeStyle = Number.isFinite(size) && size > 0 ? { fontSize: Math.min(128, size) } : undefined;
 
-    const href =
-      typeof t?.link === 'string' && t.link.trim() !== '' && t.link !== 'none'
-        ? t.link.trim()
-        : null;
+    const linkProps = getContentLinkProps(t?.link);
 
     const Line = isHeading ? CONTENT_TEXT_HEADING : CONTENT_TEXT_BODY;
 
@@ -146,11 +136,11 @@ const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
 
     const lineNode = (
       <Line as={tag} $align={align} style={inlineStyle}>
-        {renderMultiline(t?.text)}
+        {linkProps ? renderMultiline(t?.text) : renderTextWithInlineLinks(t?.text)}
       </Line>
     );
 
-    if (!href) return <React.Fragment key={key}>{lineNode}</React.Fragment>;
+    if (!linkProps) return <React.Fragment key={key}>{lineNode}</React.Fragment>;
 
     // For inline segments we must use inline anchor (so it doesn't break the sentence).
     const LinkTag = forceInline ? CONTENT_INLINE_LINK : CONTENT_LINK;
@@ -158,9 +148,7 @@ const StaticCONTENT: React.FC<{ content: ContentJson }> = ({ content }) => {
     return (
       <LinkTag
         key={key}
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...linkProps}
         aria-label={typeof t?.text === 'string' ? t.text : 'Open link'}
       >
         {lineNode}
