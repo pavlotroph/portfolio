@@ -58,6 +58,7 @@ import {
   renderMultiline,
   renderTextWithInlineLinks,
 } from './contentTextUtils';
+import ImageScroller from './ImageScroller';
 import type { CollectionBlockDB, CollectionData } from './collectionBlocks';
 
 interface CollectionComponentEditorState {
@@ -1342,6 +1343,11 @@ const imageThumbLRUrl = (fileName: string) =>
         return items.filter((item: any) => typeof item?.src === 'string' && item.src.trim()).length;
       }
 
+      case 'IMAGE_SCROLLER': {
+        const src = typeof block.content?.src === 'string' ? block.content.src.trim() : '';
+        return src && !isVideoFile(src) ? 1 : 0;
+      }
+
       case 'CONTENT': {
         const contentItems = Array.isArray(block.content?.items) ? block.content.items : [];
         return contentItems.reduce((count: number, it: any) => {
@@ -2195,6 +2201,30 @@ case 'CONTENT': {
       case 'IMAGE_GALLERY':
         return renderImageGalleryBlock(b);
 
+      case 'IMAGE_SCROLLER': {
+        const aspectRatio =
+          typeof b.content?.aspectRatio === 'string' && b.content.aspectRatio.trim()
+            ? b.content.aspectRatio
+            : '2 / 1';
+        const src = typeof b.content?.src === 'string' ? b.content.src.trim() : '';
+        if (!src || isVideoFile(src)) return null;
+
+        const title =
+          typeof b.content?.title === 'string' && b.content.title.trim()
+            ? b.content.title.trim()
+            : 'Collection image';
+
+        return (
+          <ImageScroller
+            src={imageUrl(src)}
+            alt={title}
+            aspectRatio={aspectRatio}
+            disabled={!isBlockMediaUnlocked}
+            onSettled={() => markBlockMediaItemSettled(b.id, 'image-scroller', 1)}
+          />
+        );
+      }
+
       /* ----- YouTube ----- */
       case 'YOUTUBE_PLAYER': {
         const content = b.content || {};
@@ -2334,7 +2364,13 @@ case 'CONTENT': {
             data-media-block-id={hasMedia ? String(b.id) : undefined}
           >
             <Reveal amount={isGallery ? 0 : undefined}>
-              {b.type === 'CONTENT' ? node : <ContentBlockWrapper>{node}</ContentBlockWrapper>}
+              {b.type === 'CONTENT' ? (
+                node
+              ) : (
+                <ContentBlockWrapper>
+                  {node}
+                </ContentBlockWrapper>
+              )}
             </Reveal>
           </div>
         );

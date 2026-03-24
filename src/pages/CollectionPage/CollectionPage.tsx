@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import styled, { css } from 'styled-components';
 import { supabase } from '../../supabaseClient';
 import CollectionComponent from '../../components/CollectionComponent/CollectionComponent';
 import CollectionSlider from '../../components/CollectionsSwiper/CollectionsSwiper';
@@ -33,6 +34,142 @@ interface CollectionNavRecord {
 interface CollectionPageProps {
   source: 'work' | 'photo';
 }
+
+const editPageText = css`
+  margin: 0;
+  font-family: var(--second-family);
+  color: inherit;
+`;
+
+const EditPreviewBadge = styled.div`
+  position: fixed;
+  top: 96px;
+  left: 18px;
+  z-index: 55;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  font-family: var(--second-family);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+`;
+
+const EditPlaceholderButton = styled.button`
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  border: 1px dashed rgba(255, 255, 255, 0.34);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  margin-top: 24px;
+  margin-bottom: 40px;
+  cursor: pointer;
+  font-family: var(--second-family);
+`;
+
+const EditPlaceholderPlus = styled.span`
+  ${editPageText}
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 400;
+`;
+
+const EditAuthOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  z-index: 70;
+  padding: 18px;
+`;
+
+const EditAuthCard = styled.form`
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 10, 10, 0.96);
+  color: #fff;
+  font-family: var(--second-family);
+`;
+
+const EditAuthTitle = styled.h2`
+  ${editPageText}
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.25;
+  text-transform: uppercase;
+`;
+
+const EditAuthMessage = styled.p`
+  ${editPageText}
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 1.5;
+`;
+
+const EditAuthLabel = styled.label`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--second-family);
+`;
+
+const EditAuthLabelText = styled.span`
+  ${editPageText}
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+`;
+
+const EditAuthInput = styled.input`
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  padding: 10px 12px;
+  font-family: var(--second-family);
+  font-size: 14px;
+`;
+
+const EditAuthError = styled.p`
+  ${editPageText}
+  color: #ff8f8f;
+  font-size: 12px;
+  line-height: 1.5;
+`;
+
+const EditAuthActions = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+`;
+
+const EditAuthButton = styled.button<{ $primary?: boolean }>`
+  border: 1px solid
+    ${({ $primary }) => ($primary ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.14)')};
+  background: ${({ $primary }) =>
+    $primary ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)'};
+  color: #fff;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: var(--second-family);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+`;
 
 const DEFAULT_EDITOR_EMAIL = 'pavlotroph@gmail.com';
 
@@ -600,31 +737,17 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
               selectedBlockId,
               onSelectBlock: setSelectedBlockId,
               placeholder: (
-                <button
+                <EditPlaceholderButton
                   type="button"
                   onClick={() => {
                     setInsertMode(true);
                     setIsPreviewMode(false);
                     setSelectedBlockId(null);
                   }}
-                  style={{
-                    width: '100%',
-                    aspectRatio: '21 / 9',
-                    border: '1px dashed rgba(255,255,255,0.34)',
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-                    color: '#fff',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: '44px',
-                    marginTop: '24px',
-                    marginBottom: '40px',
-                    cursor: 'pointer',
-                  }}
                   aria-label="Add a new block"
                 >
-                  +
-                </button>
+                  <EditPlaceholderPlus>+</EditPlaceholderPlus>
+                </EditPlaceholderButton>
               ),
             }
           : undefined
@@ -666,23 +789,9 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
       </div>
 
       {isEditMode && isPreviewMode ? (
-        <div
-          style={{
-            position: 'fixed',
-            top: 96,
-            left: 18,
-            zIndex: 55,
-            padding: '10px 14px',
-            border: '1px solid rgba(255,255,255,0.16)',
-            background: 'rgba(0,0,0,0.82)',
-            color: '#fff',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            fontSize: 11,
-          }}
-        >
+        <EditPreviewBadge>
           Preview mode. `Shift+P` returns to editing.
-        </div>
+        </EditPreviewBadge>
       ) : null}
 
       {isEditMode && !isPreviewMode ? (
@@ -724,103 +833,47 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
       ) : null}
 
       {isAuthPromptOpen ? (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.72)',
-            display: 'grid',
-            placeItems: 'center',
-            zIndex: 70,
-            padding: 18,
-          }}
-        >
-          <form
-            onSubmit={handleAuthenticate}
-            style={{
-              width: 'min(420px, 100%)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 14,
-              padding: 24,
-              border: '1px solid rgba(255,255,255,0.14)',
-              background: 'rgba(10,10,10,0.96)',
-              color: '#fff',
-            }}
-          >
-            <strong
-              style={{
-                fontSize: 14,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
+        <EditAuthOverlay>
+          <EditAuthCard onSubmit={handleAuthenticate}>
+            <EditAuthTitle>
               You&apos;re requested to edit this page.
-            </strong>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
+            </EditAuthTitle>
+            <EditAuthMessage>
               Enter the editor password to start a secure Supabase-authenticated edit session.
-            </p>
-            <label
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.78)',
-              }}
-            >
-              <span>Password</span>
-              <input
+            </EditAuthMessage>
+            <EditAuthLabel>
+              <EditAuthLabelText>Password</EditAuthLabelText>
+              <EditAuthInput
                 type="password"
                 autoFocus
                 value={editorPassword}
                 onChange={(event) => setEditorPassword(event.target.value)}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  padding: '10px 12px',
-                }}
               />
-            </label>
+            </EditAuthLabel>
             {authError ? (
-              <p style={{ margin: 0, color: '#ff8f8f', lineHeight: 1.5 }}>{authError}</p>
+              <EditAuthError>{authError}</EditAuthError>
             ) : null}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
+            <EditAuthActions>
+              <EditAuthButton
                 type="button"
                 onClick={() => {
                   setIsAuthPromptOpen(false);
                   setEditorPassword('');
                   setAuthError(null);
                 }}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: '#fff',
-                  padding: '10px 12px',
-                  cursor: 'pointer',
-                }}
               >
                 Cancel
-              </button>
-              <button
+              </EditAuthButton>
+              <EditAuthButton
                 type="submit"
+                $primary
                 disabled={isAuthPending}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.28)',
-                  background: 'rgba(255,255,255,0.12)',
-                  color: '#fff',
-                  padding: '10px 12px',
-                  cursor: isAuthPending ? 'default' : 'pointer',
-                  opacity: isAuthPending ? 0.6 : 1,
-                }}
               >
                 {isAuthPending ? 'Checking…' : 'Enter Edit Mode'}
-              </button>
-            </div>
-          </form>
-        </div>
+              </EditAuthButton>
+            </EditAuthActions>
+          </EditAuthCard>
+        </EditAuthOverlay>
       ) : null}
     </>
   );

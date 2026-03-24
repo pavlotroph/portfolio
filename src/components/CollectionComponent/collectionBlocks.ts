@@ -1,5 +1,6 @@
 export type BlockType =
   | 'IMAGE_SLIDER'
+  | 'IMAGE_SCROLLER'
   | 'IMAGE_DOUBLE'
   | 'IMAGE_GALLERY'
   | 'IMAGE_TRIPLE'
@@ -37,6 +38,7 @@ export interface CollectionData {
 export const RENDERABLE_BLOCK_TYPES = [
   'CONTENT',
   'IMAGE_SLIDER',
+  'IMAGE_SCROLLER',
   'IMAGE_GALLERY',
   'YOUTUBE_PLAYER',
   'SPLITTER',

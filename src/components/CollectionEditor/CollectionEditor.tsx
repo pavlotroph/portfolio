@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import {
   COLLECTION_BLOCK_TEMPLATES,
   cloneBlockContent,
@@ -33,6 +33,67 @@ interface CollectionEditorProps {
   onPublish: () => void;
 }
 
+const editHeadingBase = css`
+  margin: 0;
+  font-family: var(--second-family);
+  font-style: normal;
+  color: inherit;
+`;
+
+const EH1 = styled.h1`
+  ${editHeadingBase}
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+`;
+
+const EH2 = styled.h2`
+  ${editHeadingBase}
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+`;
+
+const EH3 = styled.h3`
+  ${editHeadingBase}
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+`;
+
+const EH4 = styled.h4`
+  ${editHeadingBase}
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+`;
+
+const EH5 = styled.h5`
+  ${editHeadingBase}
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  text-transform: none;
+`;
+
+const EH6 = styled.h6`
+  ${editHeadingBase}
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+`;
+
 const EditorShell = styled.aside`
   position: fixed;
   top: 96px;
@@ -46,7 +107,12 @@ const EditorShell = styled.aside`
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(14px);
   color: #fff;
+  font-family: var(--second-family);
   z-index: 60;
+
+  * {
+    font-family: inherit;
+  }
 
   @media (max-width: 900px) {
     top: auto;
@@ -70,26 +136,14 @@ const EditorTitle = styled.div`
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-
-  strong {
-    font-size: 14px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  span {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.62);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
 `;
 
-const EditorHint = styled.p`
-  margin: 0;
+const EditorHint = styled(EH5)`
   color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
-  line-height: 1.45;
+`;
+
+const EditorModeLabel = styled(EH6)`
+  color: rgba(255, 255, 255, 0.62);
 `;
 
 const Toolbar = styled.div`
@@ -114,6 +168,7 @@ const ToolbarButton = styled.button<{ $accent?: boolean; $danger?: boolean }>`
         : 'rgba(255,255,255,0.04)'};
   color: #fff;
   padding: 10px 12px;
+  font-family: inherit;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -141,15 +196,15 @@ const StatusPill = styled.span<{ $tone?: 'warn' | 'ok' }>`
   background: ${({ $tone }) =>
     $tone === 'ok' ? 'rgba(35, 113, 71, 0.32)' : 'rgba(255,255,255,0.06)'};
   font-size: 11px;
+  font-family: inherit;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 `;
 
-const HeaderError = styled.p`
-  margin: 0;
+const HeaderError = styled(EH6)`
   color: #ff9b9b;
-  font-size: 12px;
-  line-height: 1.45;
+  letter-spacing: 0.04em;
+  text-transform: none;
 `;
 
 const EditorBody = styled.div`
@@ -167,11 +222,7 @@ const Section = styled.section`
   gap: 12px;
 `;
 
-const SectionTitle = styled.h3`
-  margin: 0;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+const SectionTitle = styled(EH3)`
   color: rgba(255, 255, 255, 0.64);
 `;
 
@@ -193,11 +244,18 @@ const BlockListButton = styled.button<{ $selected?: boolean }>`
     ${({ $selected }) => ($selected ? 'rgba(255,255,255,0.44)' : 'rgba(255,255,255,0.12)')};
   background: ${({ $selected }) => ($selected ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)')};
   color: #fff;
+  font-family: inherit;
   cursor: pointer;
+`;
 
-  small {
-    color: rgba(255, 255, 255, 0.58);
-  }
+const BlockItemTitle = styled(EH4)`
+  text-align: left;
+`;
+
+const BlockItemSummary = styled(EH6)`
+  color: rgba(255, 255, 255, 0.58);
+  letter-spacing: 0.03em;
+  text-transform: none;
 `;
 
 const SelectedHeader = styled.div`
@@ -205,12 +263,10 @@ const SelectedHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+`;
 
-  strong {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-  }
+const SelectedType = styled(EH6)`
+  color: rgba(255, 255, 255, 0.62);
 `;
 
 const ActionsRow = styled.div`
@@ -224,6 +280,7 @@ const SecondaryButton = styled.button`
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
   padding: 8px 10px;
+  font-family: inherit;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -259,6 +316,7 @@ const TextInput = styled.input`
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   padding: 10px 12px;
+  font-family: inherit;
   font-size: 14px;
 `;
 
@@ -268,6 +326,7 @@ const SelectInput = styled.select`
   background: rgba(17, 17, 17, 0.96);
   color: #fff;
   padding: 10px 12px;
+  font-family: inherit;
   font-size: 14px;
 `;
 
@@ -278,6 +337,7 @@ const TextArea = styled.textarea`
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
   padding: 10px 12px;
+  font-family: inherit;
   font-size: 14px;
   resize: vertical;
 `;
@@ -321,10 +381,7 @@ const ArrayActions = styled.div`
   gap: 8px;
 `;
 
-const InlineMessage = styled.p`
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.45;
+const InlineMessage = styled(EH5)`
   color: rgba(255, 255, 255, 0.64);
 `;
 
@@ -334,6 +391,7 @@ const RawJsonApply = styled.button`
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   padding: 8px 10px;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -401,6 +459,19 @@ const createContentItem = (kind: 'text' | 'media' | 'youtube' | 'empty') => {
     row: '1',
     padding: '0,0,0,0',
   };
+};
+
+const resolveContentItemAspectRatio = (item: any) => {
+  if (typeof item?.aspectRatio === 'string') return item.aspectRatio;
+  if (typeof item?.['aspect-ratio'] === 'string') return item['aspect-ratio'];
+  if (typeof item?.aspect_ratio === 'string') return item.aspect_ratio;
+  return '';
+};
+
+const setContentItemAspectRatio = (draftItem: any, value: string) => {
+  draftItem.aspectRatio = value;
+  delete draftItem['aspect-ratio'];
+  delete draftItem.aspect_ratio;
 };
 
 const CollectionEditor: React.FC<CollectionEditorProps> = ({
@@ -576,11 +647,54 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                     type="button"
                     onClick={() =>
                       updateContentItems((nextItems) => {
+                        if (index <= 0) return;
+                        const reorderedItems = [...nextItems];
+                        const [movedItem] = reorderedItems.splice(index, 1);
+                        reorderedItems.splice(index - 1, 0, movedItem);
+                        nextItems.splice(0, nextItems.length, ...reorderedItems);
+                      })
+                    }
+                    disabled={index <= 0}
+                  >
+                    ↑
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    onClick={() =>
+                      updateContentItems((nextItems) => {
+                        if (index >= nextItems.length - 1) return;
+                        const reorderedItems = [...nextItems];
+                        const [movedItem] = reorderedItems.splice(index, 1);
+                        reorderedItems.splice(index + 1, 0, movedItem);
+                        nextItems.splice(0, nextItems.length, ...reorderedItems);
+                      })
+                    }
+                    disabled={index >= contentItems.length - 1}
+                  >
+                    ↓
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    onClick={() =>
+                      updateContentItems((nextItems) => {
+                        const duplicateItem = cloneBlockContent(
+                          nextItems[index] ?? createContentItem(kind as 'text' | 'media' | 'youtube' | 'empty')
+                        );
+                        nextItems.splice(index + 1, 0, duplicateItem);
+                      })
+                    }
+                  >
+                    ⧉
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    onClick={() =>
+                      updateContentItems((nextItems) => {
                         nextItems.splice(index, 1);
                       })
                     }
                   >
-                    Remove
+                    ✕
                   </SecondaryButton>
                 </ArrayActions>
               </ArrayItemHeader>
@@ -628,14 +742,14 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                     }
                   />
                 </Field>
-                {(kind === 'media' || kind === 'youtube') ? (
+                {(kind === 'text' || kind === 'media' || kind === 'youtube') ? (
                   <Field style={{ gridColumn: '1 / -1' }}>
                     <span>Aspect Ratio</span>
                     <TextInput
-                      value={typeof item?.aspectRatio === 'string' ? item.aspectRatio : ''}
+                      value={resolveContentItemAspectRatio(item)}
                       onChange={(event) =>
                         setContentItem((draftItem) => {
-                          draftItem.aspectRatio = event.target.value;
+                          setContentItemAspectRatio(draftItem, event.target.value);
                         })
                       }
                     />
@@ -1075,6 +1189,58 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
           </Section>
         );
 
+      case 'IMAGE_SCROLLER':
+        return (
+          <Section>
+            <FieldGrid>
+              <Field>
+                <span>Aspect Ratio</span>
+                <TextInput
+                  value={typeof selectedBlock.content?.aspectRatio === 'string' ? selectedBlock.content.aspectRatio : ''}
+                  onChange={(event) =>
+                    updateSelectedBlock((draft) => {
+                      draft.content = { ...(draft.content ?? {}), aspectRatio: event.target.value };
+                    })
+                  }
+                />
+              </Field>
+              <Field>
+                <span>Storage File Name</span>
+                <TextInput
+                  value={typeof selectedBlock.content?.src === 'string' ? selectedBlock.content.src : ''}
+                  onChange={(event) =>
+                    updateSelectedBlock((draft) => {
+                      draft.content = { ...(draft.content ?? {}), src: event.target.value };
+                    })
+                  }
+                />
+              </Field>
+            </FieldGrid>
+            <Field>
+              <span>Title / Alt Text</span>
+              <TextInput
+                value={typeof selectedBlock.content?.title === 'string' ? selectedBlock.content.title : ''}
+                onChange={(event) =>
+                  updateSelectedBlock((draft) => {
+                    draft.content = { ...(draft.content ?? {}), title: event.target.value };
+                  })
+                }
+              />
+            </Field>
+            <Field>
+              <span>Description</span>
+              <TextArea
+                value={typeof selectedBlock.content?.description === 'string' ? selectedBlock.content.description : ''}
+                onChange={(event) =>
+                  updateSelectedBlock((draft) => {
+                    draft.content = { ...(draft.content ?? {}), description: event.target.value };
+                  })
+                }
+              />
+            </Field>
+          </Section>
+        );
+
       case 'IMAGE_GALLERY':
         return (
           <Section>
@@ -1175,10 +1341,10 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
     <EditorShell aria-label="Collection page editor">
       <EditorHeader>
         <EditorTitle>
-          <strong>Collection Editor</strong>
-          <span>{isPreviewMode ? 'Preview' : 'Edit'}</span>
+          <EH1 as="strong">Collection Editor</EH1>
+          <EditorModeLabel>{isPreviewMode ? 'Preview' : 'Edit'}</EditorModeLabel>
         </EditorTitle>
-        <EditorHint>
+        <EditorHint as="p">
           `Shift+E` exits edit mode. `Shift+P` toggles preview. `Shift+U` publishes the current draft.
         </EditorHint>
         <StatusRow>
@@ -1245,10 +1411,10 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                 $selected={block.id === selectedBlockId}
                 onClick={() => onSelectBlock(block.id)}
               >
-                <strong>
+                <BlockItemTitle as="div">
                   {block.position}. {resolveBlockLabel(block)}
-                </strong>
-                <small>{resolveBlockSummary(block)}</small>
+                </BlockItemTitle>
+                <BlockItemSummary as="div">{resolveBlockSummary(block)}</BlockItemSummary>
               </BlockListButton>
             ))}
           </BlockList>
@@ -1259,8 +1425,8 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
           {selectedBlock ? (
             <>
               <SelectedHeader>
-                <strong>{resolveBlockLabel(selectedBlock)}</strong>
-                <span>{selectedBlock.type}</span>
+                <EH2 as="strong">{resolveBlockLabel(selectedBlock)}</EH2>
+                <SelectedType>{selectedBlock.type}</SelectedType>
               </SelectedHeader>
               <InlineMessage>
                 {getCollectionBlockTemplate(selectedBlock.type)?.description ?? 'Editable block.'}
@@ -1271,20 +1437,20 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                   onClick={() => onMoveBlock(selectedBlock.id, 'up')}
                   disabled={selectedBlock.position <= 1}
                 >
-                  Move Up
+                  ↑
                 </SecondaryButton>
                 <SecondaryButton
                   type="button"
                   onClick={() => onMoveBlock(selectedBlock.id, 'down')}
                   disabled={selectedBlock.position >= blocks.length}
                 >
-                  Move Down
+                  ↓
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => onDuplicateBlock(selectedBlock.id)}>
-                  Duplicate
+                  ⧉
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => onDeleteBlock(selectedBlock.id)}>
-                  Delete
+                  ✕
                 </SecondaryButton>
               </ActionsRow>
               <Field>

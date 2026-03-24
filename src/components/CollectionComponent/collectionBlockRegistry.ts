@@ -62,6 +62,21 @@ export const COLLECTION_BLOCK_TEMPLATES: CollectionBlockTemplate[] = [
     },
   },
   {
+    type: 'IMAGE_SCROLLER',
+    label: 'Image Scroller',
+    description: 'A 2:1 frame for tall images with a magnetic horizontal scrub bar.',
+    createContent: () => ({
+      aspectRatio: '2 / 1',
+      src: '',
+      title: '',
+      description: '',
+    }),
+    summarize: (block) => {
+      const src = typeof block.content?.src === 'string' ? block.content.src.trim() : '';
+      return src || 'No image selected';
+    },
+  },
+  {
     type: 'IMAGE_GALLERY',
     label: 'Image Gallery',
     description: 'Grid gallery with optional row grouping and aspect ratios.',

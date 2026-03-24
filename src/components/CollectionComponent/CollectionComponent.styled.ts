@@ -116,8 +116,11 @@ export const WRAPPER_BLOCKS = styled.div<{ $maxWidth?: string }>`
 }
 `;
 
-export const ContentBlockWrapper = styled.div`
+export const ContentBlockWrapper = styled.div<{ $maxWidth?: string }>`
   width: 100%;
+  max-width: ${({ $maxWidth }) => $maxWidth ?? 'none'};
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 15px;
   margin-bottom: 15px;
 
