@@ -555,18 +555,54 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
 
       const { data: existingRows, error: existingRowsError } = await supabase
         .from(blocksTable)
-        .select('id')
+        .select('id, position')
         .eq('collection_id', project.id);
       if (existingRowsError) throw existingRowsError;
 
-      const rowsToUpdate = payload.filter((row) => 'id' in row);
-      const rowsToInsert = payload.filter((row) => !('id' in row));
+      const existingRowsList = ((existingRows as Array<{ id: number; position: number | null }> | null) ?? []);
+      const existingIds = new Set(existingRowsList.map((row) => row.id));
+      const rowsToUpdate = payload.filter(
+        (row): row is (typeof payload)[number] & { id: number } =>
+          typeof (row as { id?: unknown }).id === 'number' && existingIds.has((row as { id: number }).id)
+      );
+      const rowsToInsert = payload
+        .filter(
+          (row) =>
+            typeof (row as { id?: unknown }).id !== 'number' ||
+            !existingIds.has((row as { id: number }).id)
+        )
+        .map(({ id: _discardId, ...row }) => row);
+
+      const keptIds = new Set(rowsToUpdate.map((row) => row.id));
+      const idsToDelete = existingRowsList
+        .map((row) => row.id)
+        .filter((id) => !keptIds.has(id));
+
+      const maxExistingPosition = existingRowsList.reduce(
+        (currentMax, row) => Math.max(currentMax, Number(row.position) || 0),
+        0
+      );
+      const maxPayloadPosition = payload.reduce(
+        (currentMax, row) => Math.max(currentMax, Number(row.position) || 0),
+        0
+      );
+      const tempPositionBase =
+        Math.max(maxExistingPosition, maxPayloadPosition) + payload.length + existingRowsList.length + 1024;
 
       if (rowsToUpdate.length > 0) {
-        const { error: updateError } = await supabase
+        const stagedRows = rowsToUpdate.map((row, index) => ({
+          ...row,
+          position: tempPositionBase + index,
+        }));
+        const { error: stageError } = await supabase
           .from(blocksTable)
-          .upsert(rowsToUpdate, { onConflict: 'id' });
-        if (updateError) throw updateError;
+          .upsert(stagedRows, { onConflict: 'id' });
+        if (stageError) throw stageError;
+      }
+
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase.from(blocksTable).delete().in('id', idsToDelete);
+        if (deleteError) throw deleteError;
       }
 
       if (rowsToInsert.length > 0) {
@@ -576,18 +612,11 @@ const CollectionPage: React.FC<CollectionPageProps> = ({ source }) => {
         if (insertError) throw insertError;
       }
 
-      const keptIds = new Set(
-        rowsToUpdate
-          .map((row) => ('id' in row ? row.id : null))
-          .filter((id): id is number => typeof id === 'number')
-      );
-      const idsToDelete = ((existingRows as Array<{ id: number }> | null) ?? [])
-        .map((row) => row.id)
-        .filter((id) => !keptIds.has(id));
-
-      if (idsToDelete.length > 0) {
-        const { error: deleteError } = await supabase.from(blocksTable).delete().in('id', idsToDelete);
-        if (deleteError) throw deleteError;
+      if (rowsToUpdate.length > 0) {
+        const { error: updateError } = await supabase
+          .from(blocksTable)
+          .upsert(rowsToUpdate, { onConflict: 'id' });
+        if (updateError) throw updateError;
       }
 
       const { data: freshBlocks, error: refreshError } = await supabase

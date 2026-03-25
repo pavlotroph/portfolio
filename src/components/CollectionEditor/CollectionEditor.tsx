@@ -694,7 +694,7 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                       })
                     }
                   >
-                    ✕
+                    🗑
                   </SecondaryButton>
                 </ArrayActions>
               </ArrayItemHeader>
@@ -1450,7 +1450,7 @@ const CollectionEditor: React.FC<CollectionEditorProps> = ({
                   ⧉
                 </SecondaryButton>
                 <SecondaryButton type="button" onClick={() => onDeleteBlock(selectedBlock.id)}>
-                  ✕
+                  🗑
                 </SecondaryButton>
               </ActionsRow>
               <Field>

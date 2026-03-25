@@ -74,7 +74,10 @@ export const Reveal: React.FC<RevealProps> = ({
     );
   }
 
-  const viewportAmount = amount ?? 0.3;
+  // Tall stacked mobile sections can exceed the viewport height by enough that
+  // numeric thresholds like 0.3 become unreachable. Default to "some" so
+  // oversized blocks still reveal once any visible portion enters the viewport.
+  const viewportAmount = amount ?? 'some';
 
   return (
     <motion.div

@@ -73,10 +73,10 @@ const Controls = styled.div`
 
 const Track = styled.div<{ $interactive: boolean; $active: boolean }>`
   position: relative;
-  height: clamp(44px, 6vw, 58px);
+  height: clamp(32px, 6vw, 64px);
   display: flex;
   align-items: center;
-  cursor: ${({ $interactive }) => ($interactive ? 'ew-resize' : 'default')};
+  cursor: ${({ $interactive }) => ($interactive ? 'crosshair' : 'default')};
   touch-action: none;
   outline: none;
   opacity: ${({ $interactive }) => ($interactive ? 1 : 0.72)};
@@ -95,7 +95,7 @@ const TrackRail = styled.div`
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.2);
 `;
 
 const TrackProgress = styled.div<{ $scale: number; $active: boolean }>`
