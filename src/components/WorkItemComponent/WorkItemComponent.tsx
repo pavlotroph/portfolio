@@ -11,6 +11,8 @@ import LoadingWebm from '../../assets/video/logo_animated_hq.webm';
 import LoadingMp4 from '../../assets/video/logo.mp4';
 import { WorkItemData } from '../../pages/Work/Work';
 
+const HOVER_SETTLE_DURATION_MS = 400;
+
 interface WorkItemComponentProps {
   work: WorkItemData;
   source: 'work' | 'photo';
@@ -40,6 +42,12 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   const previewImgRef = useRef<HTMLImageElement | null>(null);
   const previewSettledRef = useRef(false);
   const onPreviewSettledRef = useRef<(() => void) | undefined>(onPreviewSettled);
+  const hoverActivatedAtRef = useRef<number | null>(null);
+  const hoverReleaseTimeoutRef = useRef<number | null>(null);
+  const hoverReactivationTimeoutRef = useRef<number | null>(null);
+  const hoverReentryLockedUntilRef = useRef<number | null>(null);
+  const requestedHoverRef = useRef(false);
+  const loadEnabledRef = useRef(loadEnabled);
 
   const { folder, image_name, title, preview_url, vimeo_id } = work;
   const isVimeo = Boolean(vimeo_id);
@@ -55,7 +63,8 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   const shouldUseImgPreview = !isVideo || previewLooksLikeImage || Boolean(preview_url);
 
   const sameStaticImage = !isVideo && previewSrc === src;
-  const isHovered = loadEnabled && (isPointerHovered || touchActive);
+  const requestedHover = loadEnabled && (isPointerHovered || touchActive);
+  const [isHovered, setIsHovered] = useState(false);
 
   const markPreviewSettled = useCallback(() => {
     setIsLoading(false);
@@ -63,6 +72,20 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     if (!previewSettledRef.current) {
       previewSettledRef.current = true;
       onPreviewSettledRef.current?.();
+    }
+  }, []);
+
+  const clearHoverReleaseTimeout = useCallback(() => {
+    if (hoverReleaseTimeoutRef.current !== null) {
+      window.clearTimeout(hoverReleaseTimeoutRef.current);
+      hoverReleaseTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearHoverReactivationTimeout = useCallback(() => {
+    if (hoverReactivationTimeoutRef.current !== null) {
+      window.clearTimeout(hoverReactivationTimeoutRef.current);
+      hoverReactivationTimeoutRef.current = null;
     }
   }, []);
 
@@ -83,14 +106,27 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   }, [onPreviewSettled]);
 
   useEffect(() => {
+    requestedHoverRef.current = requestedHover;
+  }, [requestedHover]);
+
+  useEffect(() => {
+    loadEnabledRef.current = loadEnabled;
+  }, [loadEnabled]);
+
+  useEffect(() => {
     previewSettledRef.current = false;
     setIsLoading(true);
     setIsPointerHovered(false);
+    clearHoverReleaseTimeout();
+    clearHoverReactivationTimeout();
+    hoverActivatedAtRef.current = null;
+    hoverReentryLockedUntilRef.current = null;
+    setIsHovered(false);
     setIsOriginalLoaded(false);
     setIsVideoReady(false);
     setShouldLoadOriginal(false);
     setShouldActivateHoverMedia(false);
-  }, [previewSrc, src]);
+  }, [previewSrc, src, clearHoverReleaseTimeout, clearHoverReactivationTimeout]);
 
   const activateHoverState = useCallback(() => {
     if (!loadEnabled) return;
@@ -103,6 +139,104 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
       setShouldActivateHoverMedia(true);
     }
   }, [isVideo, isVimeo, loadEnabled, sameStaticImage]);
+
+  const scheduleHoverReactivation = useCallback((delayMs: number) => {
+    clearHoverReactivationTimeout();
+
+    hoverReactivationTimeoutRef.current = window.setTimeout(() => {
+      hoverReactivationTimeoutRef.current = null;
+
+      if (!loadEnabledRef.current || !requestedHoverRef.current) {
+        return;
+      }
+
+      hoverReentryLockedUntilRef.current = null;
+      hoverActivatedAtRef.current = performance.now();
+      setIsHovered(true);
+    }, delayMs);
+  }, [clearHoverReactivationTimeout]);
+
+  useEffect(() => {
+    if (!loadEnabled) {
+      clearHoverReleaseTimeout();
+      clearHoverReactivationTimeout();
+      hoverActivatedAtRef.current = null;
+      hoverReentryLockedUntilRef.current = null;
+      setIsHovered(false);
+      return;
+    }
+
+    if (requestedHover) {
+      clearHoverReleaseTimeout();
+
+      if (isHovered) {
+        clearHoverReactivationTimeout();
+
+        if (hoverActivatedAtRef.current === null) {
+          hoverActivatedAtRef.current = performance.now();
+        }
+
+        return;
+      }
+
+      const lockedUntil = hoverReentryLockedUntilRef.current;
+      const remainingLock = lockedUntil === null
+        ? 0
+        : Math.max(0, lockedUntil - performance.now());
+
+      if (remainingLock > 0) {
+        scheduleHoverReactivation(remainingLock);
+        return;
+      }
+
+      clearHoverReactivationTimeout();
+      hoverReentryLockedUntilRef.current = null;
+      hoverActivatedAtRef.current = performance.now();
+      setIsHovered(true);
+      return;
+    }
+
+    clearHoverReactivationTimeout();
+
+    if (!isHovered) {
+      hoverActivatedAtRef.current = null;
+      return;
+    }
+
+    const hoverActivatedAt = hoverActivatedAtRef.current ?? performance.now();
+    const elapsed = performance.now() - hoverActivatedAt;
+    const remaining = Math.max(0, HOVER_SETTLE_DURATION_MS - elapsed);
+
+    clearHoverReleaseTimeout();
+
+    if (remaining === 0) {
+      hoverActivatedAtRef.current = null;
+      hoverReentryLockedUntilRef.current = performance.now() + HOVER_SETTLE_DURATION_MS;
+      setIsHovered(false);
+      return;
+    }
+
+    hoverReleaseTimeoutRef.current = window.setTimeout(() => {
+      hoverReleaseTimeoutRef.current = null;
+      hoverActivatedAtRef.current = null;
+      hoverReentryLockedUntilRef.current = performance.now() + HOVER_SETTLE_DURATION_MS;
+      setIsHovered(false);
+    }, remaining);
+  }, [
+    requestedHover,
+    loadEnabled,
+    isHovered,
+    clearHoverReleaseTimeout,
+    clearHoverReactivationTimeout,
+    scheduleHoverReactivation,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      clearHoverReleaseTimeout();
+      clearHoverReactivationTimeout();
+    };
+  }, [clearHoverReleaseTimeout, clearHoverReactivationTimeout]);
 
   useEffect(() => {
     if (!loadEnabled) return;

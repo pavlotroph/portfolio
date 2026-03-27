@@ -1,7 +1,7 @@
 import { RefObject, useEffect, useRef, useState } from 'react';
 
 const TOUCH_HOVER_SELECTOR = '[data-touch-hover-id]';
-const TOUCH_HOVER_ACTIVATION_DELAY_MS = 150;
+const TOUCH_HOVER_ACTIVATION_DELAY_MS = 100;
 
 const isPointInsideElement = (element: HTMLElement, x: number, y: number) => {
   const rect = element.getBoundingClientRect();
