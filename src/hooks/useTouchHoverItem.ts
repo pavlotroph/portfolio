@@ -1,6 +1,7 @@
 import { RefObject, useEffect, useRef, useState } from 'react';
 
 const TOUCH_HOVER_SELECTOR = '[data-touch-hover-id]';
+const TOUCH_HOVER_ACTIVATION_DELAY_MS = 150;
 
 const isPointInsideElement = (element: HTMLElement, x: number, y: number) => {
   const rect = element.getBoundingClientRect();
@@ -39,13 +40,37 @@ export const useTouchHoverItem = <T extends HTMLElement>(
   const [activeTouchHoverId, setActiveTouchHoverId] = useState<string | null>(null);
   const lastTouchPointRef = useRef<{ x: number; y: number } | null>(null);
   const hasActiveTouchRef = useRef(false);
+  const activationTimeoutRef = useRef<number | null>(null);
+  const activeTouchHoverIdRef = useRef<string | null>(null);
+  const pendingTouchHoverIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const clearPendingActivation = () => {
+      if (activationTimeoutRef.current !== null) {
+        window.clearTimeout(activationTimeoutRef.current);
+        activationTimeoutRef.current = null;
+      }
+
+      pendingTouchHoverIdRef.current = null;
+    };
+
+    const commitActiveTouchHoverId = (nextId: string | null) => {
+      activeTouchHoverIdRef.current = nextId;
+      setActiveTouchHoverId(nextId);
+    };
+
+    const clearActiveTouchHoverId = () => {
+      hasActiveTouchRef.current = false;
+      lastTouchPointRef.current = null;
+      clearPendingActivation();
+      commitActiveTouchHoverId(null);
+    };
+
     const updateActiveTouchHoverId = (x: number, y: number) => {
       const container = containerRef.current;
 
       if (!container) {
-        setActiveTouchHoverId(null);
+        clearActiveTouchHoverId();
         return;
       }
 
@@ -55,19 +80,36 @@ export const useTouchHoverItem = <T extends HTMLElement>(
       const nextId = getTouchHoverIdAtPoint(container, x, y);
       const isInsideContainer = isPointInsideElement(container, x, y);
 
-      setActiveTouchHoverId((previousId) => {
-        if (nextId) {
-          return nextId;
+      if (nextId) {
+        if (nextId === activeTouchHoverIdRef.current) {
+          clearPendingActivation();
+          return;
         }
 
-        return isInsideContainer ? previousId : null;
-      });
-    };
+        if (nextId === pendingTouchHoverIdRef.current) {
+          return;
+        }
 
-    const clearActiveTouchHoverId = () => {
-      hasActiveTouchRef.current = false;
-      lastTouchPointRef.current = null;
-      setActiveTouchHoverId(null);
+        clearPendingActivation();
+        pendingTouchHoverIdRef.current = nextId;
+        activationTimeoutRef.current = window.setTimeout(() => {
+          activationTimeoutRef.current = null;
+
+          if (!hasActiveTouchRef.current || pendingTouchHoverIdRef.current !== nextId) {
+            return;
+          }
+
+          pendingTouchHoverIdRef.current = null;
+          commitActiveTouchHoverId(nextId);
+        }, TOUCH_HOVER_ACTIVATION_DELAY_MS);
+        return;
+      }
+
+      clearPendingActivation();
+
+      if (!isInsideContainer) {
+        clearActiveTouchHoverId();
+      }
     };
 
     const handleTouchStart = (event: TouchEvent) => {
@@ -155,6 +197,7 @@ export const useTouchHoverItem = <T extends HTMLElement>(
     window.addEventListener('blur', handleWindowBlur);
 
     return () => {
+      clearPendingActivation();
       window.removeEventListener('pointerdown', handlePointerStartOrMove);
       window.removeEventListener('pointermove', handlePointerStartOrMove);
       window.removeEventListener('pointerup', handlePointerUp);
