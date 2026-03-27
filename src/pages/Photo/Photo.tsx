@@ -14,10 +14,11 @@ import { Link } from 'react-router-dom';
 import QuoteBlock from '../../components/Quote/QuoteBlock';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOutletContext } from "react-router-dom";
+import { useTouchHoverItem } from '../../hooks/useTouchHoverItem';
 
 export type WorkItemData = {
   slug?: string | null;   
-  id: string;
+  id: string | number;
   folder: string;
   image_name: string;
   title: string;
@@ -57,6 +58,8 @@ const Photo: React.FC = () => {
       : works.filter(w => (w.category || '').toUpperCase() === filter);
   const sequentialFilterKey = `${filter}:${filteredWorks.length}`;
   const activeSequentialFilterKeyRef = useRef(sequentialFilterKey);
+  const workPhotoWrappRef = useRef<HTMLDivElement>(null);
+  const activeTouchHoverId = useTouchHoverItem(workPhotoWrappRef);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,7 +153,7 @@ const Photo: React.FC = () => {
           </WorkFilterWrapp>
         </WorkTitelContainer>
 
-        <WorkPhotoWrapp>
+        <WorkPhotoWrapp ref={workPhotoWrappRef}>
           <AnimatePresence>
             {filteredWorks.map((work, index) => {
               const slugOrId = work.slug || work.id;  
@@ -174,6 +177,7 @@ const Photo: React.FC = () => {
                       work={work}
                       source="photo"
                       loadEnabled={index < sequentialUnlockedCount}
+                      touchActive={activeTouchHoverId === String(work.id)}
                       onPreviewSettled={() => {
                         if (activeSequentialFilterKeyRef.current !== itemSequentialFilterKey) return;
                         setSequentialUnlockedCount(prev =>

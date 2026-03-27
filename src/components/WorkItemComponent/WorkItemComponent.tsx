@@ -16,6 +16,7 @@ interface WorkItemComponentProps {
   source: 'work' | 'photo';
   loadEnabled?: boolean;
   onPreviewSettled?: () => void;
+  touchActive?: boolean;
 }
 
 const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
@@ -23,11 +24,12 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   source,
   loadEnabled = true,
   onPreviewSettled,
+  touchActive = false,
 }) => {
   const bucket = source === 'work' ? 'work-images' : 'photography-images';
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isPointerHovered, setIsPointerHovered] = useState(false);
   const [isOriginalLoaded, setIsOriginalLoaded] = useState(false);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [shouldLoadOriginal, setShouldLoadOriginal] = useState(false);
@@ -53,6 +55,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   const shouldUseImgPreview = !isVideo || previewLooksLikeImage || Boolean(preview_url);
 
   const sameStaticImage = !isVideo && previewSrc === src;
+  const isHovered = loadEnabled && (isPointerHovered || touchActive);
 
   const markPreviewSettled = useCallback(() => {
     setIsLoading(false);
@@ -82,12 +85,24 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   useEffect(() => {
     previewSettledRef.current = false;
     setIsLoading(true);
-    setIsHovered(false);
+    setIsPointerHovered(false);
     setIsOriginalLoaded(false);
     setIsVideoReady(false);
     setShouldLoadOriginal(false);
     setShouldActivateHoverMedia(false);
   }, [previewSrc, src]);
+
+  const activateHoverState = useCallback(() => {
+    if (!loadEnabled) return;
+
+    if (!isVideo && !sameStaticImage) {
+      setShouldLoadOriginal(true);
+    }
+
+    if (isVideo || isVimeo) {
+      setShouldActivateHoverMedia(true);
+    }
+  }, [isVideo, isVimeo, loadEnabled, sameStaticImage]);
 
   useEffect(() => {
     if (!loadEnabled) return;
@@ -130,6 +145,15 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     }
   }, [isHovered, isVideo, isVimeo, loadEnabled, shouldActivateHoverMedia]);
 
+  useEffect(() => {
+    if (isHovered) {
+      activateHoverState();
+      return;
+    }
+
+    setIsVideoReady(false);
+  }, [activateHoverState, isHovered]);
+
   const showHoverVideoLoader =
     loadEnabled &&
     isHovered &&
@@ -157,20 +181,12 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   const handleMouseEnter = () => {
     if (!loadEnabled) return;
 
-    setIsHovered(true);
-
-    if (!isVideo && !sameStaticImage) {
-      setShouldLoadOriginal(true);
-    }
-
-    if (isVideo || isVimeo) {
-      setShouldActivateHoverMedia(true);
-    }
+    setIsPointerHovered(true);
+    activateHoverState();
   };
 
   const handleMouseLeave = () => {
-    setIsHovered(false);
-    setIsVideoReady(false);
+    setIsPointerHovered(false);
   };
 
   return (
@@ -178,6 +194,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="work-item"
+      data-touch-hover-id={String(work.id)}
     >
       <div
         style={{
