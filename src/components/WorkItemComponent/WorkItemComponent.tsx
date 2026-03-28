@@ -9,13 +9,45 @@ import {
 } from '../../pages/Work/Work.styled';
 import LoadingWebm from '../../assets/video/logo_animated_hq.webm';
 import LoadingMp4 from '../../assets/video/logo.mp4';
-import { WorkItemData } from '../../pages/Work/Work';
+import {
+  PortfolioSource,
+  WorkItemData,
+  resolveWorkItemMedia,
+} from '../../lib/portfolioMedia';
+import { usePersistentMediaUrl } from '../../hooks/usePersistentMediaUrl';
 
 const HOVER_SETTLE_DURATION_MS = 400;
+const LOADING_VIDEO_SOURCES = [
+  { src: LoadingWebm, type: 'video/webm' },
+  { src: LoadingMp4, type: 'video/mp4' },
+] as const;
+let preferredLoadingVideoSource:
+  | (typeof LOADING_VIDEO_SOURCES)[number]
+  | null = null;
+
+const getPreferredLoadingVideoSource = () => {
+  if (preferredLoadingVideoSource) {
+    return preferredLoadingVideoSource;
+  }
+
+  if (typeof document === 'undefined') {
+    preferredLoadingVideoSource = LOADING_VIDEO_SOURCES[0];
+    return preferredLoadingVideoSource;
+  }
+
+  const probe = document.createElement('video');
+  preferredLoadingVideoSource =
+    LOADING_VIDEO_SOURCES.find(({ type }) => {
+      const supportLevel = probe.canPlayType(type);
+      return supportLevel === 'probably' || supportLevel === 'maybe';
+    }) ?? LOADING_VIDEO_SOURCES[LOADING_VIDEO_SOURCES.length - 1];
+
+  return preferredLoadingVideoSource;
+};
 
 interface WorkItemComponentProps {
   work: WorkItemData;
-  source: 'work' | 'photo';
+  source: PortfolioSource;
   loadEnabled?: boolean;
   onPreviewSettled?: () => void;
   touchActive?: boolean;
@@ -28,7 +60,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   onPreviewSettled,
   touchActive = false,
 }) => {
-  const bucket = source === 'work' ? 'work-images' : 'photography-images';
+  const loadingVideoSource = getPreferredLoadingVideoSource();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isPointerHovered, setIsPointerHovered] = useState(false);
@@ -49,20 +81,31 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   const requestedHoverRef = useRef(false);
   const loadEnabledRef = useRef(loadEnabled);
 
-  const { folder, image_name, title, preview_url, vimeo_id } = work;
-  const isVimeo = Boolean(vimeo_id);
-  const isVideo = image_name.toLowerCase().endsWith('.mp4');
-
-  const src = `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${image_name}`;
-  const previewSrc = !preview_url
-    ? src
-    : preview_url.startsWith('http')
-      ? preview_url
-      : `https://isglxygpyiuszrsqfttp.supabase.co/storage/v1/object/public/${bucket}/${folder}/${preview_url}`;
-  const previewLooksLikeImage = /\.(avif|webp|png|jpe?g|gif|bmp|svg)([?#].*)?$/i.test(previewSrc);
-  const shouldUseImgPreview = !isVideo || previewLooksLikeImage || Boolean(preview_url);
-
-  const sameStaticImage = !isVideo && previewSrc === src;
+  const { title } = work;
+  const {
+    src,
+    previewSrc,
+    vimeoEmbedSrc,
+    isVideo,
+    isVimeo,
+    sameStaticImage,
+    shouldUseImgPreview,
+  } = resolveWorkItemMedia(work, source);
+  const persistentPreviewSrc = usePersistentMediaUrl(
+    previewSrc,
+    loadEnabled && shouldUseImgPreview
+  );
+  const persistentOriginalSrc = usePersistentMediaUrl(
+    !isVideo && !sameStaticImage ? src : null,
+    loadEnabled && shouldLoadOriginal && !isVideo && !sameStaticImage
+  );
+  const persistentHoverVideoSrc = usePersistentMediaUrl(
+    isVideo && !isVimeo ? src : null,
+    loadEnabled && shouldActivateHoverMedia && isVideo && !isVimeo
+  );
+  const renderPreviewSrc = persistentPreviewSrc ?? undefined;
+  const renderOriginalSrc = persistentOriginalSrc ?? undefined;
+  const renderHoverVideoSrc = persistentHoverVideoSrc ?? undefined;
   const requestedHover = loadEnabled && (isPointerHovered || touchActive);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -251,10 +294,18 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
 
     // Cached images may already be complete before React dispatches onLoad.
     settlePreviewIfComplete(imgEl);
-  }, [previewSrc, loadEnabled, shouldUseImgPreview, settlePreviewIfComplete]);
+  }, [renderPreviewSrc, loadEnabled, shouldUseImgPreview, settlePreviewIfComplete]);
 
   useEffect(() => {
-    if (!loadEnabled || !isLoading || !shouldUseImgPreview || previewSettledRef.current) return;
+    if (
+      !loadEnabled ||
+      !isLoading ||
+      !shouldUseImgPreview ||
+      !renderPreviewSrc ||
+      previewSettledRef.current
+    ) {
+      return;
+    }
 
     const timeoutId = window.setTimeout(() => {
       // Prevent a single missed image load/error event from blocking the whole list.
@@ -262,7 +313,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     }, 4000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [loadEnabled, isLoading, previewSrc, shouldUseImgPreview]);
+  }, [loadEnabled, isLoading, renderPreviewSrc, shouldUseImgPreview, markPreviewSettled]);
 
   useEffect(() => {
     if (!loadEnabled) return;
@@ -303,9 +354,17 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
     : '#000';
 
   useEffect(() => {
-    if (!showLoaderOverlay || !loadingVideoRef.current) return;
+    const loadingVideo = loadingVideoRef.current;
 
-    loadingVideoRef.current.play().catch(e => {
+    if (!loadingVideo) return;
+
+    if (!showLoaderOverlay) {
+      loadingVideo.pause();
+      loadingVideo.currentTime = 0;
+      return;
+    }
+
+    loadingVideo.play().catch(e => {
       if (e.name !== 'AbortError') {
         console.error('Loading video play error:', e);
       }
@@ -347,25 +406,24 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
         {showLoaderOverlay ? (
           <video
             ref={loadingVideoRef}
+            src={loadingVideoSource.src}
             loop
             muted
             playsInline
+            preload="auto"
             aria-label="Loading animation"
             style={{ width: '100px', height: '100px' }}
-          >
-            <source src={LoadingWebm} type="video/webm" />
-            <source src={LoadingMp4} type="video/mp4" />
-          </video>
+          />
         ) : null}
       </div>
 
-      <PreviewLayer $isVisible={!isLoading} $imageUrl={previewSrc}>
+      <PreviewLayer $isVisible={!isLoading} $imageUrl={renderPreviewSrc || previewSrc}>
         <img
           ref={(el) => {
             previewImgRef.current = el;
             settlePreviewIfComplete(el);
           }}
-          src={loadEnabled && shouldUseImgPreview ? previewSrc : undefined}
+          src={loadEnabled && shouldUseImgPreview ? renderPreviewSrc : undefined}
           alt={title || `Preview image for ${work.title || 'work item'}`}
           loading={loadEnabled ? 'eager' : 'lazy'}
           decoding="async"
@@ -382,7 +440,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
       {!isVideo && !sameStaticImage && (
         <OriginalLayer $isVisible={isHovered && isOriginalLoaded}>
           <img
-            src={shouldLoadOriginal ? src : undefined}
+            src={shouldLoadOriginal ? renderOriginalSrc : undefined}
             alt={title || `Full image for ${work.title || 'work item'}`}
             loading="lazy"
             decoding="async"
@@ -396,7 +454,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
           {isVimeo ? (
             shouldActivateHoverMedia ? (
               <iframe
-                src={`https://player.vimeo.com/video/${vimeo_id}?autoplay=1&muted=1&loop=1&background=1`}
+                src={vimeoEmbedSrc ?? undefined}
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
@@ -409,7 +467,7 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
           ) : shouldActivateHoverMedia ? (
             <video
               ref={videoRef}
-              src={src}
+              src={renderHoverVideoSrc}
               muted
               loop
               preload="none"

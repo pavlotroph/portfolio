@@ -15,18 +15,7 @@ import QuoteBlock from '../../components/Quote/QuoteBlock';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOutletContext } from "react-router-dom";
 import { useTouchHoverItem } from '../../hooks/useTouchHoverItem';
-
-export type WorkItemData = {
-  slug?: string | null;   
-  id: string | number;
-  folder: string;
-  image_name: string;
-  title: string;
-  description: string;
-  preview_url: string | null;
-  vimeo_id?: string;
-  category?: 'PERSONAL' | 'COMMERCIAL' | null; // <-- NEW
-};
+import { fetchPortfolioItems, WorkItemData } from '../../lib/portfolioMedia';
 
 export type Quote = {
   id: number;
@@ -66,14 +55,12 @@ const Photo: React.FC = () => {
   
     const fetchWorks = async () => {
       try {
-        const { data, error } = await supabase
-          .from('photography')
-          .select('*')
-          .order('id', { ascending: false });
-  
-        if (!cancelled && !error && data) {
-          setWorks(data as WorkItemData[]);
+        const data = await fetchPortfolioItems('photo');
+        if (!cancelled) {
+          setWorks(data);
         }
+      } catch (error) {
+        console.error('Failed to fetch photography items:', error);
       } finally {
         if (!cancelled) setIsWorksLoading(false);
       }

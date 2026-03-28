@@ -2,6 +2,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
+import { startPortfolioMediaPreload } from "../../lib/portfolioMediaPreload";
 
 export type LayoutCtx = {
   pageReady: boolean;
@@ -16,8 +17,8 @@ export const Layout: React.FC = () => {
 
   // ✅ Only these pages should "wait" for data before showing Quote/Footer
   const shouldGateFooter = useMemo(() => {
-  return pathname === "/work" || pathname === "/photo" || pathname === "/photography";
-}, [pathname]);
+    return pathname === "/work" || pathname === "/photo" || pathname === "/photography";
+  }, [pathname]);
 
 
   // ✅ Default: ready on normal pages, not-ready on gated pages
@@ -27,6 +28,10 @@ export const Layout: React.FC = () => {
   useEffect(() => {
     setPageReady(!shouldGateFooter);
   }, [shouldGateFooter]);
+
+  useEffect(() => {
+    startPortfolioMediaPreload();
+  }, []);
 
   return (
     <>
