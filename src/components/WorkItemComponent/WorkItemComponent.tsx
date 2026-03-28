@@ -316,19 +316,35 @@ const WorkItemComponent: React.FC<WorkItemComponentProps> = ({
   }, [loadEnabled, isLoading, renderPreviewSrc, shouldUseImgPreview, markPreviewSettled]);
 
   useEffect(() => {
-    if (!loadEnabled) return;
-
-    if (isHovered && isVideo && !isVimeo && shouldActivateHoverMedia && videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(error => {
-        if (error.name !== 'AbortError') {
-          console.error('Video play interrupted:', error);
-        }
-      });
-    } else if (isVideo && videoRef.current) {
-      videoRef.current.pause();
+    if (!loadEnabled || !isVideo || isVimeo) {
+      return;
     }
-  }, [isHovered, isVideo, isVimeo, loadEnabled, shouldActivateHoverMedia]);
+
+    const hoverVideo = videoRef.current;
+
+    if (!hoverVideo) {
+      return;
+    }
+
+    if (!isHovered || !shouldActivateHoverMedia || !renderHoverVideoSrc) {
+      hoverVideo.pause();
+      return;
+    }
+
+    hoverVideo.currentTime = 0;
+    hoverVideo.play().catch(error => {
+      if (error.name !== 'AbortError') {
+        console.error('Video play interrupted:', error);
+      }
+    });
+  }, [
+    isHovered,
+    isVideo,
+    isVimeo,
+    loadEnabled,
+    shouldActivateHoverMedia,
+    renderHoverVideoSrc,
+  ]);
 
   useEffect(() => {
     if (isHovered) {
