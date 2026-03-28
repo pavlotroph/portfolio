@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,8 +7,13 @@ import {
   HOME_BUTTON_TEXT,
   HomeContainer,
 } from './HomePage.styled';
+import { startPortfolioMediaPreload } from '../../lib/portfolioMediaPreload';
 
 const Home: React.FC = () => {
+  useEffect(() => {
+    startPortfolioMediaPreload();
+  }, []);
+
   type HomeButtonProps = {
     to: string;
     label: string;

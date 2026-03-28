@@ -2,7 +2,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
-import { startPortfolioMediaPreload } from "../../lib/portfolioMediaPreload";
 
 export type LayoutCtx = {
   pageReady: boolean;
@@ -28,10 +27,6 @@ export const Layout: React.FC = () => {
   useEffect(() => {
     setPageReady(!shouldGateFooter);
   }, [shouldGateFooter]);
-
-  useEffect(() => {
-    startPortfolioMediaPreload();
-  }, []);
 
   return (
     <>
